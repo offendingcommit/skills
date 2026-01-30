@@ -217,3 +217,9 @@ Some actions require an explicit confirmation flag:
 
 - Credentials are cached locally only (`~/.tesla_cache.json`).
 - Do not commit tokens, logs, VINs, or location outputs.
+
+## Exit codes (automation)
+
+- `0` — success
+- `2` — bad/missing arguments (e.g., missing `TESLA_EMAIL`)
+- `3` — car is asleep/offline and `--no-wake` was set (refused to wake)

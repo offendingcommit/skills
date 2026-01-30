@@ -131,10 +131,6 @@ python3 scripts/tesla.py seats status
 python3 scripts/tesla.py seats status --no-wake
 python3 scripts/tesla.py seats status --json
 
-# Seat heaters
-python3 scripts/tesla.py seats status
-python3 scripts/tesla.py seats status --no-wake
-
 # Seat heaters (safety gated)
 # seat: driver|passenger|rear-left|rear-center|rear-right|3rd-left|3rd-right (or 0–6)
 # level: 0–3 (0=off)
@@ -257,3 +253,11 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 - Some commands (unlock/charge start|stop|limit|amps/trunk/windows/seats set|off/sentry on|off/honk/flash/charge-port open|close/scheduled-charging set|off) require `--yes`.
 - Read-only commands support `--no-wake` to avoid waking the car (will fail if the vehicle is asleep/offline).
 - `location` shows *approximate* coords by default; add `--yes` for precise coordinates.
+
+## Exit codes (automation)
+
+Useful if you’re running this via cron/launchd and want to distinguish “expected” failures:
+
+- `0` — success
+- `2` — bad/missing arguments (e.g., missing `TESLA_EMAIL`)
+- `3` — car is asleep/offline and `--no-wake` was set (so the command refused to wake it)

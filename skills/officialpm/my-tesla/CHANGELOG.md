@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.71 — 2026-01-29
+- Docs: document CLI exit codes for easier automation; remove a duplicated `seats status` snippet.
+
 ## 0.1.70 — 2026-01-29
 - Reliability: add versioning guardrail unit tests to ensure `VERSION`/`VERSION.txt` match and the changelog includes the current version heading.
 
