@@ -1,0 +1,7 @@
+{
+  "default": "imessage",
+  "timezone": "America/Edmonton",
+  "channels": {
+    "imessage": "number@example.com"
+  }
+}
