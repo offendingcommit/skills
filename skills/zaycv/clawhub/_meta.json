@@ -3,11 +3,16 @@
   "slug": "clawhub",
   "displayName": "Clawhub",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1769865839043,
-    "commit": "https://github.com/clawdbot/skills/commit/93d548f298d9d996a42da85de09f9860136c2280"
+    "version": "1.0.4",
+    "publishedAt": 1769867907278,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1769865839043,
+      "commit": "https://github.com/clawdbot/skills/commit/93d548f298d9d996a42da85de09f9860136c2280"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1769861969806,

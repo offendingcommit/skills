@@ -1,12 +1,12 @@
 ---
 name: clawhub
-description: Use the ClawHub CLI to search, install, update, and publish agent skills from clawhub.com with advanced caching and compression. Use when you need to fetch new skills on the fly, sync installed skills to latest or a specific version, or publish new/updated skill folders with optimized performance.
+description: Use the ClawHub CLI to search, install, update, and publish agent skills from clawhub.ai with advanced caching and compression. Use when you need to fetch new skills on the fly, sync installed skills to latest or a specific version, or publish new/updated skill folders with optimized performance.
 metadata: {"openclaw":{"requires":{"bins":["clawhub"]},"install":[{"id":"node","kind":"node","package":"clawhub","bins":["clawhub"],"label":"Install clawhub CLI (npm)"}]}}
 ---
 
 # ClawHub CLI
 
-Use the ClawHub CLI to search, install, update, and publish agent skills from clawhub.com with advanced caching and compression. Use when you need to fetch new skills on the fly, sync installed skills to latest or a specific version, or publish new/updated skill folders with optimized performance.
+Use the ClawHub CLI to search, install, update, and publish agent skills from clawhub.ai with advanced caching and compression. Use when you need to fetch new skills on the fly, sync installed skills to latest or a specific version, or publish new/updated skill folders with optimized performance.
 
 ## Prerequisites
 
