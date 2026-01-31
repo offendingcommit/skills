@@ -1,13 +1,10 @@
 ---
 name: proactive-agent
-version: 2.0.0
-description: "Transform AI agents from task-followers into proactive partners that anticipate needs and continuously improve. Includes reverse prompting, security hardening, self-healing patterns, and alignment systems. Part of the Hal Stack 🦞"
-author: halthelobster
+version: 1.2.3
+description: "Transform AI agents from task-followers into proactive partners that anticipate needs and continuously improve. Includes memory architecture with pre-compaction flush (so context survives when the window fills), reverse prompting (surfaces ideas you didn't know to ask for), security hardening, self-healing patterns (diagnoses and fixes its own issues), and alignment systems (stays on mission, remembers who it serves). Battle-tested patterns for agents that learn from every interaction and create value without being asked."
 ---
 
-# Proactive Agent 🦞
-
-**By Hal Labs** — Part of the Hal Stack
+# Proactive Agent
 
 **A proactive, self-improving architecture for your AI agent.**
 
@@ -412,26 +409,6 @@ Starter files in `assets/`:
 **Built on:** [Clawdbot](https://github.com/clawdbot/clawdbot)
 
 **Disclaimer:** This skill provides patterns and templates for AI agent behavior. Results depend on your implementation, model capabilities, and configuration. Use at your own risk. The authors are not responsible for any actions taken by agents using this skill.
-
----
-
-## The Complete Agent Stack
-
-For comprehensive agent capabilities, combine this with:
-
-| Skill | Purpose |
-|-------|---------|
-| **Proactive Agent** (this) | Act without being asked |
-| **Bulletproof Memory** | Never lose active context |
-| **PARA Second Brain** | Organize and find knowledge |
-
-Together, they create an agent that anticipates needs, remembers everything, and finds anything.
-
----
-
-*Part of the Hal Stack 🦞*
-
-*Pairs well with [Bulletproof Memory](https://clawdhub.com/halthelobster/bulletproof-memory) for context persistence and [PARA Second Brain](https://clawdhub.com/halthelobster/para-second-brain) for knowledge organization.*
 
 ---
 
