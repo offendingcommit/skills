@@ -1,0 +1,11 @@
+{
+  "owner": "agentandbot-design",
+  "slug": "agents-manager",
+  "displayName": "Agent manager",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1769899073246,
+    "commit": null
+  },
+  "history": []
+}
