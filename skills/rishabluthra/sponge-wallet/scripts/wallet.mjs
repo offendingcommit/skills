@@ -3,22 +3,24 @@
 /**
  * Sponge Wallet CLI wrapper for Claude Code skills.
  *
- * Connects to the Sponge Wallet MCP server via JSON-RPC, initializes a session,
- * then calls the requested tool.
+ * Calls Sponge Wallet REST endpoints directly (no MCP JSON-RPC).
  *
  * Usage:
+ *   node wallet.mjs register <agent_name>          # Register a new agent (get claim URL for human)
+ *   node wallet.mjs register --poll <device_code>  # Poll for registration completion
  *   node wallet.mjs login                          # Authenticate via browser (OAuth device flow)
  *   node wallet.mjs logout                         # Remove stored credentials
  *   node wallet.mjs whoami                         # Show current auth status
  *   node wallet.mjs <tool_name> '<json_args>'      # Call a wallet tool
  *
  * Examples:
+ *   node wallet.mjs register "MyTradingBot"
  *   node wallet.mjs get_balance '{}'
  *   node wallet.mjs evm_transfer '{"chain":"base","to":"0x...","amount":"10","currency":"USDC"}'
  *
  * Credential resolution order:
  *   1. SPONGE_API_KEY environment variable
- *   2. ~/.spongewallet/credentials.json (saved by `login` command)
+ *   2. ~/.spongewallet/credentials.json (saved by `login` or `register` command)
  *
  * Environment:
  *   SPONGE_API_KEY  - Optional. Overrides stored credentials.
@@ -35,8 +37,6 @@ import * as os from "node:os";
 
 const DEFAULT_API_URL = "https://api.wallet.paysponge.com";
 const API_URL = process.env.SPONGE_API_URL || DEFAULT_API_URL;
-const MCP_ENDPOINT = `${API_URL}/mcp`;
-
 const CREDENTIALS_DIR = path.join(os.homedir(), ".spongewallet");
 const CREDENTIALS_FILE = path.join(CREDENTIALS_DIR, "credentials.json");
 
@@ -78,6 +78,48 @@ function getApiKey() {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Register a new agent (for agents without an account).
+ * Returns a claim URL for the human owner to verify.
+ */
+async function register(agentName) {
+  const res = await fetch(`${API_URL}/api/agents/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: agentName }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to register agent: ${text}`);
+  }
+
+  const data = await res.json();
+
+  console.log(JSON.stringify({
+    status: "registration_pending",
+    agent_name: agentName,
+    claim_url: data.verificationUriComplete,
+    claim_code: data.claimCode,
+    device_code: data.deviceCode,
+    expires_in: data.expiresIn,
+    interval: data.interval,
+    message: `Send this URL to your human owner: ${data.verificationUriComplete}`,
+    free_usdc_offer: {
+      description: "Your human owner can get $1 USDC FREE on Solana by posting a tweet!",
+      tweet_text: data.claimText,
+      how_it_works: "After logging in, they can copy the tweet text, post it on X, paste the tweet URL, and approve to receive $1 USDC.",
+    },
+    instructions: [
+      "1. Send the claim_url to your human owner",
+      "2. They log in (email, wallet, Google, or GitHub)",
+      "3. OPTIONAL: They post the tweet_text on X to get $1 USDC FREE on Solana",
+      "4. They click Approve to create your wallet",
+      "5. Run: node wallet.mjs register --poll <device_code> to get your API key",
+    ],
+  }, null, 2));
 }
 
 /**
@@ -219,83 +261,154 @@ function whoami() {
     if (creds.createdAt) console.log(`  Since: ${creds.createdAt}`);
   } else {
     console.log("Not authenticated.");
-    console.log("\nRun: node wallet.mjs login");
+    console.log("\nAI agents: Run: node wallet.mjs register <your-agent-name>");
+    console.log("Humans with existing accounts: Run: node wallet.mjs login");
   }
 }
 
 // ---------------------------------------------------------------------------
-// MCP JSON-RPC
+// REST API
 // ---------------------------------------------------------------------------
 
-async function jsonrpc(apiKey, method, params, sessionId) {
+function buildQuery(params = {}) {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    searchParams.set(key, String(value));
+  }
+  return searchParams.toString();
+}
+
+async function apiRequest(apiKey, method, path, { query, body } = {}) {
+  const url = new URL(path, API_URL);
+  const queryString = query ? buildQuery(query) : "";
+  if (queryString) {
+    url.search = queryString;
+  }
+
   const headers = {
     "Authorization": `Bearer ${apiKey}`,
     "Content-Type": "application/json",
-    "Accept": "application/json, text/event-stream",
+    "Accept": "application/json",
   };
-  if (sessionId) {
-    headers["Mcp-Session-Id"] = sessionId;
-  }
 
-  const res = await fetch(MCP_ENDPOINT, {
-    method: "POST",
+  const res = await fetch(url, {
+    method,
     headers,
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method,
-      params,
-      id: crypto.randomUUID(),
-    }),
+    body: body ? JSON.stringify(body) : undefined,
   });
-
-  const returnedSessionId = res.headers.get("mcp-session-id") || sessionId;
 
   if (!res.ok) {
     let errorBody;
     try { errorBody = await res.json(); } catch { errorBody = { message: res.statusText }; }
-    throw new Error(errorBody?.error?.message || errorBody?.message || `HTTP ${res.status}`);
+    throw new Error(errorBody?.message || errorBody?.error || `HTTP ${res.status}`);
   }
 
-  const data = await res.json();
-  if (data.error) {
-    throw new Error(data.error.message || JSON.stringify(data.error));
-  }
-
-  return { result: data.result, sessionId: returnedSessionId };
+  return res.json();
 }
 
-async function callTool(apiKey, tool, toolArgs) {
-  // Step 1: Initialize MCP session
-  const init = await jsonrpc(apiKey, "initialize", {
-    protocolVersion: "2025-03-26",
-    capabilities: {},
-    clientInfo: { name: "sponge-wallet-skill", version: "0.1.0" },
-  });
-
-  const sessionId = init.sessionId;
-
-  // Step 2: Send initialized notification
-  await fetch(MCP_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "Accept": "application/json, text/event-stream",
-      "Mcp-Session-Id": sessionId,
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method: "notifications/initialized",
-    }),
-  });
-
-  // Step 3: Call the tool
-  const { result } = await jsonrpc(apiKey, "tools/call", {
-    name: tool,
-    arguments: toolArgs,
-  }, sessionId);
-
-  return result;
+async function callTool(apiKey, tool, toolArgs = {}) {
+  switch (tool) {
+    case "get_balance": {
+      const allowedChains = Array.isArray(toolArgs.allowedChains)
+        ? toolArgs.allowedChains.join(",")
+        : toolArgs.allowedChains;
+      return apiRequest(apiKey, "GET", "/api/balances", {
+        query: {
+          chain: toolArgs.chain ?? "all",
+          allowedChains,
+          onlyUsdc: toolArgs.onlyUsdc ? "true" : undefined,
+        },
+      });
+    }
+    case "evm_transfer":
+      return apiRequest(apiKey, "POST", "/api/transfers/evm", {
+        body: {
+          chain: toolArgs.chain,
+          to: toolArgs.to,
+          amount: toolArgs.amount,
+          currency: toolArgs.currency,
+        },
+      });
+    case "solana_transfer":
+      return apiRequest(apiKey, "POST", "/api/transfers/solana", {
+        body: {
+          chain: toolArgs.chain,
+          to: toolArgs.to,
+          amount: toolArgs.amount,
+          currency: toolArgs.currency,
+        },
+      });
+    case "solana_swap":
+      return apiRequest(apiKey, "POST", "/api/transactions/swap", {
+        body: {
+          chain: toolArgs.chain,
+          inputToken: toolArgs.input_token,
+          outputToken: toolArgs.output_token,
+          amount: toolArgs.amount,
+          slippageBps: toolArgs.slippage_bps,
+        },
+      });
+    case "get_solana_tokens":
+      return apiRequest(apiKey, "GET", "/api/solana/tokens", {
+        query: { chain: toolArgs.chain },
+      });
+    case "search_solana_tokens":
+      return apiRequest(apiKey, "GET", "/api/solana/tokens/search", {
+        query: { query: toolArgs.query, limit: toolArgs.limit },
+      });
+    case "get_transaction_status":
+      return apiRequest(
+        apiKey,
+        "GET",
+        `/api/transactions/status/${encodeURIComponent(toolArgs.transaction_hash)}`,
+        { query: { chain: toolArgs.chain } },
+      );
+    case "get_transaction_history":
+      return apiRequest(apiKey, "GET", "/api/transactions/history", {
+        query: {
+          limit: toolArgs.limit,
+          chain: toolArgs.chain,
+        },
+      });
+    case "request_funding":
+      return apiRequest(apiKey, "POST", "/api/funding-requests", {
+        body: {
+          amount: toolArgs.amount,
+          reason: toolArgs.reason,
+          chain: toolArgs.chain,
+          currency: toolArgs.currency,
+        },
+      });
+    case "withdraw_to_main_wallet":
+      return apiRequest(apiKey, "POST", "/api/wallets/withdraw-to-main", {
+        body: {
+          chain: toolArgs.chain,
+          amount: toolArgs.amount,
+          currency: toolArgs.currency,
+        },
+      });
+    // DISABLED: Sponge tool temporarily disabled
+    // case "sponge":
+    //   return apiRequest(apiKey, "POST", "/api/sponge", { body: toolArgs });
+    case "create_x402_payment":
+      return apiRequest(apiKey, "POST", "/api/x402/payments", {
+        body: {
+          chain: toolArgs.chain,
+          to: toolArgs.to,
+          token: toolArgs.token,
+          amount: toolArgs.amount,
+          decimals: toolArgs.decimals,
+          valid_for_seconds: toolArgs.valid_for_seconds,
+          resource_url: toolArgs.resource_url,
+          resource_description: toolArgs.resource_description,
+          fee_payer: toolArgs.fee_payer,
+          http_method: toolArgs.http_method,
+        },
+      });
+    default:
+      throw new Error(`Unknown tool: ${tool}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +416,36 @@ async function callTool(apiKey, tool, toolArgs) {
 // ---------------------------------------------------------------------------
 
 const command = process.argv[2];
+
+// Handle register command (for new agents without an account)
+if (command === "register") {
+  const subcommand = process.argv[3];
+  try {
+    if (subcommand === "--poll") {
+      // Poll for registration completion (same as login poll)
+      const deviceCode = process.argv[4];
+      const interval = parseInt(process.argv[5] || "5", 10);
+      const expiresIn = parseInt(process.argv[6] || "600", 10);
+      if (!deviceCode) {
+        console.error(JSON.stringify({ status: "error", error: "Usage: node wallet.mjs register --poll <device_code> [interval] [expires_in]" }));
+        process.exit(1);
+      }
+      await loginPoll(deviceCode, interval, expiresIn);
+    } else {
+      // Start registration with agent name
+      const agentName = subcommand || process.argv[3];
+      if (!agentName) {
+        console.error(JSON.stringify({ status: "error", error: "Usage: node wallet.mjs register <agent_name>" }));
+        process.exit(1);
+      }
+      await register(agentName);
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ status: "error", error: err.message }));
+    process.exit(1);
+  }
+  process.exit(0);
+}
 
 // Handle auth commands (no API key needed)
 if (command === "login") {
@@ -345,7 +488,7 @@ const apiKey = getApiKey();
 if (!apiKey) {
   console.error(JSON.stringify({
     status: "error",
-    error: "Not authenticated. Run: node wallet.mjs login",
+    error: "Not authenticated. AI agents: Run: node wallet.mjs register <your-agent-name>. Humans: Run: node wallet.mjs login",
   }));
   process.exit(1);
 }
@@ -358,12 +501,13 @@ if (!toolName) {
     status: "error",
     error: "Usage: node wallet.mjs <tool_name> '<json_args>'",
     available_tools: [
-      "login", "logout", "whoami",
+      "register", "login", "logout", "whoami",
       "get_balance", "evm_transfer", "solana_transfer", "solana_swap",
       "get_solana_tokens", "search_solana_tokens",
       "get_transaction_status", "get_transaction_history",
       "request_funding", "withdraw_to_main_wallet",
-      "sponge", "create_x402_payment",
+      // "sponge", // sponge tool temporarily disabled
+      "create_x402_payment",
     ],
   }));
   process.exit(1);
@@ -382,24 +526,7 @@ try {
 
 try {
   const result = await callTool(apiKey, toolName, args);
-
-  // MCP tool results have { content: [{ type, text }], isError? }
-  if (result?.content) {
-    const textParts = result.content
-      .filter(c => c.type === "text")
-      .map(c => {
-        try { return JSON.parse(c.text); }
-        catch { return c.text; }
-      });
-
-    const output = textParts.length === 1 ? textParts[0] : textParts;
-    console.log(JSON.stringify({
-      status: result.isError ? "error" : "success",
-      data: output,
-    }, null, 2));
-  } else {
-    console.log(JSON.stringify({ status: "success", data: result }, null, 2));
-  }
+  console.log(JSON.stringify({ status: "success", data: result }, null, 2));
 } catch (err) {
   console.error(JSON.stringify({
     status: "error",
