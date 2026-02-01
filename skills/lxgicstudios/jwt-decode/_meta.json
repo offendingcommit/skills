@@ -1,0 +1,11 @@
+{
+  "owner": "lxgicstudios",
+  "slug": "jwt-decode",
+  "displayName": "JWT Decode Token Inspector CLI",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1769967526632,
+    "commit": null
+  },
+  "history": []
+}
