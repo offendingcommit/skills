@@ -1,0 +1,11 @@
+{
+  "owner": "msensintaffar",
+  "slug": "chromadb-memory",
+  "displayName": "ChromaDB Memory",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1769911812377,
+    "commit": null
+  },
+  "history": []
+}
