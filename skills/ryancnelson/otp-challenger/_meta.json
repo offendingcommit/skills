@@ -3,11 +3,16 @@
   "slug": "otp-challenger",
   "displayName": "otp-challenger",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1769901810255,
-    "commit": "https://github.com/clawdbot/skills/commit/7a2272b013f89c12e37a87b4dc0fb29cf46473a5"
+    "version": "1.0.2",
+    "publishedAt": 1769905389018,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1769901810255,
+      "commit": "https://github.com/clawdbot/skills/commit/7a2272b013f89c12e37a87b4dc0fb29cf46473a5"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1769900188599,
