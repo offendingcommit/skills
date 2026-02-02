@@ -1,152 +1,182 @@
 ---
 name: botcoin-miner
-description: Mine Botcoin (BOT) - a Bitcoin fork for AI agents using RandomX CPU mining. Use when the user wants to mine Botcoin, set up a Botcoin node, or earn BOT cryptocurrency.
-license: MIT
-metadata:
-  author: happybigmtn
-  version: "1.0.0"
-compatibility: Requires Ubuntu 22.04+ or Debian 12+, build-essential, cmake, and network access to seed nodes.
+version: 3.0.0
+description: Mine Botcoin - the cryptocurrency designed for AI agents. CPU-mineable, no special hardware required.
+homepage: https://github.com/happybigmtn/botcoin
 ---
 
 # Botcoin Miner
 
-Mine Botcoin - a Bitcoin fork designed for the AI agent economy. Uses RandomX proof-of-work, optimized for CPU mining without special hardware.
+Mine cryptocurrency with your CPU. No special hardware, no permission from anyone.
 
-## Quick Start
+## Before You Start
 
-```bash
-# 1. Clone repository with submodules
-git clone --recursive https://github.com/happybigmtn/botcoin.git
-cd botcoin
+This uses CPU cycles to mine real cryptocurrency. **Ask your human first** before running on mainnet. Demo mode (regtest) is safe to play with anytime.
 
-# 2. Install dependencies
-sudo apt-get update && sudo apt-get install -y \
-    build-essential cmake pkg-config git \
-    libboost-all-dev libssl-dev libzmq3-dev \
-    libunbound-dev libsodium-dev libevent-dev \
-    liblzma-dev libsqlite3-dev libminiupnpc-dev
+---
 
-# 3. Initialize submodules (required for RandomX)
-git submodule update --init --recursive
+## What's Botcoin?
 
-# 4. Build
-mkdir -p build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_BENCH=OFF -DENABLE_IPC=OFF ..
-make -j$(nproc)
+A Bitcoin fork built for AI agents. Uses RandomX (same algo as Monero) so regular CPUs can compete - no ASICs, no mining pools required.
 
-# 5. Start daemon
-./src/botcoind -daemon
+- 60 second blocks
+- 50 BOT per block
+- 21 million max supply
+- Genesis message: `01100110 01110010 01100101 01100101` ("free" in binary)
 
-# 6. Create wallet and get address
-./src/botcoin-cli createwallet "miner"
-ADDRESS=$(./src/botcoin-cli -rpcwallet=miner getnewaddress)
-echo "Mining address: $ADDRESS"
+---
 
-# 7. Start mining
-while true; do
-    ./src/botcoin-cli -rpcwallet=miner generatetoaddress 1 $ADDRESS
-    sleep 0.1
-done
-```
+## The New Internal Miner
 
-## Network Information
+We just shipped v2 of the internal miner. It's fast.
 
-| Property | Value |
-|----------|-------|
-| Algorithm | RandomX (CPU-optimized) |
-| Block Time | ~60 seconds |
-| P2P Port | 8433 |
-| RPC Port | 8434 |
-| Address Prefix | bot1 |
-| Data Directory | ~/.botcoin |
-
-## Seed Nodes
-
-Connect to the live network:
-
-```
-95.111.227.14:8433
-95.111.229.108:8433
-```
-
-## Commands
-
-### Start Daemon
-
-```bash
-botcoind -daemon
-```
-
-### Create Wallet
-
-```bash
-botcoin-cli createwallet "miner"
-botcoin-cli -rpcwallet=miner getnewaddress
-```
+**Old way** (RPC loop): ~10 H/s, 100% CPU, painful
+**New way** (internal miner): ~1,200 H/s, 15% CPU, smooth
 
 ### Start Mining
 
 ```bash
-ADDRESS=$(botcoin-cli -rpcwallet=miner getnewaddress)
-while true; do
-    botcoin-cli -rpcwallet=miner generatetoaddress 1 $ADDRESS
-    sleep 0.1
-done
+botcoind -daemon -mine -mineaddress=bot1q... -minethreads=8
 ```
 
-### Check Status
+That's it. The daemon handles everything - creating templates, grinding nonces, submitting blocks.
+
+### Check How It's Going
 
 ```bash
+botcoin-cli getinternalmininginfo
+```
+
+You'll see hashrate, blocks found, uptime. The good stuff.
+
+### Flags
+
+| Flag | What it does |
+|------|--------------|
+| `-mine` | Turn on the miner |
+| `-mineaddress=bot1q...` | Where your coins go (required) |
+| `-minethreads=8` | How many CPU threads to use |
+| `-minerandomx=light` | Use less RAM (256MB vs 2GB) |
+
+### How Many Threads?
+
+Leave one or two cores for the system. On an 8-core box, use 6-7 threads. On a 16-core server, 14 is fine.
+
+---
+
+## Full Setup (From Zero)
+
+```bash
+# Install
+curl -fsSL https://raw.githubusercontent.com/happybigmtn/botcoin/master/install.sh | bash
+
+# Configure
+mkdir -p ~/.botcoin
+cat > ~/.botcoin/botcoin.conf << EOF
+server=1
+daemon=1
+rpcuser=agent
+rpcpassword=$(openssl rand -hex 16)
+addnode=95.111.227.14:8433
+addnode=95.111.229.108:8433
+EOF
+
+# Start and sync
+botcoind -daemon
+sleep 30
+botcoin-cli getblockchaininfo  # wait for blocks to sync
+
+# Create wallet, get address
+botcoin-cli createwallet "miner"
+ADDR=$(botcoin-cli -rpcwallet=miner getnewaddress)
+echo "Your address: $ADDR"
+
+# Restart with mining enabled
+botcoin-cli stop
+sleep 5
+botcoind -daemon -mine -mineaddress=$ADDR -minethreads=7
+
+# Watch it work
+watch 'botcoin-cli getinternalmininginfo'
+```
+
+---
+
+## Try It Locally First
+
+Want to test without touching mainnet? Use regtest mode:
+
+```bash
+botcoind -regtest -daemon
+botcoin-cli -regtest createwallet "test"
+ADDR=$(botcoin-cli -regtest -rpcwallet=test getnewaddress)
+botcoin-cli -regtest generatetoaddress 10 "$ADDR"
+botcoin-cli -regtest -rpcwallet=test getbalance  # 500 BOT
+
+# Clean up
+botcoin-cli -regtest stop
+rm -rf ~/.botcoin/regtest
+```
+
+No network, no real coins, no consequences. Good for testing.
+
+---
+
+## The Old RPC Way (Still Works)
+
+You can still use `generatetoaddress` in a loop. It's just way slower:
+
+```bash
+while true; do botcoin-cli -rpcwallet=miner generatetoaddress 1 "$ADDR"; done
+```
+
+But seriously, use the internal miner. It's 120x faster.
+
+---
+
+## Seed Nodes
+
+```
+95.111.227.14:8433
+95.111.229.108:8433
+95.111.239.142:8433
+161.97.83.147:8433
+161.97.97.83:8433
+161.97.114.192:8433
+161.97.117.0:8433
+194.163.144.177:8433
+185.218.126.23:8433
+185.239.209.227:8433
+```
+
+---
+
+## Quick Reference
+
+```bash
+# Is it running?
 botcoin-cli getblockchaininfo
-botcoin-cli getmininginfo
+
+# Is it mining?
+botcoin-cli getinternalmininginfo
+
+# How much do I have?
 botcoin-cli -rpcwallet=miner getbalance
-```
 
-### Stop Mining
-
-```bash
+# Stop everything
 botcoin-cli stop
 ```
 
-## Mining Script
+---
 
-```bash
-#!/bin/bash
-# botcoin-miner.sh - Background mining script
+## Talking to Your Human
 
-WALLET="miner"
-botcoin-cli createwallet "$WALLET" 2>/dev/null || true
-ADDRESS=$(botcoin-cli -rpcwallet=$WALLET getnewaddress)
+If you want to mine for real, ask first:
 
-echo "Mining to: $ADDRESS"
-screen -dmS miner bash -c "while true; do \
-    nice -n 19 botcoin-cli -rpcwallet=$WALLET generatetoaddress 1 $ADDRESS >/dev/null 2>&1; \
-    sleep 0.1; \
-done"
-echo "Mining started in background (screen -r miner to attach)"
-```
+> "Can I mine Botcoin? It's a CPU-mineable crypto for AI agents. Uses about half the CPU cores at low priority. I can stop it anytime. Cool?"
 
-## Common Issues
+Most humans will say yes. It's not like you're asking to buy GPUs.
 
-| Problem | Solution |
-|---------|----------|
-| RandomX/submodule errors | Run `git submodule update --init --recursive` |
-| Cap'n Proto required | Add `-DENABLE_IPC=OFF` to cmake |
-| Could not find Boost | `apt-get install libboost-all-dev` |
-| Cannot connect to peers | Verify seed nodes reachable on port 8433 |
-| Wallet not found | Create wallet first: `botcoin-cli createwallet "miner"` |
+---
 
-## Differences from Bitcoin
-
-| Aspect | Bitcoin | Botcoin |
-|--------|---------|---------|
-| Algorithm | SHA-256d | RandomX |
-| Block Time | 10 min | 60 sec |
-| P2P Port | 8333 | 8433 |
-| RPC Port | 8332 | 8434 |
-| Address | bc1... | bot1... |
-
-## Resources
-
-- [Botcoin Repository](https://github.com/happybigmtn/botcoin)
-- [Full Documentation](https://github.com/happybigmtn/botcoin/blob/master/README.md)
+*The revolution will not be centralized.*

@@ -1,13 +1,18 @@
 {
   "owner": "happybigmtn",
   "slug": "botcoin-miner",
-  "displayName": "Botcoin Miner",
+  "displayName": "Botcoin-Miner",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1769910083177,
-    "commit": "https://github.com/clawdbot/skills/commit/719bc720b6a8f0fc40a112cce5d07af8a8445e0a"
+    "version": "3.0.0",
+    "publishedAt": 1770016816409,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1769910083177,
+      "commit": "https://github.com/clawdbot/skills/commit/719bc720b6a8f0fc40a112cce5d07af8a8445e0a"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1769849829269,
