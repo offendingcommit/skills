@@ -1,0 +1,11 @@
+{
+  "owner": "kantorcodes",
+  "slug": "registry-broker-hashnet-openclaw",
+  "displayName": "Registry Broker",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1769977185230,
+    "commit": null
+  },
+  "history": []
+}
