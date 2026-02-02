@@ -1,0 +1,11 @@
+{
+  "owner": "rdsthomas",
+  "slug": "mission-control",
+  "displayName": "Mission Control",
+  "latest": {
+    "version": "2.0.0",
+    "publishedAt": 1769995152297,
+    "commit": null
+  },
+  "history": []
+}
