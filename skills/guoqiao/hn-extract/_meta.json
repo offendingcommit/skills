@@ -1,0 +1,11 @@
+{
+  "owner": "guoqiao",
+  "slug": "hn-extract",
+  "displayName": "HackerNews Extract",
+  "latest": {
+    "version": "0.1.1",
+    "publishedAt": 1770078245825,
+    "commit": null
+  },
+  "history": []
+}
