@@ -1,0 +1,11 @@
+{
+  "owner": "shaharsha",
+  "slug": "spotify-linux",
+  "displayName": "Spotify Headless",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1770146883398,
+    "commit": null
+  },
+  "history": []
+}
