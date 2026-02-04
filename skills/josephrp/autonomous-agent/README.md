@@ -221,8 +221,6 @@ After publishing, the skill appears on [clawhub.ai](https://clawhub.ai) and user
 - [Canteen App – Aptos x402](https://canteenapp-aptos-x402.notion.site/) — wallet hydration and crediting
 - [LangChain.js MCP](https://js.langchain.com/docs/integrations/toolkits/mcp_toolbox)
 - [Hugging Face Inference – OpenAI-compatible](https://huggingface.co/docs/api-inference/en/index)
-- [evm-wallet-skill](https://github.com/surfer77/evm-wallet-skill) — self-sovereign EVM wallet pattern for agents
-
 ## License
 
 GPL-2.0-only. Use of this software is also subject to the [Responsible AI License (RAIL)](https://www.licenses.ai/). See [LICENSE.md](LICENSE.md) (GPL-2) and [RAIL](https://www.licenses.ai/).

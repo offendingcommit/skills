@@ -1,180 +1,87 @@
 ---
-name: evm-wallet-skill
-description: Self-sovereign EVM wallet for AI agents. Use when the user wants to create a crypto wallet, check balances, send ETH or ERC20 tokens, swap tokens, or interact with smart contracts. Supports Base, Ethereum, Polygon, Arbitrum, and Optimism. Private keys stored locally — no cloud custody, no API keys required.
-metadata: {"clawdbot":{"emoji":"💰","homepage":"https://github.com/surfer77/evm-wallet-skill","requires":{"bins":["node","git"]}}}
+name: autonomous-agent
+description: CreditNexus x402 agent. Use when the user wants to create and use wallets (Aptos/EVM), fund wallets, check balances, run stock predictions, backtests, open bank accounts, or transfer/swap tokens. Payment-protected MCP tools with x402 flow (Aptos + Base). Agent handles 402 → pay → retry autonomously.
+metadata: {"clawdbot":{"emoji":"📈","homepage":"https://github.com/FinTechTonic/autonomous-agent","requires":{"bins":["node","npm"]}}}
 ---
 
-# EVM Wallet Skill
+# Autonomous Agent (x402) – Skill
 
-Self-sovereign EVM wallet. Private keys stored locally, no external API dependencies.
+Autonomous agent that **creates, funds, and uses** Aptos and EVM wallets, then calls x402-paid MCP tools (stock prediction, backtest, open bank account). Handles payment flow (402 → pay → retry) with Aptos and Base. Use this skill when the user wants wallet setup, funding, balances, predictions, backtests, banking, or token operations.
 
-## Installation
+---
 
-Detect workspace and skill directory:
-```bash
-SKILL_DIR=$(ls -d \
-  ~/openclaw/skills/evm-wallet \
-  ~/OpenClaw/skills/evm-wallet \
-  ~/clawd/skills/evm-wallet \
-  ~/moltbot/skills/evm-wallet \
-  ~/molt/skills/evm-wallet \
-  2>/dev/null | head -1)
-```
+## Tasks you can do
 
-If code is not installed yet (no `src/` folder), bootstrap it:
-```bash
-if [ ! -d "$SKILL_DIR/src" ]; then
-  git clone https://github.com/surfer77/evm-wallet-skill.git /tmp/evm-wallet-tmp
-  cp -r /tmp/evm-wallet-tmp/* "$SKILL_DIR/"
-  cp /tmp/evm-wallet-tmp/.gitignore "$SKILL_DIR/" 2>/dev/null
-  rm -rf /tmp/evm-wallet-tmp
-  cd "$SKILL_DIR" && npm install
-fi
-```
+### Wallets – create and manage
 
-**For all commands below**, always `cd "$SKILL_DIR"` first.
+- **Create Aptos wallet** – `create_aptos_wallet` (optionally `network: "testnet"` or `"mainnet"`). Agent can have multiple Aptos wallets.
+- **Create EVM wallet** – `create_evm_wallet` (optionally `network: "testnet"` or `"mainnet"`). Agent can have multiple EVM wallets.
+- **List wallet addresses** – `get_wallet_addresses` returns all Aptos and EVM addresses (with network tags) for whitelisting and funding.
 
-## First-Time Setup
+### Fund wallets
 
-Generate a wallet (only needed once):
-```bash
-node src/setup.js --json
-```
+- **Fund Aptos wallet** – `credit_aptos_wallet`: on devnet uses programmatic faucet; on testnet returns instructions and Aptos faucet URL. Needed for `run_prediction` and `run_backtest` (~6¢ USDC).
+- **Fund EVM wallet** – `fund_evm_wallet`: returns address and instructions (Base Sepolia faucet, etc.). Needed for `open_bank_account` (~$3.65 on Base).
 
-Returns: `{ "success": true, "address": "0x..." }`
+User must **whitelist** every agent address at the onboarding flow (e.g. `http://localhost:4024/flow.html` or your MCP server’s flow) before paid tools succeed.
 
-The private key is stored at `~/.evm-wallet.json` (chmod 600). **Never share this file.**
+### Check balances
 
-## Commands
+- **Aptos balance** – `balance_aptos` (USDC for the agent wallet).
+- **EVM balance** – `balance_evm` (native token on a chain: base, baseSepolia, ethereum, etc.).
 
-### Check Balance
+### Paid MCP tools (x402)
 
-When user asks about balance, portfolio, or how much they have:
+- **Stock prediction** – `run_prediction` (symbol, horizon in days). Cost ~6¢ (Aptos).
+- **Backtest** – `run_backtest` (trading strategy). Cost ~6¢ (Aptos).
+- **Open bank account** – `open_bank_account` (CornerStone bank link). Cost ~$3.65 (EVM/Base).
 
-```bash
-# Single chain
-node src/balance.js base --json
+The agent handles 402 Payment Required automatically: verify → settle → retry with payment signature.
 
-# All chains at once
-node src/balance.js --all --json
+### CLI (from repo root)
 
-# Specific ERC20 token
-node src/balance.js base 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 --json
-```
+| Task | Command |
+|------|--------|
+| Generate Aptos wallet | `node src/setup-aptos.js` |
+| Generate EVM wallet | `node src/setup.js` |
+| Show addresses for whitelist | `node src/show-agent-addresses.js` |
+| Credit Aptos (devnet) | `npm run credit:aptos` (set `APTOS_FAUCET_NETWORK=devnet`) |
+| EVM balance | `node src/balance.js <chain>` |
+| Transfer ETH/tokens | `node src/transfer.js <chain> <to> <amount> [tokenAddress]` |
+| Swap tokens (Odos) | `node src/swap.js <chain> <fromToken> <toToken> <amount>` |
+| Run agent | `node src/run-agent.js "Run a 30-day prediction for AAPL"` or `node src/run-agent.js` (interactive) |
 
-**Always use `--json`** for parsing. Present results in a human-readable format.
+---
 
-### Send Tokens
+## When to use this skill
 
-When user wants to send, transfer, or pay someone:
+Use when the user wants to:
 
-```bash
-# Native ETH
-node src/transfer.js <chain> <to_address> <amount> --yes --json
+- Create or use **Aptos** or **EVM** wallets (testnet or mainnet).
+- **Fund** agent wallets (faucet instructions or programmatic credit).
+- **Check** Aptos or EVM balances.
+- Run **stock predictions** or **backtests** (paid via Aptos).
+- **Open a bank account** (paid via Base).
+- **Transfer** or **swap** tokens from the agent wallet (via CLI or context).
 
-# ERC20 token
-node src/transfer.js <chain> <to_address> <amount> <token_address> --yes --json
-```
+---
 
-**⚠️ ALWAYS confirm with the user before executing transfers.** Show them:
-- Recipient address
-- Amount and token
-- Chain
-- Estimated gas cost
+## Setup
 
-Only add `--yes` after the user explicitly confirms.
+1. **Install:** From repo root: `npm install`. Copy `.env.example` to `.env`.
+2. **Configure:** Set `MCP_SERVER_URL`, `X402_FACILITATOR_URL`, `HUGGINGFACE_API_KEY` (or `HF_TOKEN`), `LLM_MODEL`, and wallet paths (`APTOS_WALLET_PATH`, `EVM_WALLET_PATH` or `EVM_PRIVATE_KEY`).
+3. **Wallets:** Create via agent tools (`create_aptos_wallet`, `create_evm_wallet`) or CLI (`node src/setup-aptos.js`, `node src/setup.js`). Fund and whitelist all addresses at the MCP server’s flow (e.g. `/flow.html`).
 
-### Swap Tokens
+---
 
-When user wants to swap, trade, buy, or sell tokens:
+## Run the agent
+
+From the **repository root** (where `package.json` and `src/` live):
 
 ```bash
-# Get quote first
-node src/swap.js <chain> <from_token> <to_token> <amount> --quote-only --json
-
-# Execute swap (after user confirms)
-node src/swap.js <chain> <from_token> <to_token> <amount> --yes --json
+node src/run-agent.js "Create an Aptos wallet, then run a 30-day prediction for AAPL"
+# Or interactive
+node src/run-agent.js
 ```
 
-- Use `eth` for native ETH/POL, or pass a contract address
-- Default slippage: 0.5%. Override with `--slippage <percent>`
-- Powered by Odos aggregator (best-route across hundreds of DEXs)
-
-**⚠️ ALWAYS show the quote first and get user confirmation before executing.**
-
-### Contract Interactions
-
-When user wants to call a smart contract function:
-
-```bash
-# Read (free, no gas)
-node src/contract.js <chain> <contract_address> \
-  "<function_signature>" [args...] --json
-
-# Write (costs gas — confirm first)
-node src/contract.js <chain> <contract_address> \
-  "<function_signature>" [args...] --yes --json
-```
-
-Examples:
-```bash
-# Check USDC balance
-node src/contract.js base \
-  0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
-  "balanceOf(address)" 0xWALLET --json
-
-# Approve token spending
-node src/contract.js base \
-  0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 \
-  "approve(address,uint256)" 0xSPENDER 1000000 --yes --json
-```
-
-### Check for Updates
-
-```bash
-node src/check-update.js --json
-```
-
-If an update is available, inform the user and offer to run:
-```bash
-cd "$SKILL_DIR" && git pull && npm install
-```
-
-## Supported Chains
-
-| Chain | Native Token | Use For |
-|-------|-------------|---------|
-| base | ETH | Cheapest fees — default for testing |
-| ethereum | ETH | Mainnet, highest fees |
-| polygon | POL | Low fees |
-| arbitrum | ETH | Low fees |
-| optimism | ETH | Low fees |
-
-**Always recommend Base** for first-time users (lowest gas fees).
-
-## Common Token Addresses
-
-### Base
-- **USDC:** `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
-- **WETH:** `0x4200000000000000000000000000000000000006`
-
-### Ethereum
-- **USDC:** `0xA0b86a33E6441b8a46a59DE4c4C5E8F5a6a7A8d0`
-- **WETH:** `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2`
-
-## Safety Rules
-
-1. **Never execute transfers or swaps without user confirmation**
-2. **Never expose the private key** from `~/.evm-wallet.json`
-3. **Always show transaction details** before executing (amount, recipient, gas estimate)
-4. **Recommend Base** for testing and small amounts
-5. **Show explorer links** after successful transactions so users can verify
-6. If a command fails, show the error clearly and suggest fixes
-
-## Error Handling
-
-- **"No wallet found"** → Run `node src/setup.js --json` first
-- **"Insufficient balance"** → Show current balance, suggest funding
-- **"RPC error"** → Retry once, automatic failover built in
-- **"No route found"** (swap) → Token pair may lack liquidity
-- **"Gas estimation failed"** → May need more ETH for gas
+**Source:** [FinTechTonic/autonomous-agent](https://github.com/FinTechTonic/autonomous-agent)
