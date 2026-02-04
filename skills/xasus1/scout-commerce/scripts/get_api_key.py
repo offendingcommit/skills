@@ -6,11 +6,12 @@ Usage:
     python get_api_key.py --email z@example.com --address "Name,Street,City,State,Zip"
 
 This creates:
-- A Crossmint smart wallet for you
+- A Crossmint smart wallet for your agent
 - An API key for Scout API access
 - Saves everything to credentials.json
 
 After registration, fund your wallet with USDC to start buying.
+No private key management needed - Crossmint handles wallet security.
 """
 
 import argparse

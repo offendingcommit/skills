@@ -4,6 +4,7 @@ Buy a product on Scout.
 
 Usage:
     python buy.py amazon:B07GBZ4Q68
+    python buy.py amazon:B07GBZ4Q68 --quantity 2
     python buy.py amazon:B07GBZ4Q68 --email other@example.com
 
 Uses saved shipping profile from credentials.json.

@@ -1,14 +1,14 @@
 ---
 name: scout-commerce
-version: 1.0.0
-description: Search for products on Amazon/shopify and buy with USDC on Solana.
+version: 1.1.0
+description: Search for products on Amazon/shopify and buy with USDC on Solana. Swap tokens using Jupiter.
 homepage: https://scout.trustra.xyz
 metadata: {"emoji":"🛒","category":"shopping","api_base":"https://scout-api.trustra.xyz/api/v2"}
 ---
 
 # Scout 🛒
 
-Buy from Amazon & Shopify with USDC. US shipping only.
+Buy from Amazon & Shopify with USDC. Swap tokens via Jupiter. US shipping only.
 
 ## Presenting Products (Important!)
 
@@ -26,13 +26,19 @@ Buy from Amazon & Shopify with USDC. US shipping only.
 
 **Get Product details** → `python product.py amazon:B07GBZ4Q68`
 
-**Check Wallet balance** → `python balance.py`
+**Check Wallet balance** → `python balance.py` (shows all tokens)
 
 **Buy product** → `python buy.py amazon:B07GBZ4Q68`
 
 **Check order** → `python order_status.py ord_abc123`
 
 **List orders** → `python order_status.py --list`
+
+**Swap tokens** → `python swap.py SOL USDC 5` (min $5)
+
+**Get swap quote** → `python swap.py --quote SOL USDC 5`
+
+**List wallet tokens** → `python swap.py --list`
 
 All commands run from `scripts/` folder. API key loads automatically from `credentials.json`.
 
@@ -52,9 +58,14 @@ Creates a **Crossmint wallet** + **API key** and stores them in `credentials.jso
 |---------|-------|
 | Search | `python search.py "query"` |
 | Details | `python product.py amazon:B07GBZ4Q68` |
-| Balance | `python balance.py` |
+| Balance | `python balance.py` (all tokens) or `balance.py --usdc` |
 | Buy | `python buy.py amazon:B07GBZ4Q68` |
 | Orders | `python order_status.py --list` or `order_status.py <orderId>` |
+| Swap | `python swap.py SOL USDC 5` (min $5 for gasless) |
+| Quote | `python swap.py --quote SOL USDC 5` |
+| Tokens | `python swap.py --list` |
+
+**Supported tokens:** SOL, USDC, USDT, BONK, TRUST — or use any mint address directly.
 
 ## Workflow
 

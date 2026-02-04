@@ -18,13 +18,16 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CREDS_FILE = os.path.join(SKILL_DIR, "credentials.json")
 
 # API URL
-BASE_URL = "https://scout-api.trustra.xyz/api/v2"
+BASE_URL = "https://scout-api.trustra.xyz/api/v2"  # Production
+# BASE_URL = "http://localhost:8000/api/v2"  # Local development
 
 # Solana RPC
-RPC_URL = "https://api.mainnet-beta.solana.com"
+RPC_URL = "https://api.mainnet-beta.solana.com"  # Production
+# RPC_URL = "https://api.devnet.solana.com"  # Testing (devnet)
 
 # x402 Network (CAIP-2 format)
-NETWORK = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+NETWORK = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"  # Production (mainnet)
+# NETWORK = "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1"  # Testing (devnet)
 
 # Request headers
 HEADERS = {
