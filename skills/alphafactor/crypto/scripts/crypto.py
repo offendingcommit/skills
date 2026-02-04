@@ -18,7 +18,30 @@ try:
     CCXT_AVAILABLE = True
 except ImportError:
     CCXT_AVAILABLE = False
-    print("⚠️  ccxt 库未安装，请先运行: pip3 install ccxt --user")
+
+def check_ccxt():
+    """检查 ccxt 是否安装，未安装时提供帮助信息"""
+    if CCXT_AVAILABLE:
+        return True
+    
+    print("=" * 60)
+    print("❌ 缺少依赖: ccxt 库未安装")
+    print("=" * 60)
+    print()
+    print("📦 安装方式（选择其一）：")
+    print()
+    print("  方式1 - 用户安装（推荐）：")
+    print("    pip3 install ccxt --user")
+    print()
+    print("  方式2 - 系统安装（需管理员权限）：")
+    print("    pip3 install ccxt")
+    print()
+    print("  方式3 - macOS 外部管理环境：")
+    print("    pip3 install ccxt --user --break-system-packages")
+    print()
+    print("📖 文档: https://docs.ccxt.com/")
+    print("=" * 60)
+    return False
 
 # 配置存储
 CONFIG_DIR = os.path.expanduser("~/.config/crypto")
@@ -351,8 +374,8 @@ def main():
         """
     )
     
-    parser.add_argument('--exchange', '-e', default='binance',
-                       help='交易所 (默认: binance, 可选: okx, bybit, gateio, kucoin...)')
+    parser.add_argument('--exchange', '-e', default='okx',
+                       help='交易所 (默认: okx, 可选: binance, bybit, gateio, kucoin...)')
     
     subparsers = parser.add_subparsers(dest='command', help='可用命令')
     
@@ -384,7 +407,7 @@ def main():
     alert_add_parser = subparsers.add_parser('alert-add', help='添加价格预警')
     alert_add_parser.add_argument('symbol', help='交易对')
     alert_add_parser.add_argument('condition', choices=['above', 'below', 'up_percent', 'down_percent'],
-                                 help='条件: above(高于), below(低于), up_percent(涨幅%), down_percent(跌幅%)')
+                                 help='条件: above(高于), below(低于), up_percent(涨幅%%), down_percent(跌幅%%)')
     alert_add_parser.add_argument('threshold', type=float, help='阈值')
     
     # alert-remove 命令
@@ -403,9 +426,7 @@ def main():
         parser.print_help()
         return
     
-    if not CCXT_AVAILABLE:
-        print("\n❌ 请先安装 ccxt:")
-        print("   pip3 install ccxt --user")
+    if not check_ccxt():
         return
     
     # 获取交易所实例
