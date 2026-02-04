@@ -1,0 +1,11 @@
+{
+  "owner": "rpeters511",
+  "slug": "searxng-bangs",
+  "displayName": "Privacy-first web search with DuckDuckGo-style bangs (!w, !yt, !gh)",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770147036414,
+    "commit": null
+  },
+  "history": []
+}
