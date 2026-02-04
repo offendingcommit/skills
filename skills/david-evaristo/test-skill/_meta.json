@@ -1,0 +1,11 @@
+{
+  "owner": "david-evaristo",
+  "slug": "test-skill",
+  "displayName": "test-skill",
+  "latest": {
+    "version": "0.1.2",
+    "publishedAt": 1770166755634,
+    "commit": null
+  },
+  "history": []
+}
