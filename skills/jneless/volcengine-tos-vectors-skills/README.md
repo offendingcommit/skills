@@ -82,6 +82,8 @@ python scripts/search_vectors.py "machine learning"
 pip install tos
 ```
 
+* important: TOS vectors in Beta, please install tos=2.8.8b1
+
 ## Configuration
 
 ### Endpoints

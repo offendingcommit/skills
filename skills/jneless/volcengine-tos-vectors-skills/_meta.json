@@ -3,11 +3,16 @@
   "slug": "volcengine-tos-vectors-skills",
   "displayName": "volcengine-tos-vectors-skills",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1769695113268,
-    "commit": "https://github.com/clawdbot/skills/commit/e3c98254e141428de64b998371355191a8dd7940"
+    "version": "1.0.2",
+    "publishedAt": 1770191737720,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1769695113268,
+      "commit": "https://github.com/clawdbot/skills/commit/e3c98254e141428de64b998371355191a8dd7940"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1769680712735,
