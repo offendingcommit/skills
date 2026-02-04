@@ -1,11 +1,11 @@
 ---
 name: elite-longterm-memory
 version: 1.2.1
-description: "Ultimate AI agent memory system. WAL protocol + vector search + git-notes + cloud backup. Never lose context again. Works with Claude, Cursor, GPT, Clawdbot agents."
+description: "Ultimate AI agent memory system. WAL protocol + vector search + git-notes + cloud backup. Never lose context again. Works with Claude, Cursor, GPT, OpenClaw agents."
 author: NextFrontierBuilds
-keywords: [memory, ai-agent, ai-coding, long-term-memory, vector-search, lancedb, git-notes, wal, persistent-context, claude, claude-code, gpt, cursor, copilot, clawdbot, moltbot, openclaw, vibe-coding, agentic]
+keywords: [memory, ai-agent, ai-coding, long-term-memory, vector-search, lancedb, git-notes, wal, persistent-context, claude, claude-code, gpt, cursor, copilot, openclaw, moltbot, openclaw, vibe-coding, agentic]
 metadata:
-  clawdbot:
+  openclaw:
     emoji: "🧠"
     requires:
       env:
@@ -104,7 +104,7 @@ python3 memory.py -p $DIR get "frontend"
 ```
 
 ### Layer 4: CURATED ARCHIVE (MEMORY.md + daily/)
-**From: Clawdbot native**
+**From: OpenClaw native**
 
 Human-readable long-term memory. Daily logs + distilled wisdom.
 
@@ -184,7 +184,7 @@ EOF
 
 ### 2. Enable LanceDB (Warm Store)
 
-In `~/.clawdbot/clawdbot.json`:
+In `~/.openclaw/openclaw.json`:
 
 ```json
 {
@@ -290,14 +290,14 @@ Agent (internal):
 memory_recall query="*" limit=50
 
 # Clear all vectors (nuclear option)
-rm -rf ~/.clawdbot/memory/lancedb/
-clawdbot gateway restart
+rm -rf ~/.openclaw/memory/lancedb/
+openclaw gateway restart
 
 # Export Git-Notes
 python3 memory.py -p . export --format json > memories.json
 
 # Check memory health
-du -sh ~/.clawdbot/memory/
+du -sh ~/.openclaw/memory/
 wc -l MEMORY.md
 ls -la memory/
 ```
@@ -321,7 +321,7 @@ Understanding the root causes helps you fix them:
 If you have an OpenAI key, enable semantic search:
 
 ```bash
-clawdbot configure --section web
+openclaw configure --section web
 ```
 
 This enables vector search over MEMORY.md + memory/*.md files.
@@ -392,7 +392,7 @@ Keep MEMORY.md as a summary (<5KB), link to detailed files.
 
 **memory_search returns nothing:**
 → Check OpenAI API key: `echo $OPENAI_API_KEY`
-→ Verify memorySearch enabled in clawdbot.json
+→ Verify memorySearch enabled in openclaw.json
 
 ---
 

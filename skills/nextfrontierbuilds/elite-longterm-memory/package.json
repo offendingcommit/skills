@@ -1,6 +1,6 @@
 {
   "name": "elite-longterm-memory",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "Ultimate AI agent memory system. Combines bulletproof WAL protocol, vector search, git-based knowledge graphs, cloud backup, and maintenance hygiene. Never lose context again.",
   "keywords": [
     "memory",
@@ -13,8 +13,9 @@
     "persistent-context",
     "claude",
     "gpt",
-    "clawdbot",
-    "moltbot", "openclaw",
+    "openclaw",
+    "moltbot",
+    "openclaw",
     "cursor",
     "copilot",
     "ai",
