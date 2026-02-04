@@ -22,5 +22,6 @@ export function loadConfig(): AppConfig {
             user: process.env.SMTP_USER!,
             pass: process.env.SMTP_PASS!,
         },
+        titlePrefix: process.env.TITLE_PREFIX,
     };
 }

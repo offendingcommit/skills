@@ -1,3 +1,6 @@
+/** 优先级 */
+export type Priority = "high" | "medium" | "low";
+
 /** 解析后的任务结构 */
 export interface ParsedTask {
     /** 任务标题 */
@@ -8,6 +11,10 @@ export interface ParsedTask {
     tags?: string[];
     /** 备注 */
     notes?: string;
+    /** 截止日期 */
+    dueDate?: Date;
+    /** 优先级 */
+    priority?: Priority;
 }
 
 /** SMTP 邮件配置 */
@@ -24,6 +31,8 @@ export interface AppConfig {
     twodoEmail: string;
     /** SMTP 配置 */
     smtp: SmtpConfig;
+    /** 邮件标题前缀（用于匹配 2Do 捕获规则） */
+    titlePrefix?: string;
 }
 
 /** 邮件发送结果 */

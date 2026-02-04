@@ -29,7 +29,7 @@ export async function sendTaskEmail(
 ): Promise<SendResult> {
     const transporter = createTransport(config);
 
-    const subject = buildEmailSubject(task);
+    const subject = buildEmailSubject(task, config.titlePrefix);
     const body = buildEmailBody(task, rawInput);
 
     try {

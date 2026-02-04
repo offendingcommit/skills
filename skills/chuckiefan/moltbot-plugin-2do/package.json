@@ -1,6 +1,6 @@
 {
   "name": "moltbot-plugin-2do",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Moltbot skill to create tasks via natural language and send them to 2Do app via email",
   "type": "module",
   "main": "./dist/main.js",
