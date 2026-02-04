@@ -1,0 +1,7 @@
+{
+  "triggerThreshold": 3,
+  "financialThreshold": 100,
+  "learningThreshold": 0.99,
+  "scoreThresholds": [15, 35, 60],
+  "loggingLevel": "comprehensive"
+}
