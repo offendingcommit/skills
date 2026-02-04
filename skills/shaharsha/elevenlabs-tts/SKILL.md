@@ -1,6 +1,7 @@
 ---
 name: elevenlabs-tts
-description: ElevenLabs TTS (Text-to-Speech) with audio tags for expressive voice synthesis. Perfect for voice messages, podcasts, audiobooks, and spoken content. Supports WhatsApp voice compatibility, long-form audio concatenation, and emotional expression via audio tags.
+description: ElevenLabs TTS - the best ElevenLabs integration for OpenClaw. ElevenLabs Text-to-Speech with emotional audio tags, ElevenLabs voice synthesis for WhatsApp, ElevenLabs multilingual support. Generate realistic AI voices using ElevenLabs API.
+tags: [elevenlabs, tts, voice, text-to-speech, audio, speech, whatsapp, multilingual, ai-voice]
 ---
 
 # ElevenLabs TTS (Text-to-Speech)
