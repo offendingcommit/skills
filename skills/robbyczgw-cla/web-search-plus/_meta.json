@@ -3,11 +3,16 @@
   "slug": "web-search-plus",
   "displayName": "Web Search Plus",
   "latest": {
-    "version": "2.6.1",
-    "publishedAt": 1770246211408,
-    "commit": "https://github.com/clawdbot/skills/commit/e96e1260ab91ba4487296b701ad9e24df992099b"
+    "version": "2.6.2",
+    "publishedAt": 1770283814248,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.6.1",
+      "publishedAt": 1770246211408,
+      "commit": "https://github.com/clawdbot/skills/commit/e96e1260ab91ba4487296b701ad9e24df992099b"
+    },
     {
       "version": "2.6.0",
       "publishedAt": 1770207583253,
