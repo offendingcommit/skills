@@ -1,7 +1,7 @@
 ---
 name: airtable
 description: |
-  Airtable API integration with managed OAuth. Manage bases, tables, and records. Use this skill when users want to read, create, update, or delete Airtable records, or query data with filter formulas.
+  Airtable API integration with managed OAuth. Manage bases, tables, and records. Use this skill when users want to read, create, update, or delete Airtable records, or query data with filter formulas. For other third party apps, use the api-gateway skill (https://clawhub.ai/byungkyu/api-gateway).
 compatibility: Requires network access and valid Maton API key
 metadata:
   author: maton
@@ -16,8 +16,7 @@ Access the Airtable API with managed OAuth authentication. Manage bases, tables,
 
 ```bash
 # List records from a table
-curl -s -X GET 'https://gateway.maton.ai/airtable/v0/{baseId}/{tableIdOrName}?maxRecords=100' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
+curl -s -X GET "https://gateway.maton.ai/airtable/v0/{baseId}/{tableIdOrName}?maxRecords=100" -H "Authorization: Bearer $MATON_API_KEY"
 ```
 
 ## Base URL
@@ -33,7 +32,7 @@ Replace `{native-api-path}` with the actual Airtable API endpoint path. The gate
 All requests require the Maton API key in the Authorization header:
 
 ```
-Authorization: Bearer YOUR_API_KEY
+Authorization: Bearer $MATON_API_KEY
 ```
 
 **Environment Variable:** Set your API key as `MATON_API_KEY`:
@@ -55,24 +54,19 @@ Manage your Airtable OAuth connections at `https://ctrl.maton.ai`.
 ### List Connections
 
 ```bash
-curl -s -X GET 'https://ctrl.maton.ai/connections?app=airtable&status=ACTIVE' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
+curl -s -X GET "https://ctrl.maton.ai/connections?app=airtable&status=ACTIVE" -H "Authorization: Bearer $MATON_API_KEY"
 ```
 
 ### Create Connection
 
 ```bash
-curl -s -X POST 'https://ctrl.maton.ai/connections' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"app": "airtable"}'
+curl -s -X POST "https://ctrl.maton.ai/connections" -H "Content-Type: application/json" -H "Authorization: Bearer $MATON_API_KEY" -d '{"app": "airtable"}'
 ```
 
 ### Get Connection
 
 ```bash
-curl -s -X GET 'https://ctrl.maton.ai/connections/{connection_id}' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
+curl -s -X GET "https://ctrl.maton.ai/connections/{connection_id}" -H "Authorization: Bearer $MATON_API_KEY"
 ```
 
 **Response:**
@@ -95,8 +89,7 @@ Open the returned `url` in a browser to complete OAuth authorization.
 ### Delete Connection
 
 ```bash
-curl -s -X DELETE 'https://ctrl.maton.ai/connections/{connection_id}' \
-  -H 'Authorization: Bearer YOUR_API_KEY'
+curl -s -X DELETE "https://ctrl.maton.ai/connections/{connection_id}" -H "Authorization: Bearer $MATON_API_KEY"
 ```
 
 ### Specifying Connection
@@ -104,9 +97,7 @@ curl -s -X DELETE 'https://ctrl.maton.ai/connections/{connection_id}' \
 If you have multiple Airtable connections, specify which one to use with the `Maton-Connection` header:
 
 ```bash
-curl -s -X GET 'https://gateway.maton.ai/airtable/v0/appXXXXX/TableName' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -H 'Maton-Connection: 21fd90f9-5935-43cd-b6c8-bde9d915ca80'
+curl -s -X GET "https://gateway.maton.ai/airtable/v0/appXXXXX/TableName" -H "Authorization: Bearer $MATON_API_KEY" -H "Maton-Connection: 21fd90f9-5935-43cd-b6c8-bde9d915ca80"
 ```
 
 If omitted, the gateway uses the default (oldest) active connection.
@@ -276,6 +267,8 @@ response = requests.get(
 - Maximum 100 records per request for create/update
 - Maximum 10 records per delete request
 - Filter formulas use Airtable formula syntax
+- IMPORTANT: When using curl commands, use `curl -g` when URLs contain brackets (`fields[]`, `sort[]`, `records[]`) to disable glob parsing
+- IMPORTANT: When piping curl output to `jq` or other commands, environment variables like `$MATON_API_KEY` may not expand correctly in some shell environments. You may get "Invalid API key" errors when piping.
 
 ## Error Handling
 
