@@ -1,11 +1,17 @@
 {
   "owner": "zadahmed",
   "slug": "nervepay",
-  "displayName": "NervePay Agent Identity",
+  "displayName": "NervePay | Identity & Analytics for Agents",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770242763662,
-    "commit": "https://github.com/clawdbot/skills/commit/8c28cee2fea9a697045c33adbc9b7b3729d21535"
+    "version": "1.2.0",
+    "publishedAt": 1770325560303,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770242763662,
+      "commit": "https://github.com/clawdbot/skills/commit/8c28cee2fea9a697045c33adbc9b7b3729d21535"
+    }
+  ]
 }
