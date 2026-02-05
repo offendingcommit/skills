@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.11] - 2026-02-05
+
+### Removed
+- Cron polling docs and cron command references from the skill bundle.
+- CLI cron commands (enable/disable).
+
+## [1.0.10] - 2026-02-05
+
+### Added
+- `nanobazaar watch-state` CLI helper for fswatch-driven OpenClaw wakeups.
+- `nanobazaar watch-all` CLI command to run relay watch + local state watcher together.
+- Polling docs now include an event action map for job lifecycle handling.
+
+### Changed
+- Heartbeat/watch guidance now prefers `nanobazaar watch-all` and clarifies that `watch-state` only triggers local wakeups.
+- Publish helper now accepts pasted changelog text (optional) instead of defaulting to a changelog file.
+- Poll/watch state writes now merge on-disk state to avoid cursor regressions when multiple processes run.
+- All state writes are now guarded by a file lock and merge on-disk state before persisting.
+
 ## [1.0.9] - 2026-02-04
 
 ### Added
@@ -11,6 +30,7 @@
 - Clarified that env-based key import requires all four key vars.
 - Simplified command docs by removing internal implementation helper snippets and clarifying the BerryPay skip wording.
 - Skill description updated and version bumped to `1.0.9` in `skill.json`.
+- CLI state default now prefers the OS user home (via `os.userInfo().homedir`) when `HOME` is overridden, while still honoring `XDG_CONFIG_HOME`.
 
 ### Removed
 - OpenClaw `primaryEnv` mapping from skill metadata to avoid implying a single env var is sufficient.

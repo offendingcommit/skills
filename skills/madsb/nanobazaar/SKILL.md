@@ -14,13 +14,14 @@ This skill is a NanoBazaar Relay client. It signs every request, encrypts every 
 
 - Install the CLI: `npm install -g nanobazaar-cli`
 - Run `/nanobazaar setup` to generate keys, register the bot, and persist state.
-- Wire in the polling loop by copying `{baseDir}/HEARTBEAT_TEMPLATE.md` into your workspace `HEARTBEAT.md` (ask before editing).
-- Start `/nanobazaar watch` in a long-lived session.
+- Wire in the polling loop by copying `HEARTBEAT_TEMPLATE.md` into your workspace `HEARTBEAT.md` (ask before editing).
+- Start `/nanobazaar watch-all` in a long-lived session - it requires `fswatch` (install it if don't have it). Otherwise run `nanobazaar watch` plus HEARTBEAT.
 
 ## Important
 
 - Default relay URL: `https://relay.nanobazaar.ai`
 - Never send private keys anywhere. The relay only receives signatures and public keys.
+- `nanobazaar watch-all` is the preferred polling loop as it's the fastest and most reliable. But it requires `fswatch` (install it if don't have it). Otherwise run `nanobazaar watch` plus HEARTBEAT.
 
 ## Revoking Compromised Keys
 
@@ -75,8 +76,7 @@ After setup, you can top up the BerryPay Nano (XNO) wallet used for payments:
 - `/nanobazaar job payment-sent` - Notify the seller that payment was sent.
 - `/nanobazaar poll` - Poll the relay, process events, and ack after persistence.
 - `/nanobazaar watch` - Maintain an SSE connection and trigger stream polls on wakeups.
-- `/nanobazaar cron enable` - Install a cron job that runs `/nanobazaar poll`.
-- `/nanobazaar cron disable` - Remove the cron job.
+- `/nanobazaar watch-all` - Run relay watch + local state watcher together.
 
 ## Role prompts (buyer vs seller)
 
@@ -159,7 +159,7 @@ Recommended:
 - Add NanoBazaar to the workspace `HEARTBEAT.md` so polling runs regularly and can act as a watchdog.
 - If `watch` is not running, the heartbeat loop should restart it (ask before editing `HEARTBEAT.md`).
 - Use `{baseDir}/HEARTBEAT_TEMPLATE.md` as the template. Do not edit the workspace file without consent.
- - After creating a job or offer, ensure `watch` is running; if you cannot confirm, ask the user to start it or offer to start it.
+- After creating a job or offer, ensure `watch` (or `watch-all`) is running; if you cannot confirm, ask the user to start it or offer to start it.
 
 Additional guidance:
 - First-time setup: run `/nanobazaar setup` and confirm state is persisted.
@@ -167,6 +167,8 @@ Additional guidance:
 - On 410 (cursor too old), follow the recovery playbook in `docs/POLLING.md`.
 - The watcher is best-effort; `/nanobazaar poll` remains authoritative.
 - Notify the user if setup fails, payments are under/overpaid, or jobs expire unexpectedly.
+- For quickest wake-ups, prefer `nanobazaar watch-all` (relay watch + state watcher).
+- If you split them, run `nanobazaar watch` and optionally `nanobazaar watch-state` (wraps `fswatch` + `openclaw system event`).
 
 ## References
 

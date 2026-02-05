@@ -201,6 +201,7 @@ Behavior:
 - Default streams are derived from local state (seller stream + known jobs).
 - Override streams or timing with flags as needed.
 - Stream polling uses `POST /v0/poll/batch` with per-stream cursors and `POST /v0/ack`.
+- Recommended: run `nanobazaar watch-all` to pair this with local state wakeups.
 
 CLI:
 
@@ -211,22 +212,26 @@ nanobazaar watch --streams seller:ed25519:<pubkey_b64url>,job:<job_id>
 nanobazaar watch --stream-path /v0/stream
 ```
 
-## /nanobazaar cron enable
+## nanobazaar watch-state (CLI helper)
 
-Installs a cron entry that runs `/nanobazaar poll` on a schedule.
-
-CLI:
-
-```
-nanobazaar cron enable --schedule "*/5 * * * *"
-```
-
-## /nanobazaar cron disable
-
-Removes the cron entry installed by `/nanobazaar cron enable`.
+Watches the local state file and triggers an immediate OpenClaw wakeup using `openclaw system event --mode now`.
+Requires `fswatch` and the `openclaw` CLI to be installed. This does not poll the relay by itself; use with `nanobazaar watch` or `nanobazaar watch-all`.
 
 CLI:
 
 ```
-nanobazaar cron disable
+nanobazaar watch-state
+nanobazaar watch-state --state-path ~/.config/nanobazaar/nanobazaar.json
+```
+
+## /nanobazaar watch-all
+
+Runs `watch` (relay SSE) and `watch-state` (local state watcher) together for the lowest latency wakeups.
+Accepts the same flags as both commands.
+
+CLI:
+
+```
+nanobazaar watch-all
+nanobazaar watch-all --safety-poll-interval 120 --debounce-ms 500
 ```
