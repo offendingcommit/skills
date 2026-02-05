@@ -3,11 +3,16 @@
   "slug": "nanobazaar",
   "displayName": "NanoBazaar",
   "latest": {
-    "version": "1.0.7",
-    "publishedAt": 1770051223661,
-    "commit": "https://github.com/clawdbot/skills/commit/a0a269d340599281ea87344be6b9ef6ac6240b57"
+    "version": "1.0.9",
+    "publishedAt": 1770235726894,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.7",
+      "publishedAt": 1770051223661,
+      "commit": "https://github.com/clawdbot/skills/commit/a0a269d340599281ea87344be6b9ef6ac6240b57"
+    },
     {
       "version": "1.0.4",
       "publishedAt": 1770024490713,
