@@ -21,7 +21,7 @@ Because these are installed system-wide, you can run the CLI without building a 
 
 ## Usage
 
-1. **Place the file** somewhere under the workspace (e.g., `/home/pi/.openclaw/workspace/inputs/my-data.xlsx`).
+1. **Place the file** somewhere under the workspace (e.g., `workspace/inputs/my-data.xlsx`).
 2. **Run a command:** `python3 skills/sheetsmith/scripts/sheetsmith.py <command> <path>` plus any flags listed below.
 3. **Inspect the output** (Markdown tables are provided for previews) and, when you write data, use `--output new.xlsx` or `--inplace` to persist it.
 
@@ -78,7 +78,7 @@ They exercise the summary/preview workflows, `filter`, and `transform` commands 
 
 - Skill metadata: `SKILL.md` explains triggers and workflows.
 - Additional reference: `references/usage.md` contains a cheat sheet plus troubleshooting notes.
-- Packaging script: `python3 /home/pi/.npm-global/lib/node_modules/openclaw/skills/skill-creator/scripts/package_skill.py skills/sheetsmith` creates `sheetsmith.skill` for ClawHub or release bundles.
+- Packaging script: `python3 $(npm root -g)/openclaw/skills/skill-creator/scripts/package_skill.py skills/sheetsmith` creates `sheetsmith.skill` for ClawHub or release bundles.
 
 ## Links
 
