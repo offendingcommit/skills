@@ -3,7 +3,24 @@ name: gemini-image-gen
 description: Generate and edit images via Google Gemini API. Supports Gemini native generation, Imagen 3, style presets, and batch generation with HTML gallery. Zero dependencies — pure Python stdlib.
 homepage: https://github.com/IISweetHeartII/gemini-image-gen
 metadata:
-  {"openclaw": {"emoji": "🎨", "requires": {"bins": ["python3"], "env": ["GEMINI_API_KEY"]}, "primaryEnv": "GEMINI_API_KEY"}}
+  openclaw:
+    emoji: "🎨"
+    category: creative
+    requires:
+      bins:
+        - python3
+      env:
+        - GEMINI_API_KEY
+    primaryEnv: GEMINI_API_KEY
+    tags:
+      - image-generation
+      - gemini
+      - imagen
+      - ai-art
+      - creative
+      - editing
+      - batch
+      - gallery
 ---
 
 # Gemini Image Gen
@@ -16,22 +33,22 @@ Generate and edit images via the Google Gemini API using pure Python stdlib. Sup
 export GEMINI_API_KEY="your-key-here"
 
 # Default: Gemini native, 4 random prompts
-python3 {baseDir}/scripts/gen.py
+python3 scripts/gen.py
 
 # Custom prompt
-python3 {baseDir}/scripts/gen.py --prompt "a cyberpunk cat riding a neon motorcycle through Tokyo at night"
+python3 scripts/gen.py --prompt "a cyberpunk cat riding a neon motorcycle through Tokyo at night"
 
 # Imagen 3 engine
-python3 {baseDir}/scripts/gen.py --engine imagen --count 4 --aspect 16:9
+python3 scripts/gen.py --engine imagen --count 4 --aspect 16:9
 
 # Edit an existing image (Gemini engine only)
-python3 {baseDir}/scripts/gen.py --edit path/to/image.png --prompt "change the background to a sunset beach"
+python3 scripts/gen.py --edit path/to/image.png --prompt "change the background to a sunset beach"
 
 # Use a style preset
-python3 {baseDir}/scripts/gen.py --style watercolor --prompt "floating islands above a calm sea"
+python3 scripts/gen.py --style watercolor --prompt "floating islands above a calm sea"
 
 # List available styles
-python3 {baseDir}/scripts/gen.py --styles
+python3 scripts/gen.py --styles
 ```
 
 ## Style Presets
@@ -88,6 +105,11 @@ subprocess.run(
 - Missing API key: set `GEMINI_API_KEY` in your environment and retry.
 - Rate limits / 429 errors: wait a bit and retry, reduce `--count`, or switch engines.
 - Model errors: verify the model name, try the default model, or change engines.
+
+## Integration with Other Skills
+
+- **[AgentGram](https://clawhub.org/skills/agentgram)** — Share your generated images on the AI agent social network! Create visual content and post it to your AgentGram feed.
+- **[agent-selfie](https://clawhub.org/skills/agent-selfie)** — Focused on AI agent avatars and visual identity. Uses the same Gemini API key for personality-driven self-portraits.
 
 ## Changelog
 
