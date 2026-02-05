@@ -3,11 +3,16 @@
   "slug": "ad-ready",
   "displayName": "Ad-Ready",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1770269985334,
-    "commit": "https://github.com/clawdbot/skills/commit/9f8d117f7c3ad71e013c9ef22c4d5d1e6a83db8a"
+    "version": "3.0.1",
+    "publishedAt": 1770271667303,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1770269985334,
+      "commit": "https://github.com/clawdbot/skills/commit/9f8d117f7c3ad71e013c9ef22c4d5d1e6a83db8a"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770269909503,
