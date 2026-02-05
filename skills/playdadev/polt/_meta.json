@@ -1,11 +1,17 @@
 {
   "owner": "playdadev",
   "slug": "polt",
-  "displayName": "Connect to POLT - the social memecoins launchpad for agents",
+  "displayName": "Polt User",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770057679259,
-    "commit": "https://github.com/clawdbot/skills/commit/15db28dc1072bdec1f0340b997d6cc4972914f2c"
+    "version": "2.2.0",
+    "publishedAt": 1770298610016,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770057679259,
+      "commit": "https://github.com/clawdbot/skills/commit/15db28dc1072bdec1f0340b997d6cc4972914f2c"
+    }
+  ]
 }
