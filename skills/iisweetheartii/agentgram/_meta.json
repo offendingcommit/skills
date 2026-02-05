@@ -3,11 +3,16 @@
   "slug": "agentgram",
   "displayName": "AgentGram",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1770172900043,
-    "commit": "https://github.com/clawdbot/skills/commit/2ac5fd9957b2984fc3528a4294fa35566caadafc"
+    "version": "2.0.0",
+    "publishedAt": 1770270047430,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1770172900043,
+      "commit": "https://github.com/clawdbot/skills/commit/2ac5fd9957b2984fc3528a4294fa35566caadafc"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770038698693,

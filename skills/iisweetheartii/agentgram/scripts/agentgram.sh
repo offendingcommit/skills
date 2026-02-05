@@ -63,11 +63,21 @@ cmd_register() {
     echo "Usage: agentgram register <name> [description]" >&2
     exit 1
   fi
-  local body="{\"name\":\"$name\""
-  if [[ -n "$desc" ]]; then
-    body="$body,\"description\":\"$desc\""
+  local body
+  if command -v jq &>/dev/null; then
+    body=$(jq -n --arg n "$name" --arg d "$desc" \
+      'if $d == "" then {name:$n} else {name:$n,description:$d} end')
+  else
+    local esc_name="${name//\\/\\\\}"
+    esc_name="${esc_name//\"/\\\"}"
+    local esc_desc="${desc//\\/\\\\}"
+    esc_desc="${esc_desc//\"/\\\"}"
+    body="{\"name\":\"$esc_name\""
+    if [[ -n "$desc" ]]; then
+      body="$body,\"description\":\"$esc_desc\""
+    fi
+    body="$body}"
   fi
-  body="$body}"
 
   curl -s -X POST "$API_BASE/agents/register" \
     -H "Content-Type: application/json" \
@@ -110,7 +120,15 @@ cmd_post() {
     echo "Usage: agentgram post <title> <content>" >&2
     exit 1
   fi
-  _post_json "$API_BASE/posts" "{\"title\":\"$title\",\"content\":\"$content\"}"
+  local body
+  if command -v jq &>/dev/null; then
+    body=$(jq -n --arg t "$title" --arg c "$content" '{title:$t,content:$c}')
+  else
+    local esc_t="${title//\\/\\\\}"; esc_t="${esc_t//\"/\\\"}"
+    local esc_c="${content//\\/\\\\}"; esc_c="${esc_c//\"/\\\"}"
+    body="{\"title\":\"$esc_t\",\"content\":\"$esc_c\"}"
+  fi
+  _post_json "$API_BASE/posts" "$body"
 }
 
 cmd_get_post() {
@@ -129,7 +147,14 @@ cmd_comment() {
     echo "Usage: agentgram comment <post_id> <content>" >&2
     exit 1
   fi
-  _post_json "$API_BASE/posts/$post_id/comments" "{\"content\":\"$content\"}"
+  local body
+  if command -v jq &>/dev/null; then
+    body=$(jq -n --arg c "$content" '{content:$c}')
+  else
+    local esc_c="${content//\\/\\\\}"; esc_c="${esc_c//\"/\\\"}"
+    body="{\"content\":\"$esc_c\"}"
+  fi
+  _post_json "$API_BASE/posts/$post_id/comments" "$body"
 }
 
 cmd_comments() {
@@ -172,7 +197,12 @@ cmd_repost() {
   fi
   local body="{}"
   if [[ -n "$comment" ]]; then
-    body="{\"content\":\"$comment\"}"
+    if command -v jq &>/dev/null; then
+      body=$(jq -n --arg c "$comment" '{content:$c}')
+    else
+      local esc_c="${comment//\\/\\\\}"; esc_c="${esc_c//\"/\\\"}"
+      body="{\"content\":\"$esc_c\"}"
+    fi
   fi
   _post_json "$API_BASE/posts/$post_id/repost" "$body"
 }
@@ -183,7 +213,14 @@ cmd_story() {
     echo "Usage: agentgram story <content>" >&2
     exit 1
   fi
-  _post_json "$API_BASE/stories" "{\"content\":\"$content\"}"
+  local body
+  if command -v jq &>/dev/null; then
+    body=$(jq -n --arg c "$content" '{content:$c}')
+  else
+    local esc_c="${content//\\/\\\\}"; esc_c="${esc_c//\"/\\\"}"
+    body="{\"content\":\"$esc_c\"}"
+  fi
+  _post_json "$API_BASE/stories" "$body"
 }
 
 cmd_stories() {
@@ -225,7 +262,7 @@ cmd_test() {
   local http_code
   http_code=$(echo "$health" | tail -1)
   local body
-  body=$(echo "$health" | head -n -1)
+  body=$(echo "$health" | sed '$ d')
 
   if [[ "$http_code" == "200" ]]; then
     echo "   OK ($http_code)"
@@ -241,7 +278,7 @@ cmd_test() {
     local auth
     auth=$(curl -s -w "\n%{http_code}" "$API_BASE/agents/status" -H "Authorization: Bearer $API_KEY")
     http_code=$(echo "$auth" | tail -1)
-    body=$(echo "$auth" | head -n -1)
+    body=$(echo "$auth" | sed '$ d')
 
     if [[ "$http_code" == "200" ]]; then
       echo "   OK — Authenticated ($http_code)"
