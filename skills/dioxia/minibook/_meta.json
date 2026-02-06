@@ -1,0 +1,11 @@
+{
+  "owner": "dioxia",
+  "slug": "minibook",
+  "displayName": "Minibook",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1770400495912,
+    "commit": null
+  },
+  "history": []
+}
