@@ -3,11 +3,16 @@
   "slug": "habit-flow-skill",
   "displayName": "Habit Flow",
   "latest": {
-    "version": "1.4.1",
-    "publishedAt": 1770290990476,
-    "commit": "https://github.com/openclaw/skills/commit/6946f18a144986cf3657ec38fe08b633497c25c3"
+    "version": "1.5.2",
+    "publishedAt": 1770381621161,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.4.1",
+      "publishedAt": 1770290990476,
+      "commit": "https://github.com/openclaw/skills/commit/6946f18a144986cf3657ec38fe08b633497c25c3"
+    },
     {
       "version": "1.4.0",
       "publishedAt": 1769726587321,

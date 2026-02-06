@@ -92,26 +92,27 @@ hnew() {
   echo ""
   read -p "Set reminder? (y/n): " has_reminder
 
-  local cmd="cd $SKILL_DIR && npx tsx scripts/manage_habit.ts create \
-    --name \"$name\" \
-    --category \"$category\" \
-    --frequency \"$frequency\" \
-    --target-count $count \
-    --target-unit \"$unit\""
+  local args=(
+    --name "$name"
+    --category "$category"
+    --frequency "$frequency"
+    --target-count "$count"
+    --target-unit "$unit"
+  )
 
   if [ -n "$description" ]; then
-    cmd="$cmd --description \"$description\""
+    args+=(--description "$description")
   fi
 
   if [ "$has_reminder" = "y" ]; then
     read -p "Reminder time (HH:MM): " reminder_time
-    cmd="$cmd --reminder \"$reminder_time\""
+    args+=(--reminder "$reminder_time")
   fi
 
   echo ""
   echo "Creating habit..."
 
-  result=$(eval "$cmd" 2>/dev/null)
+  result=$(cd "$SKILL_DIR" && npx tsx scripts/manage_habit.ts create "${args[@]}" 2>/dev/null)
 
   if echo "$result" | jq -e '.success' > /dev/null 2>&1; then
     habit_id=$(echo "$result" | jq -r '.habit.id')

@@ -101,11 +101,7 @@ npx tsx assets/canvas-dashboard.ts trends --habit-id h_abc123 --weeks 8
 npx tsx assets/canvas-dashboard.ts dashboard
 ```
 
-**Example: Completion Heatmap**
-
-![Heatmap Example](heatmap_whatsapp.png)
-
-GitHub-style calendar showing 30 days of habit completion patterns. Perfect visualization for identifying consistency trends and day-of-week patterns.
+Generates GitHub-style calendar heatmaps showing habit completion patterns — perfect for identifying consistency trends and day-of-week patterns.
 
 ## Natural Language Examples
 

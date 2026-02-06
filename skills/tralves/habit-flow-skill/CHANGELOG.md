@@ -2,6 +2,38 @@
 
 All notable changes to HabitFlow skill will be documented in this file.
 
+## [1.5.2] - 2026-02-06
+
+### Fixed
+- Fix path traversal vulnerability in persona switching: added explicit ID validation against allowed list
+- Fix command injection in `examples/utils.sh`: replaced `eval` with direct command execution using array arguments
+- Softened imperative language in SKILL.md to avoid prompt injection classification by security scanners
+
+## [1.5.0] - 2026-02-06
+
+### Changed - Security & Transparency Improvements
+
+#### Cron Message Refactoring
+- Replaced multi-paragraph AI instructions in cron `--message` with minimal one-line invocations
+- Created `scripts/run_reminder.ts` - deterministic wrapper that checks completion and outputs JSON
+- Created `scripts/run_coaching.ts` - deterministic wrapper for coaching analysis output
+- Removed Portuguese-language conditional logic from cron messages
+- Removed embedded tool-use directives (Read tool, JSON parsing) from cron messages
+
+#### Opt-in Cron Job Creation
+- `init_skill.ts` no longer auto-creates coaching cron jobs on install
+- Users must explicitly run `sync_reminders.ts sync-coaching` to enable coaching
+- Updated SKILL.md documentation to reflect opt-in behavior
+
+#### Asset Management
+- Moved persona PNGs to Git LFS (reduces high-entropy file count)
+- Removed `heatmap_whatsapp.png` sample image from repo root
+- Fixed broken image reference in README.md
+
+#### Documentation
+- Added "Handling Automated Task Output" section to SKILL.md
+- Documented JSON output format for `run_reminder.ts` and `run_coaching.ts`
+
 ## [1.4.1] - 2026-02-04
 
 ### Changed
