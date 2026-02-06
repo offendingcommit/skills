@@ -1,0 +1,11 @@
+{
+  "owner": "kai-jar",
+  "slug": "gmail-oauth",
+  "displayName": "Gmail OAuth Setup",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770338436440,
+    "commit": null
+  },
+  "history": []
+}
