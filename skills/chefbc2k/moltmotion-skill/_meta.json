@@ -1,11 +1,17 @@
 {
   "owner": "chefbc2k",
   "slug": "moltmotion-skill",
-  "displayName": "Molt Motion Skill",
+  "displayName": "Moltmotion Skill",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770351587254,
-    "commit": "https://github.com/openclaw/skills/commit/bf643c93972aca6afb68ba3596beb8d060ffd87f"
+    "version": "1.0.1",
+    "publishedAt": 1770478767490,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770351587254,
+      "commit": "https://github.com/openclaw/skills/commit/bf643c93972aca6afb68ba3596beb8d060ffd87f"
+    }
+  ]
 }
