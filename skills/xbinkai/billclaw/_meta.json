@@ -3,11 +3,16 @@
   "slug": "billclaw",
   "displayName": "BillClaw",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1770432863302,
-    "commit": "https://github.com/openclaw/skills/commit/7d3dfcda936c5a49d2d2ff06cdc606a432ebb328"
+    "version": "0.1.5",
+    "publishedAt": 1770461869100,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1770432863302,
+      "commit": "https://github.com/openclaw/skills/commit/7d3dfcda936c5a49d2d2ff06cdc606a432ebb328"
+    },
     {
       "version": "0.1.1",
       "publishedAt": 1770430549353,
