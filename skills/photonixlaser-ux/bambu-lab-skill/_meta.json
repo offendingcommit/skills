@@ -1,0 +1,11 @@
+{
+  "owner": "photonixlaser-ux",
+  "slug": "bambu-lab-skill",
+  "displayName": "Bambu Lab",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1770567942736,
+    "commit": null
+  },
+  "history": []
+}
