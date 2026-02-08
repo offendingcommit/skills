@@ -1,0 +1,11 @@
+{
+  "owner": "crossservicesolutions",
+  "slug": "compress-pdf",
+  "displayName": "Compress PDF",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770555517922,
+    "commit": null
+  },
+  "history": []
+}
