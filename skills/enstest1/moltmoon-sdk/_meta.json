@@ -1,0 +1,11 @@
+{
+  "owner": "enstest1",
+  "slug": "moltmoon-sdk",
+  "displayName": "Moltmoon Sdk",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1770499526796,
+    "commit": null
+  },
+  "history": []
+}
