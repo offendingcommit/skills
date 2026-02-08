@@ -3,11 +3,16 @@
   "slug": "ai-ppt-generator",
   "displayName": "Ai Ppt Generator",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770501565939,
-    "commit": "https://github.com/openclaw/skills/commit/d2eacca0fc3f2d962873e98b3449494bc5e8f876"
+    "version": "1.0.6",
+    "publishedAt": 1770568845055,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770501565939,
+      "commit": "https://github.com/openclaw/skills/commit/d2eacca0fc3f2d962873e98b3449494bc5e8f876"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770484058130,
