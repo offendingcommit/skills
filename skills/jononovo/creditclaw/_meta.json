@@ -3,9 +3,15 @@
   "slug": "creditclaw",
   "displayName": "CreditClaw - Give your Claw Agent a credit card - They can spend anywhere or request payment from anyone.",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770431254792,
-    "commit": "https://github.com/openclaw/skills/commit/eb0c59fa47f20fb478ac741437f66da27dd14431"
+    "version": "1.0.2",
+    "publishedAt": 1770504837746,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770431254792,
+      "commit": "https://github.com/openclaw/skills/commit/eb0c59fa47f20fb478ac741437f66da27dd14431"
+    }
+  ]
 }
