@@ -1,5 +1,11 @@
 # Giphy GIF Skill Changelog
 
+## 2026-02-08 - v1.0.3 Security Fix + Repo Link
+
+**Changes:**
+- ✅ Removed shell injection risk in exec() examples by using base64 transport
+- ✅ Added GitHub repo link to SKILL.md
+
 ## 2026-02-02 - Consolidated to Single-File Skill
 
 **Why:**

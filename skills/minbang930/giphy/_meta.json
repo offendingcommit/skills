@@ -3,11 +3,16 @@
   "slug": "giphy",
   "displayName": "Giphy",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770042243352,
-    "commit": "https://github.com/clawdbot/skills/commit/ba5d8b7cd55978f64af7526a5151ea3516d6c58f"
+    "version": "1.0.3",
+    "publishedAt": 1770489329807,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770042243352,
+      "commit": "https://github.com/clawdbot/skills/commit/ba5d8b7cd55978f64af7526a5151ea3516d6c58f"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770010310592,
