@@ -3,9 +3,15 @@
   "slug": "pubmed-edirect",
   "displayName": "Pubmed Edirect",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1770476095178,
-    "commit": "https://github.com/openclaw/skills/commit/56d25a640552765cb4b48b6b3312b53b4c98254a"
+    "version": "0.3.0",
+    "publishedAt": 1770553531658,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1770476095178,
+      "commit": "https://github.com/openclaw/skills/commit/56d25a640552765cb4b48b6b3312b53b4c98254a"
+    }
+  ]
 }
