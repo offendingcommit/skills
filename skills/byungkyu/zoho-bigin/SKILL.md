@@ -1,5 +1,5 @@
 ---
-name: zohobigin
+name: zoho-bigin
 description: |
   Zoho Bigin API integration with managed OAuth. Manage contacts, companies, pipelines, and products in Bigin CRM.
   Use this skill when users want to read, create, update, or delete CRM records, search contacts, or manage sales pipelines.
