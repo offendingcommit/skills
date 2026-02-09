@@ -1,0 +1,75 @@
+/* Center everything */
+body {
+    background: linear-gradient(to bottom, #ffebeb, #ffb3c6);
+    font-family: 'Courier New', Courier;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0;
+}
+
+/* Centering the container */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* GIF styling */
+img {
+    width: 250px;
+}
+
+/* Text styling */
+h1 {
+    font-size: 32px;
+    color: white;
+}
+
+/* Button container */
+.btn-container {
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* General button styles */
+button {
+    padding: 10px 20px;
+    font-size: 24px;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    margin: 10px;
+    transition: all 0.3s ease;
+}
+
+/* "Yes" Button */
+#yesBtn {
+    background-color: greenyellow;
+    color: white;
+    box-shadow: 5px 5px rgba(0, 0, 0);
+}
+
+#yesBtn:hover {
+    background-color: green;
+    transform: scale(1.1);
+}
+
+/* "No" Button */
+#noBtn {
+    background-color: red;
+    color: white;
+    box-shadow: 5px 5px rgba(0, 0, 0);
+    position: absolute; /* Allows movement */
+}
+
+/* "No" button moves smoothly */
+#noBtn:hover {
+    background-color: darkred;
+    transform: scale(0.9);
+    transition: all 0.3s ease;
+}
