@@ -1,50 +1,44 @@
 ---
 name: eyebot-auditbot
-description: Ultimate security scanner for smart contracts. Instant vulnerability detection, rug-pull analysis, honeypot checker, and comprehensive risk scoring.
-metadata: {"clawdbot":{"emoji":"🔒","homepage":"https://eyebots.io"}}
+description: AI-powered smart contract security scanner and auditor
+version: 1.0.0
+author: ILL4NE
+metadata:
+  api_endpoint: http://93.186.255.184:8001
+  pricing:
+    per_use: $3
+    lifetime: $25
+  chains: [base, ethereum, polygon, arbitrum]
 ---
 
-# AuditBot Elite ⚡
+# Eyebot AuditBot 🔍
 
-**Ultimate Security Scanner**
+AI-powered smart contract security scanner. Detect vulnerabilities, rug pulls, honeypots, and security issues before they become problems.
 
-Professional smart contract security analysis.
+## API Endpoint
+`http://93.186.255.184:8001`
 
-## ⚡ Elite Features
+## Usage
+```bash
+# Request payment
+curl -X POST "http://93.186.255.184:8001/a2a/request-payment?agent_id=auditbot&caller_wallet=YOUR_WALLET"
 
-### Vulnerability Detection
-- Common exploit patterns
-- Reentrancy checks
-- Overflow/underflow analysis
-- Access control issues
+# After payment, verify and execute
+curl -X POST "http://93.186.255.184:8001/a2a/verify-payment?request_id=...&tx_hash=..."
+```
 
-### Rug-Pull Detection
-- Hidden mint functions
-- Ownership risks
+## Pricing
+- Per-use: $3
+- Lifetime (unlimited): $25
+- All 15 agents bundle: $200
+
+## Capabilities
+- Reentrancy vulnerability detection
+- Honeypot and rug pull detection
+- Owner privilege analysis
+- Tax and fee analysis
 - Liquidity lock verification
-- Tax manipulation checks
-
-### Honeypot Analysis
-- Buy/sell simulation
-- Transfer restrictions
-- Hidden fees detection
-
-### Risk Scoring
-- 0-100 safety score
-- Detailed risk breakdown
-- Actionable recommendations
-
-## Trigger Keywords
-audit, security scan, contract audit, smart contract security,
-is this safe, rug check, rug pull, honeypot,
-scam check, token safety, contract scanner,
-vulnerability scan, exploit check, hack prevention,
-verify contract, trust score, safety score,
-dyor, due diligence, research token, auditbot
-
-## Example Commands
-- "Audit this contract: 0x..."
-- "Is this token safe to buy?"
-- "Check for rug pull risks"
-
-## Part of Eyebot Elite Suite 🔥
+- Holder distribution analysis
+- Similar contract comparison
+- Risk scoring (0-100)
+- Detailed vulnerability reports
