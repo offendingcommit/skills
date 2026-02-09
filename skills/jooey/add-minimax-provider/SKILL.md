@@ -319,6 +319,51 @@ tail -20 ~/.openclaw/logs/gateway.err.log
 
 ---
 
+## Coding Plan 额度管理
+
+### 计费模式
+
+| 项目 | 值 |
+|------|------|
+| 月费 | ¥49 |
+| 额度 | 1500 次/5小时滑动窗口 |
+| 每日理论上限 | ~7200 次 |
+| 窗口计算 | 每次调用倒算前 5 小时消耗（滑动窗口） |
+
+### ⚠️ 额度查询 API 不可信
+
+API 端点 `GET /v1/api/openplatform/coding_plan/remains` 存在已知问题：
+- 窗口切换后 `current_interval_usage_count` 不刷新（惰性更新）
+- 平台控制台与 API 返回数字不一致
+- **唯一可靠的判断方式：发一个真实测试请求**
+
+### 推荐监控方案
+
+不要用 API 数字做监控。推荐在 OpenClaw 中配置 cron 任务，定期发测试请求验证可用性：
+
+```
+# cron 表达式示例：每 5 小时执行一次验证
+# 发真实请求 → 通了就可用，不通就记录
+curl -s https://api.minimaxi.com/v1/chat/completions \
+  -H "Authorization: Bearer <API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"MiniMax-M2.1","messages":[{"role":"user","content":"test"}],"max_tokens":3}'
+```
+
+判断逻辑：
+- 返回 `choices` → 可用
+- 返回 429 → 额度耗尽，等待滑动窗口释放
+- 返回其他错误 → API 故障，走 fallback
+
+### 多 Agent 消耗建议
+
+6 个 agent 全用 MiniMax 时，1500 条/5h 大约 2-3 小时就用完。建议：
+- **核心 agent**（main、ada）用 MiniMax
+- **辅助 agent**（clara、sophia）用免费模型（Qwen/SiliconFlow）
+- Fallback 链兜底，额度耗尽自动降级
+
+---
+
 ## 排障
 
 ### 问题：API 返回 401 Unauthorized
@@ -372,4 +417,4 @@ curl -s https://api.minimaxi.com/v1/chat/completions \
 | 日期 | 版本 | 变更内容 | 变更人 |
 |------|------|----------|--------|
 | 2026-02-08 | v1.0 | 创建 MiniMax provider 配置指南 | ConfigBot (via OpenClaw with Opus 4.6) |
-| 2026-02-09 | v1.1 | 更新额度信息 (1500/5h 滑动窗口)；新增额度 API 不可信警告 | ConfigBot (via OpenClaw with Claude Opus 4.6) |
+| 2026-02-09 | v2.0 | 新增 Coding Plan 额度管理专节；更新额度信息 (1500/5h 滑动窗口)；额度 API 不可信警告；多 Agent 消耗建议 | ConfigBot (via OpenClaw with Qwen3-30B) |

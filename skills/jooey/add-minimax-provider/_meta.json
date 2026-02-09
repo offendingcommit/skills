@@ -3,11 +3,16 @@
   "slug": "add-minimax-provider",
   "displayName": "MiniMax Provider 配置",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1770629645454,
-    "commit": "https://github.com/openclaw/skills/commit/451a2579a2eeb5ff5618bf0ac0b250f34a954e21"
+    "version": "2.0.0",
+    "publishedAt": 1770631078190,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1770629645454,
+      "commit": "https://github.com/openclaw/skills/commit/451a2579a2eeb5ff5618bf0ac0b250f34a954e21"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770564646835,
