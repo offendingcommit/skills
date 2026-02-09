@@ -25,6 +25,7 @@ case "$ACTION" in
         # Using Baidu Baike API to get lemma content
         curl -s -X GET \
           -H "Authorization: Bearer $BAIDU_API_KEY" \
+          -H "X-Appbuilder-From: openclaw" \
           "https://appbuilder.baidu.com/v2/baike/lemma/get_content?search_type=lemmaTitle&search_key=$TITLE"
         ;;
         
@@ -37,6 +38,7 @@ case "$ACTION" in
         
         curl -s -X GET \
           -H "Authorization: Bearer $BAIDU_API_KEY" \
+          -H "X-Appbuilder-From: openclaw" \
           "https://appbuilder.baidu.com/v2/baike/lemma/get_content?search_type=lemmaId&search_key=$ID"
         ;;
         
@@ -51,6 +53,7 @@ case "$ACTION" in
         
         curl -s -X GET \
           -H "Authorization: Bearer $BAIDU_API_KEY" \
+          -H "X-Appbuilder-From: openclaw" \
           "https://appbuilder.baidu.com/v2/baike/lemma/get_list_by_title?lemma_title=$TITLE&top_k=$TOP_K"
         ;;
         
