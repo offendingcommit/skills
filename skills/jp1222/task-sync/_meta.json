@@ -3,9 +3,15 @@
   "slug": "task-sync",
   "displayName": "Task Sync",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770669828329,
-    "commit": "https://github.com/openclaw/skills/commit/11b4e9d73862cff4ed17cf582e0c8d88653d07e5"
+    "version": "2.0.2",
+    "publishedAt": 1770709440249,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770669828329,
+      "commit": "https://github.com/openclaw/skills/commit/11b4e9d73862cff4ed17cf582e0c8d88653d07e5"
+    }
+  ]
 }

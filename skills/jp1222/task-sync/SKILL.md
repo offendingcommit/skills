@@ -1,50 +1,58 @@
 ---
 name: task-sync
-description: Bidirectional sync between TickTick and Google Tasks. Use when the user wants to sync tasks, lists, or completion status between TickTick (Dida) and Google Tasks, set up automated task synchronization, or manage smart lists (Today, Next 7 Days, All) from TickTick in Google Tasks.
+description: Synchronize TickTick (Dida) and Google Tasks bidirectionally, including list/project mapping, task content sync, completion sync, and smart-list export (Today, Next 7 Days, All). Use when users ask to set up OAuth, run or schedule sync, fix mismatched/deleted/completed tasks, or troubleshoot Google Calendar duplicate behavior caused by due-date handling.
 ---
 
 # Task Sync
 
-Bidirectional sync between TickTick and Google Tasks with smart list support.
+Operate and troubleshoot bidirectional task sync between TickTick and Google Tasks.
 
-## What It Does
-
-- Syncs Google Task Lists <-> TickTick Projects (bidirectional, matched by name)
-- Syncs tasks bidirectionally: titles, completion status, notes/content
-- Maps TickTick priorities to Google title prefixes (`[★]` high, `[!]` medium)
-- Pushes TickTick smart lists (Today, Next 7 Days, All) one-way to Google Tasks
-- Prevents Google Calendar duplicates via date strategy: dates forwarded to TickTick then cleared from Google; only the "All" smart list retains dates
-
-## Running
+## Run
 
 ```bash
-python sync.py
+python {baseDir}/sync.py
 ```
 
-## Setup Requirements
+## Setup Checklist
 
 1. Python 3.10+ with: `google-auth google-auth-oauthlib google-api-python-client requests`
-2. Google Cloud project with Tasks API enabled — run `python scripts/setup_google_tasks.py`
-3. TickTick developer app from developer.ticktick.com — run `python scripts/setup_ticktick.py`
-4. Edit `config.json` with token paths
+2. Enable Google Tasks API and run:
+   ```bash
+   python {baseDir}/scripts/setup_google_tasks.py
+   ```
+3. Create TickTick developer app and run:
+   ```bash
+   python {baseDir}/scripts/setup_ticktick.py
+   ```
+4. Configure `{baseDir}/config.json` token and data paths.
+
+## Expected Behavior
+
+- Sync Google Task Lists `<->` TickTick Projects by same name.
+- Sync task title, completion status, and notes/content bidirectionally.
+- Map TickTick priority to Google title prefix: `[★]` high, `[!]` medium.
+- Export TickTick smart lists (Today, Next 7 Days, All) to Google Tasks one-way.
+
+## Due-Date Rule (Calendar Duplicates)
+
+- Keep due dates only in the "All" smart list.
+- For other synced lists, forward date to TickTick then clear Google due date.
+- Treat this as the source-of-truth rule when debugging duplicate Calendar items.
 
 ## Automation
 
 ```bash
 # Cron: every 10 minutes
-*/10 * * * * /path/to/python /path/to/sync.py >> /path/to/sync.log 2>&1
+*/10 * * * * /path/to/python {baseDir}/sync.py >> /path/to/sync.log 2>&1
 ```
 
-Or use OpenClaw's built-in cron system.
+Use OpenClaw cron if available.
 
-## Files
+## Troubleshooting Workflow
 
-| File | Purpose |
-|------|---------|
-| `sync.py` | Main sync orchestrator |
-| `utils/google_api.py` | Google Tasks API wrapper |
-| `utils/ticktick_api.py` | TickTick Open API wrapper |
-| `scripts/setup_google_tasks.py` | Google OAuth setup |
-| `scripts/setup_ticktick.py` | TickTick OAuth setup |
-| `config.json` | Configuration |
-| `e2e_test.py` | 15 end-to-end tests |
+1. Re-run both OAuth setup scripts if auth errors appear.
+2. Verify `config.json` paths point to existing token files.
+3. Run `python {baseDir}/sync.py` and inspect `sync_log.json` and `sync_db.json`.
+4. Check API wrappers:
+   - `{baseDir}/utils/google_api.py`
+   - `{baseDir}/utils/ticktick_api.py`

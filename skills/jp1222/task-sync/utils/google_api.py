@@ -56,6 +56,14 @@ class GoogleAPI:
             log.error("update_list: %s", e)
             return None
 
+    def delete_list(self, list_id):
+        try:
+            self.service.tasklists().delete(tasklist=list_id).execute()
+            return True
+        except Exception as e:
+            log.error("delete_list %s: %s", list_id, e)
+            return False
+
     # ── Tasks ──
 
     def get_tasks(self, list_id, show_completed=False):

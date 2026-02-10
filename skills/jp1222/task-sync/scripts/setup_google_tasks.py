@@ -1,4 +1,4 @@
-#!/home/ubuntu/.openclaw/workspace/venv/bin/python3
+#!/usr/bin/env python3
 """
 重新授权 Google Tasks 权限 (手动授权模式)
 """
@@ -8,13 +8,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 import json
 
-# 需要 Tasks 权限
+# 最小权限：仅 Google Tasks 读写
 SCOPES = [
-    'https://www.googleapis.com/auth/tasks',
-    'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/gmail.modify',
-    'https://www.googleapis.com/auth/contacts',
-    'https://www.googleapis.com/auth/drive'
+    'https://www.googleapis.com/auth/tasks'
 ]
 
 CREDENTIALS_FILE = os.path.expanduser("~/.openclaw/google-workspace/credentials.json")

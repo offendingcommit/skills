@@ -62,6 +62,10 @@ class TickTickAPI:
             return data["tasks"]
         return []
 
+    def get_task(self, project_id, task_id):
+        """Get a single task by ID. Returns task dict or None if deleted/not found."""
+        return self._request(f"/project/{project_id}/task/{task_id}")
+
     def create_task(self, project_id, title, content="", due_date=None):
         body = {"title": title, "projectId": project_id}
         if content:

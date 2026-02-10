@@ -145,6 +145,15 @@ class TaskSync:
         for gid in list(self.db["lists"]):
             tid = self.db["lists"][gid]
             if gid not in g_idx or tid not in t_idx or g_idx[gid]["title"] in SMART_LIST_NAMES:
+                # TickTick project deleted -> delete the Google list and its task mappings
+                if gid in g_idx and tid not in t_idx:
+                    log.info("TickTick project deleted, removing Google list: %s", g_idx[gid]["title"])
+                    # Clean up task mappings before deleting list
+                    for gt in self.google.get_tasks(gid, show_completed=True):
+                        self.db["tasks"].pop(gt["id"], None)
+                    self.google.delete_list(gid)
+                # Mark as used so unlinked-matching loop won't re-create it
+                used_g.add(gid)
                 del self.db["lists"][gid]
             else:
                 pairs.append((g_idx[gid], t_idx[tid]))
@@ -261,10 +270,21 @@ class TaskSync:
                     done_t.add(tid)
 
                 else:
-                    # TickTick partner gone (completed/deleted) -> complete in Google
-                    if not g_done:
-                        log.info("TickTick partner gone: %s", g["title"])
-                        self.google.update_task(g_list["id"], gid, status="completed")
+                    # TickTick partner gone from active list
+                    # Check if completed (still exists) or deleted (404)
+                    tt_task = self.ticktick.get_task(t_proj["id"], tid)
+                    if tt_task:
+                        # Task still exists -> completed in TickTick
+                        if not g_done:
+                            log.info("Completed in TickTick: %s", g["title"])
+                            self.google.update_task(g_list["id"], gid, status="completed")
+                            self.stats["completed"] += 1
+                    else:
+                        # Task truly deleted -> delete from Google
+                        if not g_done:
+                            log.info("Deleted in TickTick, deleting from Google: %s", g["title"])
+                            self.google.delete_task(g_list["id"], gid)
+                        del task_db[gid]
                         self.stats["completed"] += 1
 
             elif not g_done:
@@ -310,9 +330,10 @@ class TaskSync:
             known_gid = rev_idx.get(tid)
 
             if known_gid:
-                # Mapped partner missing from this Google list -> likely deleted/moved
-                log.info("Google partner gone: %s", t["title"])
-                self.ticktick.complete_task(t_proj["id"], tid)
+                # Mapped partner missing from this Google list -> deleted
+                log.info("Google partner gone, deleting: %s", t["title"])
+                self.ticktick.delete_task(t_proj["id"], tid)
+                task_db.pop(known_gid, None)
                 self.stats["completed"] += 1
             else:
                 # New TickTick task -> create in Google (NO date)
@@ -445,6 +466,24 @@ class TaskSync:
             if gid in g_idx and g_idx[gid]["status"] != "completed":
                 self.google.delete_task(target["id"], gid)
             del mapping[tid]
+
+        # Clean up orphan tasks (in Google but never mapped from TickTick)
+        mapped_gids = set(mapping.values())
+        for gid, g in g_idx.items():
+            if gid not in mapped_gids and g["status"] != "completed":
+                log.info("Removing orphan from %s: %s", name, g["title"])
+                self.google.delete_task(target["id"], gid)
+                self.stats["completed"] += 1
+
+        # Clean up completed tasks in smart lists (no purpose in one-way view)
+        for gid, g in g_idx.items():
+            if g["status"] == "completed":
+                log.info("Removing completed from %s: %s", name, g["title"])
+                self.google.delete_task(target["id"], gid)
+                # Also remove from mapping if present
+                tid_to_remove = next((t for t, gi in mapping.items() if gi == gid), None)
+                if tid_to_remove:
+                    del mapping[tid_to_remove]
 
 
 if __name__ == "__main__":
