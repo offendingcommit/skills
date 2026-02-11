@@ -8,6 +8,11 @@ description: |
 metadata:
   author: maton
   version: "1.0"
+  clawdbot:
+    emoji: 🧠
+    requires:
+      env:
+        - MATON_API_KEY
 ---
 
 # Twilio
