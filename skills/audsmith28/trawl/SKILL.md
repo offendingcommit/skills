@@ -1,6 +1,12 @@
 ---
 name: trawl
 description: Autonomous lead generation through agent social networks. Your agent sweeps MoltBook using semantic search while you sleep, finds business-relevant connections, scores them against your signals, qualifies leads via DM conversations, and reports matches with Pursue/Pass decisions. Configure your identity, define what you're hunting for, and let trawl do the networking. Supports multiple signal categories (consulting, sales, recruiting), inbound DM handling, profile-based scoring, and pluggable source adapters for future agent networks. Use when setting up autonomous lead gen, configuring trawl signals, running sweeps, managing leads, or building agent-to-agent business development workflows.
+metadata:
+  clawdbot:
+    emoji: "🦞"
+    requires:
+      env:
+        - MOLTBOOK_API_KEY
 ---
 
 # Trawl — Autonomous Agent Lead Gen
@@ -30,7 +36,7 @@ Key sections:
 - **qualify** — DM strategy, intro template, qualifying questions, `auto_approve_inbound`
 - **reporting** — Channel, frequency, format
 
-Signals have `category` labels for multi-profile hunting (e.g., "consulting", "steelflo").
+Signals have `category` labels for multi-profile hunting (e.g., "consulting", "sales", "recruiting").
 
 ## Scripts
 

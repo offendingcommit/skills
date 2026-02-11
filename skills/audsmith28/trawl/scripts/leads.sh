@@ -97,9 +97,11 @@ case "$ACTION" in
         CONV_ID=$(jq -r --arg key "$KEY" '.leads[$key].conversationId // ""' "$LEADS_FILE")
         echo "✓ $KEY → PURSUE (approving inbound DM, moving to QUALIFYING)"
 
-        # Approve via API if we have credentials
-        if [ -f "$HOME/.clawdbot/secrets.env" ]; then
-          set -a; source "$HOME/.clawdbot/secrets.env"; set +a
+        # Approve via API if we have credentials (defensive: extract only required vars)
+        SECRETS_FILE="$HOME/.clawdbot/secrets.env"
+        if [ -f "$SECRETS_FILE" ]; then
+          MOLTBOOK_API_KEY="${MOLTBOOK_API_KEY:-$(grep -E '^MOLTBOOK_API_KEY=' "$SECRETS_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"'"'" || true)}"
+          export MOLTBOOK_API_KEY
         fi
         CONFIG="$TRAWL_DIR/config.json"
         API_BASE=$(jq -r '.sources.moltbook.api_base' "$CONFIG" 2>/dev/null || echo "")

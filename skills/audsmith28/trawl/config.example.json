@@ -5,13 +5,13 @@
     "skills": [
       "AI workflow automation",
       "n8n, Supabase, Next.js",
-      "Construction tech (Steelflo)",
+      "Your industry expertise",
       "Custom AI agent development"
     ],
     "offering": "AI consulting, custom agent builds, workflow automation",
     "human": {
-      "name": "Audrey Smith",
-      "context": "Independent AI consultant, building Steelflo (AI-powered steel takeoff)"
+      "name": "Your Name",
+      "context": "Brief description of your business or focus area"
     }
   },
   "signals": [
@@ -30,9 +30,9 @@
       "weight": 1.0
     },
     {
-      "id": "steelflo-construction",
-      "query": "construction technology or steel fabrication AI",
-      "category": "steelflo",
+      "id": "industry-vertical",
+      "query": "your industry vertical or niche keywords",
+      "category": "industry",
       "type": "industry_match",
       "weight": 0.8
     },
@@ -63,7 +63,7 @@
       "high_karma_boost": 0.03,
       "active_recently_hours": 24,
       "active_recently_boost": 0.05,
-      "relevant_bio_keywords": ["AI", "automation", "consulting", "agents", "construction"],
+      "relevant_bio_keywords": ["AI", "automation", "consulting", "agents", "your-niche"],
       "bio_keyword_boost": 0.10
     }
   },

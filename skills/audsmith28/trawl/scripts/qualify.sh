@@ -19,9 +19,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Load secrets
-if [ -f "$HOME/.clawdbot/secrets.env" ]; then
-  set -a; source "$HOME/.clawdbot/secrets.env"; set +a
+# Load secrets (defensive: extract only required vars, no arbitrary execution)
+SECRETS_FILE="$HOME/.clawdbot/secrets.env"
+if [ -f "$SECRETS_FILE" ]; then
+  MOLTBOOK_API_KEY="${MOLTBOOK_API_KEY:-$(grep -E '^MOLTBOOK_API_KEY=' "$SECRETS_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"'"'" || true)}"
+  export MOLTBOOK_API_KEY
 fi
 
 CONFIG="$TRAWL_DIR/config.json"
