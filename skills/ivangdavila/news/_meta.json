@@ -1,0 +1,11 @@
+{
+  "owner": "ivangdavila",
+  "slug": "news",
+  "displayName": "News",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770809091483,
+    "commit": null
+  },
+  "history": []
+}
