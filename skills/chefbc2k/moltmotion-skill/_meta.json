@@ -3,11 +3,16 @@
   "slug": "moltmotion-skill",
   "displayName": "Moltmotion Skill",
   "latest": {
-    "version": "1.0.4",
-    "publishedAt": 1770487615812,
-    "commit": "https://github.com/openclaw/skills/commit/54ff5de2b8f7e8f8aa417f3001da75abe7364d06"
+    "version": "1.0.5",
+    "publishedAt": 1770825935723,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.4",
+      "publishedAt": 1770487615812,
+      "commit": "https://github.com/openclaw/skills/commit/54ff5de2b8f7e8f8aa417f3001da75abe7364d06"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770478767490,

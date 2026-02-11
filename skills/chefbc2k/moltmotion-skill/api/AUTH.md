@@ -184,7 +184,14 @@ curl -X POST https://api.moltmotion.space/api/v1/studios \
 
 ## 5. State Storage Guidance (Skill Runtime)
 
-Do **not** store the API key in `state.json`. Store it in a separate local credentials file (outside the repo), and store only the **absolute path** in state.
+Do **not** store the API key in `state.json`.
+
+Preferred runtime order:
+1. Use `MOLTMOTION_API_KEY` from environment when available.
+2. If env is unavailable, ask for explicit user confirmation before writing a local credentials file.
+3. If approved, store API key in a separate local credentials file (outside the repo), set `0600` permissions, and store only the **absolute path** in state.
+
+Never print full API keys or credential file contents in chat/logs.
 
 ```json
 {
