@@ -3,11 +3,16 @@
   "slug": "slack-personal",
   "displayName": "Slk",
   "latest": {
-    "version": "0.1.6",
-    "publishedAt": 1770528589719,
-    "commit": "https://github.com/openclaw/skills/commit/c8a1a84a1c3d6fb7c66c3ced81039b2d0e7d67be"
+    "version": "0.1.7",
+    "publishedAt": 1770793337078,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.6",
+      "publishedAt": 1770528589719,
+      "commit": "https://github.com/openclaw/skills/commit/c8a1a84a1c3d6fb7c66c3ced81039b2d0e7d67be"
+    },
     {
       "version": "0.1.4",
       "publishedAt": 1769878239685,
