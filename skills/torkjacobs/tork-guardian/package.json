@@ -1,0 +1,55 @@
+{
+  "name": "@tork/guardian",
+  "version": "1.0.0",
+  "description": "Security & governance layer for OpenClaw - PII redaction, compliance receipts, policy enforcement",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "docs/",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "openclaw",
+    "tork",
+    "ai-governance",
+    "security",
+    "port-security",
+    "mcp",
+    "agent-safety",
+    "llm-safety",
+    "compliance"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/torkjacobs/tork-guardian-skill"
+  },
+  "bin": {
+    "tork-scan": "dist/scanner/cli.js"
+  },
+  "homepage": "https://tork.network",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^1.6.0"
+  }
+}
