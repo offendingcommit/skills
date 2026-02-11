@@ -1,0 +1,39 @@
+{
+  "name": "fluora-balance",
+  "version": "1.0.0",
+  "description": "Check USDC balance of your Fluora wallet on Base network",
+  "type": "module",
+  "main": "balance.js",
+  "bin": {
+    "fluora-balance": "./balance.js"
+  },
+  "scripts": {
+    "check": "node balance.js"
+  },
+  "keywords": [
+    "fluora",
+    "balance",
+    "usdc",
+    "base",
+    "wallet",
+    "openclaw",
+    "blockchain",
+    "ethereum"
+  ],
+  "author": "Fluora Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fluora/fluora-balance"
+  },
+  "bugs": {
+    "url": "https://github.com/fluora/fluora-balance/issues"
+  },
+  "homepage": "https://fluora.ai",
+  "dependencies": {
+    "ethers": "^6.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
