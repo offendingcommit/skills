@@ -1,0 +1,11 @@
+{
+  "owner": "cinience",
+  "slug": "alicloud-security-kms",
+  "displayName": "Alicloud Security Kms",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1770768591464,
+    "commit": null
+  },
+  "history": []
+}
