@@ -1,7 +1,7 @@
 ---
 name: apify-ultimate-scraper
 description: Universal AI-powered web scraper for any platform. Scrape data from Instagram, Facebook, TikTok, YouTube, Google Maps, Google Search, Google Trends, Booking.com, and TripAdvisor. Use for lead generation, brand monitoring, competitor analysis, influencer discovery, trend research, content analytics, audience analysis, or any data extraction task.
-version: 1.0.0
+version: 1.0.8
 source: https://github.com/apify/agent-skills
 homepage: https://apify.com
 metadata:
@@ -11,12 +11,12 @@ metadata:
         - APIFY_TOKEN
       bins:
         - node
-        - mcporter
+        - mcpc
     primaryEnv: APIFY_TOKEN
     install:
       - kind: node
-        package: mcporter
-        bins: [mcporter]
+        package: "@apify/mcpc"
+        bins: [mcpc]
 ---
 
 # Universal Web Scraper
@@ -27,7 +27,7 @@ AI-driven data extraction from 55+ Actors across all major platforms. This skill
 
 - `APIFY_TOKEN` configured in OpenClaw settings
 - Node.js 20.6+
-- `mcporter` CLI (auto-installed via skill metadata)
+- `mcpc` CLI (auto-installed via skill metadata)
 
 ## Input Sanitization Rules
 
@@ -44,7 +44,7 @@ Copy this checklist and track progress:
 ```
 Task Progress:
 - [ ] Step 1: Understand user goal and select Actor
-- [ ] Step 2: Fetch Actor schema via mcporter
+- [ ] Step 2: Fetch Actor schema via mcpc
 - [ ] Step 3: Ask user preferences (format, filename)
 - [ ] Step 4: Run the scraper script
 - [ ] Step 5: Summarize results and offer follow-ups
@@ -172,17 +172,17 @@ For complex tasks, chain multiple Actors:
 If none of the Actors above match the user's request, search the Apify Store directly:
 
 ```bash
-mcporter call apify.search-actors keywords='SEARCH_KEYWORDS' limit=10 offset=0 --json
+mcpc --json mcp.apify.com --header "Authorization: Bearer $APIFY_TOKEN" tools-call search-actors keywords:="SEARCH_KEYWORDS" limit:=10 offset:=0 category:="" | jq -r '.content[0].text'
 ```
 
 Replace `SEARCH_KEYWORDS` with 1-3 simple terms (e.g., "LinkedIn profiles", "Amazon products", "Twitter").
 
 ### Step 2: Fetch Actor Schema
 
-Fetch the Actor's input schema and details dynamically using mcporter:
+Fetch the Actor's input schema and details dynamically using mcpc:
 
 ```bash
-mcporter call apify.fetch-actor-details actor='ACTOR_ID' --json
+mcpc --json mcp.apify.com --header "Authorization: Bearer $APIFY_TOKEN" tools-call fetch-actor-details actor:="ACTOR_ID" | jq -r ".content"
 ```
 
 Replace `ACTOR_ID` with the selected Actor (e.g., `compass/crawler-google-places`).
@@ -246,14 +246,14 @@ After completion, report:
 
 ## Security & Data Privacy
 
-This skill instructs the agent to select an Apify Actor, fetch its schema (via mcporter), and run scrapers. The included script communicates only with api.apify.com and writes outputs to files under the current working directory; it does not access unrelated system files or other environment variables.
+This skill instructs the agent to select an Apify Actor, fetch its schema (via mcpc), and run scrapers. The included script communicates only with api.apify.com and writes outputs to files under the current working directory; it does not access unrelated system files or other environment variables.
 
 Apify Actors only scrape publicly available data and do not collect private or personally identifiable information beyond what is openly accessible on the target platforms. For additional security assurance, you can check an Actor's permission level by querying `https://api.apify.com/v2/acts/:actorId` — an Actor with `LIMITED_PERMISSIONS` operates in a restricted sandbox, while `FULL_PERMISSIONS` indicates broader system access. For full details, see [Apify's General Terms and Conditions](https://docs.apify.com/legal/general-terms-and-conditions).
 
 ## Error Handling
 
 `APIFY_TOKEN not found` - Ask user to configure `APIFY_TOKEN` in OpenClaw settings
-`mcporter not found` - Run `npm install -g mcporter`
+`mcpc not found` - Run `npm install -g @apify/mcpc`
 `Actor not found` - Check Actor ID spelling
 `Run FAILED` - Ask user to check Apify console link in error output
 `Timeout` - Reduce input size or increase `--timeout`
