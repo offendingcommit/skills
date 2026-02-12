@@ -1,0 +1,11 @@
+{
+  "owner": "samirjtv-ctrl",
+  "slug": "groq",
+  "displayName": "Groq",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1770853300536,
+    "commit": null
+  },
+  "history": []
+}
