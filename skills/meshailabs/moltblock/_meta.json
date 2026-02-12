@@ -1,0 +1,11 @@
+{
+  "owner": "meshailabs",
+  "slug": "moltblock",
+  "displayName": "Moltblock — Trust Layer For AI Agents",
+  "latest": {
+    "version": "0.7.4",
+    "publishedAt": 1770860810988,
+    "commit": null
+  },
+  "history": []
+}
