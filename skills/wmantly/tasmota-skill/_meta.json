@@ -1,0 +1,11 @@
+{
+  "owner": "wmantly",
+  "slug": "tasmota-skill",
+  "displayName": "Tasmota",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1770861787991,
+    "commit": null
+  },
+  "history": []
+}
