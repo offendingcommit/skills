@@ -23,6 +23,22 @@ check_auth() {
     fi
 }
 
+# Sanitize input: strip any characters that could enable shell injection.
+# Allows only alphanumeric chars, spaces, hyphens, underscores, periods, and ampersands.
+sanitize() {
+    printf '%s' "$1" | tr -cd 'A-Za-z0-9 _.&-'
+}
+
+# URL-encode a string using only printf and sed (no command substitution on user input)
+urlencode() {
+    printf '%s' "$1" | sed \
+        -e 's/%/%25/g' \
+        -e 's/ /%20/g' \
+        -e 's/&/%26/g' \
+        -e 's/+/%2B/g' \
+        -e 's/#/%23/g'
+}
+
 # GET request with auth
 api_get() {
     curl -s -H "Authorization: Bearer $CEORATER_API_KEY" \
@@ -38,10 +54,16 @@ case "${1:-help}" in
             exit 1
         fi
         check_auth
-        TICKER=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+        # Validate: tickers must be 1-5 alphanumeric characters only
+        TICKER=$(sanitize "$2")
+        if ! printf '%s' "$TICKER" | grep -qE '^[A-Za-z0-9]{1,5}$'; then
+            echo "Error: Invalid ticker. Use 1-5 alphanumeric characters (e.g., AAPL)."
+            exit 1
+        fi
+        TICKER=$(printf '%s' "$TICKER" | tr '[:lower:]' '[:upper:]')
         api_get "$BASE_URL/v1/company/$TICKER?format=raw"
         ;;
-    
+
     search)
         if [ -z "$2" ]; then
             echo "Usage: ceorater.sh search <query>"
@@ -49,16 +71,23 @@ case "${1:-help}" in
             exit 1
         fi
         check_auth
-        QUERY=$(echo "$2" | sed 's/ /%20/g')
+        # Sanitize then URL-encode — no raw user input reaches the shell
+        QUERY=$(sanitize "$2")
+        QUERY=$(urlencode "$QUERY")
         api_get "$BASE_URL/v1/search?q=$QUERY&format=raw"
         ;;
-    
+
     list)
         check_auth
         LIMIT="${2:-20}"
+        # Validate: limit must be a positive integer
+        if ! printf '%s' "$LIMIT" | grep -qE '^[0-9]+$'; then
+            echo "Error: Limit must be a positive integer."
+            exit 1
+        fi
         api_get "$BASE_URL/v1/companies?limit=$LIMIT&format=raw"
         ;;
-    
+
     help|--help|-h|*)
         echo "CEORater API Helper"
         echo ""
