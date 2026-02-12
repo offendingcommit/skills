@@ -1,13 +1,18 @@
 {
   "owner": "star-ga",
   "slug": "clawshake",
-  "displayName": "Skill",
+  "displayName": "Clawshake",
   "latest": {
-    "version": "1.2.2",
-    "publishedAt": 1770694228541,
-    "commit": "https://github.com/openclaw/skills/commit/bbb6a3e9d6e1fb81c74bdbeaf39a1388255db114"
+    "version": "3.0.0",
+    "publishedAt": 1770871503726,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.2",
+      "publishedAt": 1770694228541,
+      "commit": "https://github.com/openclaw/skills/commit/bbb6a3e9d6e1fb81c74bdbeaf39a1388255db114"
+    },
     {
       "version": "1.1.2",
       "publishedAt": 1770475839281,
