@@ -1,6 +1,5 @@
 ---
 name: openclaw-bastion
-description: "Prompt injection defense for agent workspaces. Scan files for injection attempts, analyze content boundaries, detect hidden instructions, and maintain command allowlists. Free alert layer — upgrade to openclaw-bastion-pro for active blocking, sanitization, and runtime enforcement."
 user-invocable: true
 metadata: {"openclaw":{"emoji":"\ud83c\udfdb\ufe0f","requires":{"bins":["python3"]},"os":["darwin","linux","win32"]}}
 ---
@@ -13,7 +12,6 @@ Runtime prompt injection defense for agent workspaces. While other tools watch w
 
 Agents process content from many sources: local files, API responses, web pages, user uploads. Any of these can contain prompt injection attacks — hidden instructions that manipulate agent behavior. Bastion scans this content before the agent acts on it.
 
-**Need active blocking?** Upgrade to [openclaw-bastion-pro](https://github.com/AtlasPA/openclaw-bastion-pro) for runtime content sanitization, auto-quarantine, canary testing, and policy enforcement via hooks.
 
 ## Commands
 

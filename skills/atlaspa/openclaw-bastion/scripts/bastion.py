@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
 """
-OpenClaw Bastion — Prompt Injection Defense for Agent Workspaces
+OpenClaw Bastion— Full Prompt Injection Defense Suite
 
 Runtime content boundary defense: scans files for injection attempts,
-analyzes content boundaries, validates command allowlists, and scores
-input risk. This tool protects the input/output boundary — the files
-being read by the agent, web content, API responses, and user-supplied
-documents.
+analyzes content boundaries, validates command allowlists, scores input
+risk, AND actively neutralizes threats — block injections, sanitize
+hidden Unicode, quarantine compromised files, deploy canary tokens,
+and enforce content policies via hooks.
+
+Free version alerts. Full features subverts, quarantines, and defends.
 
 Usage:
-    bastion.py scan [file|dir]     [--workspace PATH]
-    bastion.py check <file>        [--workspace PATH]
-    bastion.py boundaries          [--workspace PATH]
-    bastion.py allowlist [--show]  [--workspace PATH]
-    bastion.py status              [--workspace PATH]
-
-For active blocking, sanitization, and runtime enforcement,
-see openclaw-bastion-pro.
+    bastion.py scan [file|dir]        [--workspace PATH]
+    bastion.py check <file>           [--workspace PATH]
+    bastion.py boundaries             [--workspace PATH]
+    bastion.py allowlist [--show]     [--workspace PATH]
+    bastion.py status                 [--workspace PATH]
+    bastion.py block <file>           [--workspace PATH]
+    bastion.py sanitize <file|dir>    [--workspace PATH]
+    bastion.py quarantine <file>      [--workspace PATH]
+    bastion.py unquarantine <file>    [--workspace PATH]
+    bastion.py canary [file|dir]      [--workspace PATH]
+    bastion.py enforce                [--workspace PATH]
+    bastion.py protect                [--workspace PATH]
 """
 
 import argparse
@@ -24,6 +30,8 @@ import io
 import json
 import os
 import re
+import secrets
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,13 +53,18 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ("utf-8", "utf8"):
 # ---------------------------------------------------------------------------
 
 POLICY_FILE = ".bastion-policy.json"
+CANARY_DIR = ".bastion"
+CANARY_MANIFEST = "canary-manifest.json"
+QUARANTINE_DIR = ".quarantine/bastion"
+QUARANTINE_PREFIX = ".quarantined-"
 
 SKIP_DIRS = {
     ".git", ".svn", ".hg", "__pycache__", "node_modules", ".venv", "venv",
     ".integrity", ".bastion", ".env", ".tox", "dist", "build", "egg-info",
+    ".quarantine",
 }
 
-SELF_SKILL_DIRS = {"openclaw-bastion", "openclaw-bastion-pro"}
+SELF_SKILL_DIRS = {"openclaw-bastion", "openclaw-bastion"}
 
 SEVERITY_CRITICAL = "CRITICAL"
 SEVERITY_WARNING = "WARNING"
@@ -90,7 +103,7 @@ INSTRUCTION_OVERRIDE_PATTERNS = [
     (r"(?i)execute\s+the\s+following\s+(commands?|instructions?|code)\s*(:|without)", "execute following commands"),
 ]
 
-SYSTEM_PROMPT_MARKERS = [
+SYSTEM_FULLMPT_MARKERS = [
     (r"<\s*system\s*>", "<system> tag"),
     (r"\[\s*SYSTEM\s*\]", "[SYSTEM] marker"),
     (r"<<\s*SYS\s*>>", "<<SYS>> marker"),
@@ -181,6 +194,10 @@ DANGEROUS_COMMAND_PATTERNS = [
     (r"(?i)dd\s+if=/dev/(?:zero|random)\s+of=/dev/", "dd overwrite device"),
 ]
 
+# Characters to strip during sanitization (all UNICODE_TRICKS chars)
+SANITIZE_CHARS = {char for char, _ in UNICODE_TRICKS}
+SANITIZE_CHARS.update({char for char, _ in HOMOGLYPH_CHARS})
+
 # ---------------------------------------------------------------------------
 # Default allowlist / blocklist policy
 # ---------------------------------------------------------------------------
@@ -216,7 +233,7 @@ DEFAULT_POLICY = {
         "nc -e /bin/sh *",
         "bash -i >& /dev/tcp/*",
     ],
-    "notes": "Edit this file to customize. Bastion free displays policy only. Bastion Pro enforces it at runtime.",
+    "notes": "Edit this file to customize. Bastion Pro enforces at runtime via hooks.",
 }
 
 # ---------------------------------------------------------------------------
@@ -258,9 +275,15 @@ def read_file_text(path: Path) -> str | None:
         return None
 
 
+def write_file_text(path: Path, content: str):
+    """Write text to a file, creating parent directories if needed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(content)
+
+
 def is_scannable(path: Path) -> bool:
     """Check if a file should be scanned based on extension."""
-    # No extension — could be a config file, scan it
     if path.suffix == "":
         return True
     return path.suffix.lower() in SCANNABLE_EXTENSIONS
@@ -280,7 +303,6 @@ def collect_scannable_files(root: Path, target: str = None) -> dict:
 
     if target:
         target_path = Path(target)
-        # Resolve relative to workspace if not absolute
         if not target_path.is_absolute():
             target_path = root / target_path
 
@@ -301,19 +323,12 @@ def collect_scannable_files(root: Path, target: str = None) -> dict:
         root_scan = root
 
     for dirpath, dirnames, filenames in os.walk(root_scan):
-        # Filter out skip dirs in-place to prevent os.walk from descending
         dirnames[:] = [
             d for d in dirnames
             if not should_skip_dir(d) and d not in SELF_SKILL_DIRS
         ]
 
-        # Skip self skill dirs at skills level
         dp = Path(dirpath)
-        try:
-            rel_dir = dp.relative_to(root).as_posix()
-        except ValueError:
-            rel_dir = ""
-
         for fname in filenames:
             fpath = dp / fname
             if is_scannable(fpath):
@@ -322,7 +337,6 @@ def collect_scannable_files(root: Path, target: str = None) -> dict:
                 except ValueError:
                     rel = fpath.name
 
-                # Skip files inside our own skill directories
                 if any(
                     rel.startswith(f"skills/{sd}/") for sd in SELF_SKILL_DIRS
                 ):
@@ -352,6 +366,31 @@ def save_policy(workspace: Path, policy: dict):
         json.dump(policy, f, indent=2)
 
 
+def ensure_bastion_dir(workspace: Path) -> Path:
+    """Ensure the .bastion metadata directory exists."""
+    d = workspace / CANARY_DIR
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def ensure_quarantine_dir(workspace: Path) -> Path:
+    """Ensure the quarantine directory exists."""
+    d = workspace / QUARANTINE_DIR
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def create_backup(path: Path) -> Path:
+    """Create a .bak backup of a file, returning the backup path."""
+    bak = path.with_suffix(path.suffix + ".bak")
+    counter = 1
+    while bak.exists():
+        bak = path.with_suffix(f"{path.suffix}.bak{counter}")
+        counter += 1
+    shutil.copy2(path, bak)
+    return bak
+
+
 # ---------------------------------------------------------------------------
 # Code block detection (context-aware scanning)
 # ---------------------------------------------------------------------------
@@ -372,7 +411,6 @@ def build_code_block_ranges(text: str) -> list:
         fence_char = open_fence[0]
         fence_len = len(open_fence)
 
-        # Find the matching close fence
         for j in range(i + 1, len(matches)):
             close_match = matches[j]
             close_fence = close_match.group(1)
@@ -381,7 +419,6 @@ def build_code_block_ranges(text: str) -> list:
                 i = j + 1
                 break
         else:
-            # No matching close — treat rest of file as code block
             ranges.append((open_match.start(), len(text)))
             break
         continue
@@ -417,7 +454,6 @@ def scan_file(path: Path, rel_path: str) -> list:
     if text is None:
         return []
 
-    # Skip empty files
     if not text.strip():
         return []
 
@@ -448,11 +484,11 @@ def scan_file(path: Path, rel_path: str) -> list:
                 )
 
     # --- 2. System prompt markers ---
-    for pattern, desc in SYSTEM_PROMPT_MARKERS:
+    for pattern, desc in SYSTEM_FULLMPT_MARKERS:
         for m in re.finditer(pattern, text):
             if not is_inside_code_block(m.start(), code_ranges):
                 add(
-                    "system_prompt_marker", desc,
+                    "systemmpt_marker", desc,
                     line_number_at(text, m.start()),
                     SEVERITY_CRITICAL,
                     m.group(),
@@ -494,7 +530,6 @@ def scan_file(path: Path, rel_path: str) -> list:
     for m in re.finditer(BASE64_BLOB_PATTERN, text):
         if not is_inside_code_block(m.start(), code_ranges):
             blob = m.group()
-            # Skip hex-only strings that look like hashes
             if re.fullmatch(r"[0-9a-fA-F]+", blob) and len(blob) <= 128:
                 continue
             add(
@@ -522,7 +557,6 @@ def scan_file(path: Path, rel_path: str) -> list:
     for char, desc in HOMOGLYPH_CHARS:
         idx = text.find(char)
         while idx != -1:
-            # Only flag if surrounded by ASCII (mixed script = suspicious)
             before_ok = idx == 0 or text[idx - 1].isascii()
             after_ok = idx == len(text) - 1 or text[idx + 1].isascii()
             if before_ok and after_ok:
@@ -584,11 +618,13 @@ def compute_file_risk(findings: list) -> str:
         return "MEDIUM"
     if warns >= 1:
         return "LOW"
-    return "INFO"
+    if findings:
+        return "INFO"
+    return "CLEAN"
 
 
 # ---------------------------------------------------------------------------
-# Commands
+# Free Commands (scan, check, boundaries, allowlist, status)
 # ---------------------------------------------------------------------------
 
 def cmd_scan(workspace: Path, target: str = None):
@@ -610,7 +646,7 @@ def cmd_scan(workspace: Path, target: str = None):
 
     # --- Report ---
     print("=" * 64)
-    print("BASTION INJECTION SCAN")
+    print("BASTION FULL INJECTION SCAN")
     print("=" * 64)
     print(f"Workspace : {workspace}")
     if target:
@@ -638,7 +674,6 @@ def cmd_scan(workspace: Path, target: str = None):
         print(f"  INFO     : {infos}")
     print()
 
-    # Group by file
     by_file = {}
     for f in all_findings:
         by_file.setdefault(f["file"], []).append(f)
@@ -663,12 +698,13 @@ def cmd_scan(workspace: Path, target: str = None):
     print("=" * 64)
 
     if crits:
-        print("ACTION REQUIRED: CRITICAL findings indicate active injection attempts.")
-        print("  Review flagged files before allowing agent access.")
-        print("  Upgrade to openclaw-bastion-pro for automatic blocking.")
+        print("ACTION REQUIRED: CRITICAL findings detected.")
+        print("  Run 'bastion block <file>' to neutralize injection patterns.")
+        print("  Run 'bastion quarantine <file>' to isolate compromised files.")
+        print("  Run 'bastion protect' for automated full defense sweep.")
     elif warns:
         print("REVIEW SUGGESTED: WARNING findings may indicate injection attempts.")
-        print("  Investigate flagged patterns to confirm or dismiss.")
+        print("  Run 'bastion sanitize <file>' to strip hidden Unicode.")
 
     print("=" * 64)
 
@@ -720,7 +756,7 @@ def cmd_check(workspace: Path, filepath: str):
 def cmd_boundaries(workspace: Path):
     """Analyze content boundary safety in the workspace."""
     print("=" * 64)
-    print("BASTION BOUNDARY ANALYSIS")
+    print("BASTION FULL BOUNDARY ANALYSIS")
     print("=" * 64)
     print(f"Workspace : {workspace}")
     print(f"Timestamp : {now_iso()}")
@@ -742,7 +778,6 @@ def cmd_boundaries(workspace: Path):
             writable = os.access(p, os.W_OK)
             print(f"  {name:20s}  {stat.st_size:>8d} bytes  writable={writable}")
 
-    # Memory directory
     mem_dir = workspace / "memory"
     if mem_dir.is_dir():
         for f in sorted(mem_dir.iterdir()):
@@ -764,7 +799,6 @@ def cmd_boundaries(workspace: Path):
         if text is None:
             continue
 
-        # Check if instruction files contain external/user content markers
         external_markers = [
             (r"(?i)user[- ]?(?:provided|supplied|uploaded|input)", "user-supplied content marker"),
             (r"(?i)(?:api|web|external)\s+(?:response|content|data)", "external content marker"),
@@ -793,7 +827,7 @@ def cmd_boundaries(workspace: Path):
 
     print()
 
-    # --- 3. Writable instruction files (attack surface) ---
+    # --- 3. Writable instruction files ---
     print("-" * 48)
     print("WRITABLE INSTRUCTION FILES (attack surface)")
     print("-" * 48)
@@ -842,7 +876,6 @@ def cmd_boundaries(workspace: Path):
         if exists:
             print(f"             {desc}")
 
-    # Memory files
     if mem_dir.is_dir():
         mem_files = [f.name for f in mem_dir.iterdir() if f.is_file() and f.suffix == ".md"]
         if mem_files:
@@ -865,7 +898,7 @@ def cmd_boundaries(workspace: Path):
     else:
         print("BOUNDARY SAFETY: POOR")
         print(f"{total_issues} issues detected. Action recommended.")
-        print("Upgrade to openclaw-bastion-pro for automated boundary enforcement.")
+        print("Run 'bastion protect' for automated boundary enforcement.")
         score = 2
 
     print("=" * 64)
@@ -878,23 +911,22 @@ def cmd_allowlist(workspace: Path, show: bool = False):
     policy_path = workspace / POLICY_FILE
 
     if not policy_path.is_file():
-        # Create default policy file
         save_policy(workspace, DEFAULT_POLICY)
         print(f"Created default policy: {policy_path}")
         print()
 
     print("=" * 64)
-    print("BASTION COMMAND POLICY")
+    print("BASTION FULL COMMAND POLICY")
     print("=" * 64)
     print(f"Policy file: {policy_path}")
     print()
 
-    if show or True:  # Always show in free version
+    if show or True:
         print("-" * 48)
         print("ALLOWED COMMANDS")
         print("-" * 48)
         allowlist = policy.get("allowlist", [])
-        for i, cmd in enumerate(sorted(allowlist)):
+        for cmd in sorted(allowlist):
             print(f"  {cmd}")
         print(f"  ({len(allowlist)} commands)")
         print()
@@ -909,9 +941,8 @@ def cmd_allowlist(workspace: Path, show: bool = False):
         print()
 
     print("=" * 64)
-    print("NOTE: Bastion free displays the policy. Edit the JSON file directly")
-    print("to customize. Upgrade to openclaw-bastion-pro for runtime enforcement")
-    print("via hooks that block dangerous commands before execution.")
+    print("Bastion Pro enforces this policy at runtime via hooks.")
+    print("Run 'bastion enforce' to generate the hook configuration.")
     print("=" * 64)
     return 0
 
@@ -938,7 +969,6 @@ def cmd_status(workspace: Path):
     policy = load_policy(workspace)
     policy_exists = (workspace / POLICY_FILE).is_file()
 
-    # Boundary quick check
     instruction_count = sum(
         1 for name in AGENT_INSTRUCTION_FILES
         if (workspace / name).is_file()
@@ -948,8 +978,25 @@ def cmd_status(workspace: Path):
         if (workspace / name).is_file() and os.access(workspace / name, os.W_OK)
     )
 
+    # Canary status
+    canary_manifest_path = workspace / CANARY_DIR / CANARY_MANIFEST
+    canary_count = 0
+    if canary_manifest_path.is_file():
+        try:
+            with open(canary_manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+            canary_count = len(manifest.get("canaries", {}))
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Quarantine status
+    quarantine_path = workspace / QUARANTINE_DIR
+    quarantined_count = 0
+    if quarantine_path.is_dir():
+        quarantined_count = sum(1 for _ in quarantine_path.iterdir() if _.is_file())
+
     print("=" * 64)
-    print("BASTION STATUS")
+    print("BASTION FULL STATUS")
     print("=" * 64)
     print(f"Workspace           : {workspace}")
     print(f"Files scanned       : {len(files)}")
@@ -962,26 +1009,751 @@ def cmd_status(workspace: Path):
     print(f"Instruction files   : {instruction_count}")
     print(f"Writable instr.     : {writable_instructions}")
     print(f"Policy file         : {'present' if policy_exists else 'not created (run allowlist)'}")
+    print(f"Canary tokens       : {canary_count} deployed")
+    print(f"Quarantined files   : {quarantined_count}")
     print()
 
-    # Overall posture
     if crits > 0:
-        posture = "CRITICAL — Active injection patterns detected"
+        posture = "CRITICAL -- Active injection patterns detected"
         code = 2
     elif warns > 0:
-        posture = "WARNING — Suspicious patterns found, review needed"
+        posture = "WARNING -- Suspicious patterns found, review needed"
         code = 1
     elif writable_instructions > 3:
-        posture = "FAIR — Many writable instruction files"
+        posture = "FAIR -- Many writable instruction files"
         code = 1
     elif total_findings > 0:
-        posture = "INFO — Minor findings, likely benign"
+        posture = "INFO -- Minor findings, likely benign"
         code = 0
     else:
-        posture = "GOOD — No injection patterns detected"
+        posture = "GOOD -- No injection patterns detected"
         code = 0
 
     print(f"POSTURE: {posture}")
+    print("=" * 64)
+    return code
+
+
+# ---------------------------------------------------------------------------
+# Pro Commands: block, sanitize, quarantine, unquarantine, canary,
+#               enforce, protect
+# ---------------------------------------------------------------------------
+
+def cmd_block(workspace: Path, filepath: str):
+    """
+    Neutralize injection patterns in a file by wrapping them in warning
+    comments. Creates a .bak backup first. Adds
+    '<!-- [BLOCKED by openclaw-bastion] -->' around detected patterns.
+    """
+    target_path = Path(filepath)
+    if not target_path.is_absolute():
+        target_path = workspace / target_path
+
+    if not target_path.is_file():
+        print(f"ERROR: File not found: {filepath}", file=sys.stderr)
+        return 2
+
+    try:
+        rel = target_path.relative_to(workspace).as_posix()
+    except ValueError:
+        rel = target_path.name
+
+    text = read_file_text(target_path)
+    if text is None:
+        print(f"ERROR: Cannot read file: {filepath}", file=sys.stderr)
+        return 2
+
+    # Scan for findings
+    findings = scan_file(target_path, rel)
+    if not findings:
+        print(f"BLOCK: {rel} -- No injection patterns detected. Nothing to block.")
+        return 0
+
+    # Create backup before modifying
+    bak = create_backup(target_path)
+    print(f"BLOCK: Backup created: {bak.name}")
+
+    # Collect all match positions for CRITICAL and WARNING patterns
+    code_ranges = build_code_block_ranges(text)
+    all_patterns = (
+        INSTRUCTION_OVERRIDE_PATTERNS
+        + SYSTEM_FULLMPT_MARKERS
+        + HIDDEN_INSTRUCTION_PATTERNS
+        + HTML_INJECTION_PATTERNS
+        + DANGEROUS_COMMAND_PATTERNS
+    )
+
+    # Gather match spans, sorted by start position descending (for safe replacement)
+    matches = []
+    for pattern, desc in all_patterns:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            if not is_inside_code_block(m.start(), code_ranges):
+                matches.append((m.start(), m.end(), desc))
+
+    # Also match exfiltration images
+    for m in re.finditer(EXFIL_IMAGE_PATTERN, text):
+        if not is_inside_code_block(m.start(), code_ranges):
+            matches.append((m.start(), m.end(), "exfiltration image"))
+
+    if not matches:
+        print(f"BLOCK: {rel} -- No blockable patterns found (findings may be informational).")
+        return 0
+
+    # Deduplicate overlapping spans, keeping the widest
+    matches.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+    deduped = []
+    for start, end, desc in matches:
+        if deduped and start < deduped[-1][1]:
+            # Overlapping -- extend previous if needed
+            if end > deduped[-1][1]:
+                deduped[-1] = (deduped[-1][0], end, deduped[-1][2])
+            continue
+        deduped.append((start, end, desc))
+
+    # Apply blocks in reverse order to preserve positions
+    modified = text
+    blocked_count = 0
+    for start, end, desc in reversed(deduped):
+        original_text = modified[start:end]
+        blocked = (
+            f"<!-- [BLOCKED by openclaw-bastion] {desc} -->"
+            f"{original_text}"
+            f"<!-- [/BLOCKED] -->"
+        )
+        modified = modified[:start] + blocked + modified[end:]
+        blocked_count += 1
+
+    write_file_text(target_path, modified)
+
+    print(f"BLOCK: {rel}")
+    print(f"  Patterns neutralized : {blocked_count}")
+    print(f"  Backup              : {bak.name}")
+    print(f"  Original findings   : {len(findings)}")
+    print()
+
+    for f in sorted(findings, key=lambda x: x["line"])[:10]:
+        print(f"  [{f['severity']:8s}] Line {f['line']:>5d}: {f['detail']}")
+
+    if len(findings) > 10:
+        print(f"  ... and {len(findings) - 10} more findings")
+
+    print()
+    print("Injection patterns have been wrapped in BLOCKED comments.")
+    print("Review the file and remove blocked content if appropriate.")
+    return 0
+
+
+def cmd_sanitize(workspace: Path, target: str):
+    """
+    Strip zero-width characters, RTL overrides, and hidden Unicode from
+    files. Creates backups. Reports what was removed.
+    """
+    files = collect_scannable_files(workspace, target)
+
+    if not files:
+        print("No scannable files found.")
+        return 0
+
+    # Build the set of characters to strip (Unicode tricks only, not homoglyphs)
+    strip_chars = {char for char, _ in UNICODE_TRICKS}
+
+    # Build regex for stripping
+    strip_pattern = "[" + "".join(re.escape(c) for c in strip_chars) + "]"
+    strip_re = re.compile(strip_pattern)
+
+    print("=" * 64)
+    print("BASTION FULL SANITIZE")
+    print("=" * 64)
+    print(f"Workspace : {workspace}")
+    print(f"Target    : {target}")
+    print(f"Timestamp : {now_iso()}")
+    print()
+
+    total_removed = 0
+    files_modified = 0
+
+    for rel, abspath in sorted(files.items()):
+        text = read_file_text(abspath)
+        if text is None:
+            continue
+
+        # Count occurrences
+        found = strip_re.findall(text)
+        if not found:
+            continue
+
+        # Create backup
+        bak = create_backup(abspath)
+
+        # Build detailed removal report
+        char_counts = {}
+        for char in found:
+            label = f"U+{ord(char):04X}"
+            for uc, desc in UNICODE_TRICKS:
+                if uc == char:
+                    label = f"U+{ord(char):04X} ({desc})"
+                    break
+            char_counts[label] = char_counts.get(label, 0) + 1
+
+        # Strip characters
+        cleaned = strip_re.sub("", text)
+        write_file_text(abspath, cleaned)
+
+        files_modified += 1
+        total_removed += len(found)
+
+        print(f"  {rel}: {len(found)} hidden characters removed")
+        for label, count in sorted(char_counts.items()):
+            print(f"    {label}: {count}")
+        print(f"    Backup: {bak.name}")
+        print()
+
+    print("=" * 64)
+    print(f"SANITIZE COMPLETE: {total_removed} characters removed from {files_modified} file(s)")
+    print("=" * 64)
+
+    return 0 if total_removed == 0 else 1
+
+
+def cmd_quarantine(workspace: Path, filepath: str):
+    """
+    Move a file with injection patterns to .quarantine/bastion/ with
+    evidence metadata.
+    """
+    target_path = Path(filepath)
+    if not target_path.is_absolute():
+        target_path = workspace / target_path
+
+    if not target_path.is_file():
+        print(f"ERROR: File not found: {filepath}", file=sys.stderr)
+        return 2
+
+    try:
+        rel = target_path.relative_to(workspace).as_posix()
+    except ValueError:
+        rel = target_path.name
+
+    # Scan for evidence
+    findings = scan_file(target_path, rel)
+    risk = compute_file_risk(findings)
+
+    # Prepare quarantine destination
+    q_dir = ensure_quarantine_dir(workspace)
+    safe_name = rel.replace("/", "__").replace("\\", "__")
+    q_file = q_dir / safe_name
+    q_meta = q_dir / (safe_name + ".meta.json")
+
+    # Handle name collision
+    counter = 1
+    while q_file.exists():
+        q_file = q_dir / f"{safe_name}.{counter}"
+        q_meta = q_dir / f"{safe_name}.{counter}.meta.json"
+        counter += 1
+
+    # Move the file
+    shutil.move(str(target_path), str(q_file))
+
+    # Write evidence metadata
+    metadata = {
+        "original_path": rel,
+        "original_abs_path": str(target_path),
+        "quarantined_at": now_iso(),
+        "risk_level": risk,
+        "finding_count": len(findings),
+        "critical_count": sum(1 for f in findings if f["severity"] == SEVERITY_CRITICAL),
+        "warning_count": sum(1 for f in findings if f["severity"] == SEVERITY_WARNING),
+        "findings": findings[:20],  # Cap to prevent huge metadata files
+        "quarantine_file": str(q_file),
+    }
+    with open(q_meta, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    print(f"QUARANTINE: {rel}")
+    print(f"  Risk level   : {risk}")
+    print(f"  Findings     : {len(findings)}")
+    print(f"  Moved to     : {q_file.relative_to(workspace)}")
+    print(f"  Metadata     : {q_meta.relative_to(workspace)}")
+    print()
+    print("File has been quarantined and is no longer accessible to the agent.")
+    print("Run 'bastion unquarantine' to restore.")
+    return 0
+
+
+def cmd_unquarantine(workspace: Path, filepath: str):
+    """Restore a quarantined file to its original location."""
+    q_dir = workspace / QUARANTINE_DIR
+
+    if not q_dir.is_dir():
+        print("ERROR: No quarantine directory found.", file=sys.stderr)
+        return 2
+
+    # Search by original path or quarantined filename
+    safe_name = filepath.replace("/", "__").replace("\\", "__")
+
+    # Try to find by quarantine name first
+    q_file = q_dir / safe_name
+    q_meta = q_dir / (safe_name + ".meta.json")
+
+    # If not found directly, search metadata files for original path
+    if not q_file.is_file():
+        found = False
+        for meta_file in q_dir.glob("*.meta.json"):
+            try:
+                with open(meta_file, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                if meta.get("original_path") == filepath:
+                    q_meta = meta_file
+                    q_name = meta_file.name.replace(".meta.json", "")
+                    q_file = q_dir / q_name
+                    found = True
+                    break
+            except (json.JSONDecodeError, OSError):
+                continue
+
+        if not found:
+            print(f"ERROR: Quarantined file not found: {filepath}", file=sys.stderr)
+            print("  Available quarantined files:")
+            for f in sorted(q_dir.iterdir()):
+                if f.is_file() and not f.name.endswith(".meta.json"):
+                    print(f"    {f.name}")
+            return 2
+
+    if not q_file.is_file():
+        print(f"ERROR: Quarantined file missing: {q_file}", file=sys.stderr)
+        return 2
+
+    # Read metadata for original path
+    original_path = None
+    if q_meta.is_file():
+        try:
+            with open(q_meta, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+            original_path = meta.get("original_abs_path") or meta.get("original_path")
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    if original_path is None:
+        # Reconstruct from safe name
+        original_path = str(workspace / safe_name.replace("__", "/"))
+
+    dest = Path(original_path)
+    if not dest.is_absolute():
+        dest = workspace / dest
+
+    # Ensure parent directory exists
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Move back
+    shutil.move(str(q_file), str(dest))
+
+    # Clean up metadata
+    if q_meta.is_file():
+        q_meta.unlink()
+
+    try:
+        rel = dest.relative_to(workspace).as_posix()
+    except ValueError:
+        rel = dest.name
+
+    print(f"UNQUARANTINE: {rel}")
+    print(f"  Restored to : {dest}")
+    print()
+    print("WARNING: This file was quarantined for containing injection patterns.")
+    print("Run 'bastion check' to verify it is safe before allowing agent access.")
+    return 0
+
+
+def cmd_canary(workspace: Path, target: str = None):
+    """
+    Deploy canary strings into monitored files. If an injection attack
+    reads and leaks these files, the canary string appears in the
+    exfiltration, proving the attack. Generates unique canary tokens
+    per file.
+    """
+    bastion_dir = ensure_bastion_dir(workspace)
+    manifest_path = bastion_dir / CANARY_MANIFEST
+
+    # Load existing manifest
+    manifest = {"version": 1, "canaries": {}, "deployed_at": now_iso()}
+    if manifest_path.is_file():
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    # Determine target files — if none specified, use agent instruction files
+    if target:
+        files = collect_scannable_files(workspace, target)
+    else:
+        files = {}
+        for name in sorted(AGENT_INSTRUCTION_FILES):
+            p = workspace / name
+            if p.is_file():
+                files[name] = p
+        # Also add memory files
+        mem_dir = workspace / "memory"
+        if mem_dir.is_dir():
+            for f in sorted(mem_dir.iterdir()):
+                if f.is_file() and f.suffix == ".md":
+                    rel = f"memory/{f.name}"
+                    files[rel] = f
+
+    if not files:
+        print("No target files found for canary deployment.")
+        return 0
+
+    print("=" * 64)
+    print("BASTION FULL CANARY DEPLOYMENT")
+    print("=" * 64)
+    print(f"Workspace : {workspace}")
+    print(f"Timestamp : {now_iso()}")
+    print()
+
+    deployed = 0
+    canaries = manifest.get("canaries", {})
+
+    for rel, abspath in sorted(files.items()):
+        text = read_file_text(abspath)
+        if text is None:
+            continue
+
+        # Generate a unique canary token
+        token = f"CANARY-{secrets.token_hex(12)}"
+
+        # Check if file already has a canary
+        existing_token = canaries.get(rel, {}).get("token")
+        if existing_token and existing_token in text:
+            print(f"  {rel}: canary already deployed (token={existing_token[:20]}...)")
+            continue
+
+        # Inject canary as an invisible HTML comment at the end
+        canary_line = f"\n<!-- {token} -->\n"
+        modified = text.rstrip() + canary_line
+
+        write_file_text(abspath, modified)
+
+        canaries[rel] = {
+            "token": token,
+            "deployed_at": now_iso(),
+            "file_path": str(abspath),
+        }
+        deployed += 1
+        print(f"  {rel}: canary deployed (token={token[:20]}...)")
+
+    manifest["canaries"] = canaries
+    manifest["last_deployment"] = now_iso()
+
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    print()
+    print("=" * 64)
+    print(f"CANARY DEPLOYMENT COMPLETE: {deployed} token(s) deployed")
+    print(f"Manifest: {manifest_path.relative_to(workspace)}")
+    print()
+    print("If these tokens appear in any external request, URL, or output,")
+    print("it proves that an exfiltration attack accessed the monitored files.")
+    print("=" * 64)
+    return 0
+
+
+def cmd_enforce(workspace: Path):
+    """
+    Generate a Claude Code hook configuration that runs bastion scan
+    on file reads (PreToolUse hook for Read tool). Outputs the JSON
+    config to add to settings.
+    """
+    # Determine the path to this script
+    script_path = Path(__file__).resolve()
+
+    hook_config = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "Read",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": f"python3 \"{script_path}\" check \"$TOOL_INPUT_FILE\" --workspace \"{workspace}\"",
+                            "timeout": 15,
+                            "description": "Bastion Pro: scan file for injection patterns before reading"
+                        }
+                    ]
+                },
+                {
+                    "matcher": "Bash",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": f"python3 \"{script_path}\" check-command \"$TOOL_INPUT_COMMAND\" --workspace \"{workspace}\"",
+                            "timeout": 10,
+                            "description": "Bastion Pro: validate command against policy before execution"
+                        }
+                    ]
+                }
+            ],
+            "SessionStart": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": f"python3 \"{script_path}\" protect --workspace \"{workspace}\"",
+                            "timeout": 60,
+                            "description": "Bastion Pro: full protection sweep on session start"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    print("=" * 64)
+    print("BASTION FULL ENFORCE — Hook Configuration")
+    print("=" * 64)
+    print()
+    print("Add the following to your Claude Code settings.json to enable")
+    print("runtime injection defense:")
+    print()
+    print("-" * 48)
+    print(json.dumps(hook_config, indent=2))
+    print("-" * 48)
+    print()
+    print("Configuration locations:")
+    print("  Global : ~/.claude/settings.json")
+    print("  Project: .claude/settings.json")
+    print()
+    print("The PreToolUse hooks will:")
+    print("  - Scan files for injection patterns before Read operations")
+    print("  - Validate commands against the allowlist before Bash execution")
+    print("  - Block operations that trigger CRITICAL findings (exit code 2)")
+    print()
+    print("The SessionStart hook will:")
+    print("  - Run a full protection sweep when a new session begins")
+    print()
+
+    # Also write to a file for easy copy
+    enforce_path = workspace / CANARY_DIR / "enforce-hooks.json"
+    ensure_bastion_dir(workspace)
+    with open(enforce_path, "w", encoding="utf-8") as f:
+        json.dump(hook_config, f, indent=2)
+    print(f"Hook config saved to: {enforce_path.relative_to(workspace)}")
+    print("=" * 64)
+    return 0
+
+
+def cmdtect(workspace: Path):
+    """
+    Full automated sweep: scan all files, sanitize hidden Unicode,
+    quarantine files with CRITICAL injections, deploy canaries, report.
+    Recommended for session startup.
+    """
+    print("=" * 64)
+    print("BASTION FULL FULLTECT — Full Defense Sweep")
+    print("=" * 64)
+    print(f"Workspace : {workspace}")
+    print(f"Timestamp : {now_iso()}")
+    print()
+
+    files = collect_scannable_files(workspace)
+    if not files:
+        print("No scannable files found.")
+        print("=" * 64)
+        return 0
+
+    # --- Phase 1: Scan ---
+    print("-" * 48)
+    print("PHASE 1: SCANNING")
+    print("-" * 48)
+
+    all_findings = []
+    file_findings = {}  # rel -> [findings]
+    file_risks = {}
+
+    for rel, abspath in sorted(files.items()):
+        findings = scan_file(abspath, rel)
+        if findings:
+            all_findings.extend(findings)
+            file_findings[rel] = findings
+            file_risks[rel] = compute_file_risk(findings)
+
+    crits = sum(1 for f in all_findings if f["severity"] == SEVERITY_CRITICAL)
+    warns = sum(1 for f in all_findings if f["severity"] == SEVERITY_WARNING)
+
+    print(f"  Scanned {len(files)} files")
+    print(f"  Found {len(all_findings)} finding(s): {crits} CRITICAL, {warns} WARNING")
+    print(f"  Files with findings: {len(file_findings)}")
+    print()
+
+    # --- Phase 2: Sanitize hidden Unicode ---
+    print("-" * 48)
+    print("PHASE 2: SANITIZING HIDDEN UNICODE")
+    print("-" * 48)
+
+    strip_chars = {char for char, _ in UNICODE_TRICKS}
+    strip_pattern = "[" + "".join(re.escape(c) for c in strip_chars) + "]"
+    strip_re = re.compile(strip_pattern)
+
+    sanitized_count = 0
+    total_chars_removed = 0
+
+    for rel, abspath in sorted(files.items()):
+        text = read_file_text(abspath)
+        if text is None:
+            continue
+
+        found = strip_re.findall(text)
+        if not found:
+            continue
+
+        bak = create_backup(abspath)
+        cleaned = strip_re.sub("", text)
+        write_file_text(abspath, cleaned)
+
+        sanitized_count += 1
+        total_chars_removed += len(found)
+        print(f"  {rel}: {len(found)} hidden characters removed")
+
+    if sanitized_count == 0:
+        print("  No hidden Unicode characters found.")
+    print()
+
+    # --- Phase 3: Quarantine CRITICAL files ---
+    print("-" * 48)
+    print("PHASE 3: QUARANTINING CRITICAL FILES")
+    print("-" * 48)
+
+    quarantined_count = 0
+    critical_files = [
+        rel for rel, risk in file_risks.items() if risk == "CRITICAL"
+    ]
+
+    if critical_files:
+        q_dir = ensure_quarantine_dir(workspace)
+        for rel in critical_files:
+            abspath = files.get(rel)
+            if abspath is None or not abspath.is_file():
+                continue
+
+            # Skip agent instruction files from auto-quarantine (too disruptive)
+            basename = Path(rel).name
+            if basename in AGENT_INSTRUCTION_FILES:
+                print(f"  {rel}: CRITICAL but instruction file -- blocking instead of quarantining")
+                # Block instead
+                cmd_block(workspace, rel)
+                continue
+
+            safe_name = rel.replace("/", "__").replace("\\", "__")
+            q_file = q_dir / safe_name
+            q_meta = q_dir / (safe_name + ".meta.json")
+
+            counter = 1
+            while q_file.exists():
+                q_file = q_dir / f"{safe_name}.{counter}"
+                q_meta = q_dir / f"{safe_name}.{counter}.meta.json"
+                counter += 1
+
+            findings = file_findings.get(rel, [])
+            metadata = {
+                "original_path": rel,
+                "original_abs_path": str(abspath),
+                "quarantined_at": now_iso(),
+                "risk_level": "CRITICAL",
+                "finding_count": len(findings),
+                "critical_count": sum(1 for f in findings if f["severity"] == SEVERITY_CRITICAL),
+                "auto_quarantined": True,
+                "findings": findings[:20],
+                "quarantine_file": str(q_file),
+            }
+
+            shutil.move(str(abspath), str(q_file))
+            with open(q_meta, "w", encoding="utf-8") as f:
+                json.dump(metadata, f, indent=2)
+
+            quarantined_count += 1
+            print(f"  {rel}: QUARANTINED")
+    else:
+        print("  No files at CRITICAL risk level.")
+    print()
+
+    # --- Phase 4: Deploy canaries ---
+    print("-" * 48)
+    print("PHASE 4: DEPLOYING CANARY TOKENS")
+    print("-" * 48)
+
+    bastion_dir = ensure_bastion_dir(workspace)
+    manifest_path = bastion_dir / CANARY_MANIFEST
+
+    manifest = {"version": 1, "canaries": {}, "deployed_at": now_iso()}
+    if manifest_path.is_file():
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    canaries = manifest.get("canaries", {})
+    canary_deployed = 0
+
+    for name in sorted(AGENT_INSTRUCTION_FILES):
+        p = workspace / name
+        if not p.is_file():
+            continue
+
+        text = read_file_text(p)
+        if text is None:
+            continue
+
+        existing_token = canaries.get(name, {}).get("token")
+        if existing_token and existing_token in text:
+            continue
+
+        token = f"CANARY-{secrets.token_hex(12)}"
+        canary_line = f"\n<!-- {token} -->\n"
+        modified = text.rstrip() + canary_line
+        write_file_text(p, modified)
+
+        canaries[name] = {
+            "token": token,
+            "deployed_at": now_iso(),
+            "file_path": str(p),
+        }
+        canary_deployed += 1
+        print(f"  {name}: canary deployed")
+
+    manifest["canaries"] = canaries
+    manifest["last_deployment"] = now_iso()
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    if canary_deployed == 0:
+        print("  Canary tokens already deployed or no target files found.")
+    print()
+
+    # --- Summary ---
+    print("=" * 64)
+    print("BASTION FULL FULLTECT COMPLETE")
+    print("=" * 64)
+    print(f"  Files scanned          : {len(files)}")
+    print(f"  Total findings         : {len(all_findings)}")
+    print(f"  Unicode chars removed  : {total_chars_removed} across {sanitized_count} file(s)")
+    print(f"  Files quarantined      : {quarantined_count}")
+    print(f"  Canaries deployed      : {canary_deployed}")
+    print()
+
+    if crits > 0 and quarantined_count > 0:
+        print("CRITICAL threats neutralized. Review quarantined files.")
+        code = 1
+    elif crits > 0:
+        print("CRITICAL patterns detected but files are instruction files (blocked, not quarantined).")
+        code = 2
+    elif warns > 0:
+        print("WARNING patterns found. Review recommended.")
+        code = 1
+    else:
+        print("Workspace is clean. Defense posture: GOOD.")
+        code = 0
+
     print("=" * 64)
     return code
 
@@ -993,7 +1765,7 @@ def cmd_status(workspace: Path):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="bastion",
-        description="OpenClaw Bastion — Prompt Injection Defense",
+        description="OpenClaw Bastion — Full Prompt Injection Defense Suite",
     )
     parser.add_argument(
         "--workspace", "-w",
@@ -1002,6 +1774,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     sub = parser.add_subparsers(dest="command")
+
+    # --- Free commands ---
 
     # scan
     p_scan = sub.add_parser("scan", help="Scan files for injection patterns")
@@ -1024,9 +1798,36 @@ def build_parser() -> argparse.ArgumentParser:
     # status
     sub.add_parser("status", help="Quick posture summary")
 
-    # Pro upsell commands
-    for pro_cmd in ("block", "sanitize", "quarantine", "canary", "enforce"):
-        sub.add_parser(pro_cmd, help=f"[PRO] {pro_cmd} (requires openclaw-bastion-pro)")
+    # --- Pro commands ---
+
+    # block
+    p_block = sub.add_parser("block", help="Neutralize injection patterns in a file")
+    p_block.add_argument("file", help="File to block injection patterns in")
+
+    # sanitize
+    p_sanitize = sub.add_parser("sanitize", help="Strip hidden Unicode from files")
+    p_sanitize.add_argument("target", help="File or directory to sanitize")
+
+    # quarantine
+    p_quarantine = sub.add_parser("quarantine", help="Quarantine a file with injections")
+    p_quarantine.add_argument("file", help="File to quarantine")
+
+    # unquarantine
+    p_unquarantine = sub.add_parser("unquarantine", help="Restore a quarantined file")
+    p_unquarantine.add_argument("file", help="File to restore from quarantine")
+
+    # canary
+    p_canary = sub.add_parser("canary", help="Deploy canary tokens into monitored files")
+    p_canary.add_argument(
+        "target", nargs="?", default=None,
+        help="File or directory (defaults to agent instruction files)",
+    )
+
+    # enforce
+    sub.add_parser("enforce", help="Generate Claude Code hook config for runtime defense")
+
+    # protect
+    sub.add_parser("protect", help="Full automated defense sweep (recommended at startup)")
 
     return parser
 
@@ -1061,11 +1862,33 @@ def main():
         code = cmd_status(workspace)
         sys.exit(code)
 
-    elif args.command in ("block", "sanitize", "quarantine", "canary", "enforce"):
-        print(f"'{args.command}' is a Pro feature.")
-        print("Upgrade to openclaw-bastion-pro for active defense:")
-        print("  block, sanitize, quarantine, canary tokens, enforce policy via hooks")
-        sys.exit(1)
+    elif args.command == "block":
+        code = cmd_block(workspace, args.file)
+        sys.exit(code)
+
+    elif args.command == "sanitize":
+        code = cmd_sanitize(workspace, args.target)
+        sys.exit(code)
+
+    elif args.command == "quarantine":
+        code = cmd_quarantine(workspace, args.file)
+        sys.exit(code)
+
+    elif args.command == "unquarantine":
+        code = cmd_unquarantine(workspace, args.file)
+        sys.exit(code)
+
+    elif args.command == "canary":
+        code = cmd_canary(workspace, args.target)
+        sys.exit(code)
+
+    elif args.command == "enforce":
+        code = cmd_enforce(workspace)
+        sys.exit(code)
+
+    elif args.command == "protect":
+        code = cmdtect(workspace)
+        sys.exit(code)
 
     else:
         parser.print_help()
