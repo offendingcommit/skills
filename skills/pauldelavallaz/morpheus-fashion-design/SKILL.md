@@ -1,6 +1,23 @@
 ---
 name: morpheus-fashion-design
-description: Generate professional fashion/product advertising images using ComfyDeploy's Morpheus Fashion Design workflow. Use when the user asks to create fashion ads, product campaigns, commercial photography with models, or branded content. Supports model face consistency, product integration, and professional camera/lighting simulation.
+description: |
+  Generate professional advertising images with AI models holding/wearing products.
+  
+  ✅ USE WHEN:
+  - Need a person/model in the image WITH a product
+  - Creating fashion ads, product campaigns, commercial photography
+  - Want consistent model face across multiple shots
+  - Need professional lighting/camera simulation
+  - Input: product image + model reference (or catalog)
+  
+  ❌ DON'T USE WHEN:
+  - Just editing/modifying an existing image → use nano-banana-pro
+  - Product-only shot without a person → use nano-banana-pro
+  - Already have the hero image, need variations → use multishot-ugc
+  - Need video, not image → use veed-ugc after generating image
+  - URL-based product fetch with brand profile → use ad-ready instead
+  
+  OUTPUT: Single high-quality PNG image (2K-4K resolution)
 ---
 
 # Morpheus Fashion Design

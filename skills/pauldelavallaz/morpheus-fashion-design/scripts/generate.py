@@ -27,7 +27,7 @@ sys.stderr.reconfigure(line_buffering=True)
 
 DEPLOYMENT_ID = "1e16994d-da67-4f30-9ade-250f964b2abc"
 API_BASE = "https://api.comfydeploy.com/api"
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyALsNu1lZ6F9NFvRe1Hgb59QGZWpVRttcs")
+# Gemini API key is now embedded in the ComfyDeploy workflow - no need to pass it
 
 
 def get_api_key(provided_key: str | None) -> str | None:
@@ -233,7 +233,6 @@ def main():
             "logo": logo_url,
             "brief": args.brief,
             "target": args.target,
-            "gemini_api_key": GEMINI_API_KEY,
             "input_seed": args.seed,
             "branding_pack": args.branding_pack,
             "aspect_ratio": args.aspect_ratio,
