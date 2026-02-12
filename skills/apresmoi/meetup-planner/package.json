@@ -1,0 +1,109 @@
+{
+  "name": "meetup-planner",
+  "version": "1.0.0",
+  "description": "An intelligent event finder that searches for meetups and events based on your interests, tracks them, and reminds you before they happen",
+  "author": "apresmoi",
+  "license": "MIT",
+  "tags": [
+    "events",
+    "meetups",
+    "automation",
+    "productivity",
+    "scheduling",
+    "reminders",
+    "search"
+  ],
+  "homepage": "https://github.com/apresmoi/meetup-planner",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apresmoi/meetup-planner.git"
+  },
+  "skillDependencies": {
+    "firecrawl/cli": "^1.0.0",
+    "brave-search": "^1.0.0"
+  },
+  "permissions": {
+    "filesystem": {
+      "read": [
+        "~/.claude/meetup-finder/"
+      ],
+      "write": [
+        "~/.claude/meetup-finder/"
+      ]
+    },
+    "network": {
+      "domains": [
+        "brave.com",
+        "firecrawl.dev",
+        "eventbrite.com",
+        "meetup.com",
+        "luma.co"
+      ],
+      "description": "Required for searching events via Brave Search API and scraping event details via Firecrawl API"
+    },
+    "env": [
+      "BRAVE_API_KEY",
+      "FIRECRAWL_API_KEY"
+    ],
+    "cron": true
+  },
+  "requirements": {
+    "env": {
+      "BRAVE_API_KEY": {
+        "required": true,
+        "description": "API key for Brave Search - Get it from https://brave.com/search/api/"
+      },
+      "FIRECRAWL_API_KEY": {
+        "required": true,
+        "description": "API key for Firecrawl - Get it from https://firecrawl.dev/app/api-keys"
+      }
+    },
+    "skills": {
+      "firecrawl/cli": "To scrape event pages and extract detailed information",
+      "brave-search": "To search the web for events matching user preferences"
+    }
+  },
+  "entryPoint": "SKILL.md",
+  "install": {
+    "preInstall": {
+      "message": "⚠️  SECURITY REVIEW REQUIRED\n\nBefore installing this skill, please review:\n1. Required permissions in claw.json\n2. Security policy in SECURITY.md\n3. Data transmission scope in SKILL.md\n\nThis skill will:\n- Install dependencies: firecrawl/cli@^1.0.0, brave-search@^1.0.0\n- Create files in ~/.claude/meetup-finder/\n- Set up cron jobs for scheduled tasks\n- Require API keys: BRAVE_API_KEY, FIRECRAWL_API_KEY\n\nContinue only if you trust this source and have reviewed the code.",
+      "confirm": true
+    },
+    "postInstall": {
+      "message": "✅ Meetup Planner installed successfully!\n\n🚀 Next Steps:\n1. Run the skill - it will guide you through BOOTSTRAP.md setup\n2. Have API keys ready (or get them during setup):\n   • Brave Search: https://brave.com/search/api/\n   • Firecrawl: https://firecrawl.dev/app/api-keys\n\n🔐 Security:\n• The skill will help you store credentials securely (Keychain recommended)\n• Review SECURITY.md for detailed security practices\n• All setup is done interactively - just follow the prompts!\n\n⏱️  Setup takes 2-5 minutes. Let's go! 🎉"
+    }
+  },
+  "security": {
+    "policyUrl": "https://github.com/apresmoi/meetup-planner/blob/main/SECURITY.md",
+    "dataTransmission": {
+      "external": true,
+      "endpoints": [
+        {
+          "domain": "brave.com",
+          "purpose": "Event search via Brave Search API",
+          "dataSent": ["search queries", "API key", "IP address"]
+        },
+        {
+          "domain": "firecrawl.dev",
+          "purpose": "Event details extraction via Firecrawl API",
+          "dataSent": ["event page URLs", "API key", "IP address"]
+        }
+      ],
+      "dataRetention": "All data stored locally only",
+      "encryption": "HTTPS for all API calls"
+    },
+    "credentialStorage": {
+      "recommended": "OS keychain (macOS Keychain, Linux Secret Service)",
+      "supported": ["keychain", "secret-service", "environment-variables"],
+      "instructions": "See SECURITY.md for detailed setup"
+    },
+    "versionPinning": true,
+    "codeReview": {
+      "recommended": true,
+      "repository": "https://github.com/apresmoi/meetup-planner"
+    }
+  },
+  "changelog": {
+    "1.0.0": "Initial release with event discovery, tracking, and reminder features"
+  }
+}
