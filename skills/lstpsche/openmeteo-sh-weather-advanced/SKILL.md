@@ -129,6 +129,7 @@ Use this when you need a variable beyond the common ones listed above.
 4. Use `--forecast-days=1` or `--forecast-days=2` for today/tomorrow — don't waste tokens on 7-day fetches.
 5. For targeted questions (e.g. "when will the rain stop?"), override params via `--hourly-params` or `--daily-params` to fetch only what's needed, analyze the output and give answer.
 6. Use `--forecast-since=N` when the user asks about a specific future day (e.g. "weather on Friday") to avoid fetching unnecessary earlier days.
+7. When the user switches cities ("and what about London?"), carry over all params used in prior weather queries this conversation — including any added in follow-ups. The new city gets the union of all previously requested params.
 
 ## Conversational examples
 
