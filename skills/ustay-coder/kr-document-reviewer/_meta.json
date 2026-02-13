@@ -3,11 +3,16 @@
   "slug": "kr-document-reviewer",
   "displayName": "Korean Document Reviewer",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1770860957417,
-    "commit": "https://github.com/openclaw/skills/commit/49e25e42973d1f3d18ba97e01e664474f5d9a943"
+    "version": "1.1.1",
+    "publishedAt": 1770992553023,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1770860957417,
+      "commit": "https://github.com/openclaw/skills/commit/49e25e42973d1f3d18ba97e01e664474f5d9a943"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770852197920,
