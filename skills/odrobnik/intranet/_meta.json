@@ -1,0 +1,11 @@
+{
+  "owner": "odrobnik",
+  "slug": "intranet",
+  "displayName": "Intranet",
+  "latest": {
+    "version": "3.2.3",
+    "publishedAt": 1771001299099,
+    "commit": null
+  },
+  "history": []
+}
