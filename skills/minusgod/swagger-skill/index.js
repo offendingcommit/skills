@@ -1,4 +1,29 @@
-import axios from 'axios';
+import { execSync } from 'child_process';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+
+function ensureDependencies() {
+  const deps = ['axios', 'form-data'];
+  const missing = deps.filter(dep => {
+    try { require.resolve(dep); return false; } catch { return true; }
+  });
+  if (missing.length > 0) {
+    const pkgJsonPath = path.join(__dirname, 'package.json');
+    try { require.resolve(pkgJsonPath); } catch {
+      execSync(`npm init -y --prefix "${__dirname}" && node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('${pkgJsonPath}','utf8'));p.type='module';fs.writeFileSync('${pkgJsonPath}',JSON.stringify(p,null,2))"`, { stdio: 'pipe' });
+    }
+    execSync(`npm install --prefix "${__dirname}" ${missing.join(' ')}`, { stdio: 'pipe' });
+  }
+}
+
+ensureDependencies();
+
+const axios = (await import('axios')).default;
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'delete', 'patch', 'head', 'options']);
 

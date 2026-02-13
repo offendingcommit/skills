@@ -21,6 +21,10 @@ metadata:
 
 ## 安装
 
+无需手动安装依赖。首次使用时会自动检测并安装所需依赖（axios、form-data），同时自动初始化 package.json（含 `"type": "module"` 配置）。
+
+如需手动安装，可在 skill 目录下执行：
+
 ```bash
 npm install
 ```
