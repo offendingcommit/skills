@@ -3,11 +3,16 @@
   "slug": "telegram-compose",
   "displayName": "Telegram Compose",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770058956073,
-    "commit": "https://github.com/clawdbot/skills/commit/dcebc978d8bf23df9bcef3c2d92b924ad5f8d47f"
+    "version": "1.0.4",
+    "publishedAt": 1770935193951,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770058956073,
+      "commit": "https://github.com/clawdbot/skills/commit/dcebc978d8bf23df9bcef3c2d92b924ad5f8d47f"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1769575509137,
