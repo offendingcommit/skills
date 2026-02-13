@@ -1,13 +1,18 @@
 {
   "owner": "amandiwakar",
   "slug": "ai-sentinel",
-  "displayName": "AI Sentinel",
+  "displayName": "Openclaw Sentinel",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1770876611886,
-    "commit": "https://github.com/openclaw/skills/commit/89685864665ba30b5b46d7c9435574d42c759680"
+    "version": "0.1.6",
+    "publishedAt": 1770959653771,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1770876611886,
+      "commit": "https://github.com/openclaw/skills/commit/89685864665ba30b5b46d7c9435574d42c759680"
+    },
     {
       "version": "1.0.3",
       "publishedAt": 1770788959709,

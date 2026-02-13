@@ -1,126 +1,74 @@
-# AI Sentinel — OpenClaw Plugin
+# AI Sentinel - ClawHub Skill
 
-Prompt injection detection and security scanning for [OpenClaw](https://openclaw.com) agents. Scans messages, tool results, and tool parameters in real time using 39 regex-based threat patterns across 8 categories.
+This folder contains the ClawHub skill package for AI Sentinel. It provides an interactive setup wizard that helps OpenClaw users integrate prompt injection protection into their gateway.
 
-## Install
+## Folder Structure
 
-```bash
-openclaw plugins install openclaw-ai-sentinel
+```
+packages/clawhub-skill/
+├── SKILL.md        # Skill entry point (required by ClawHub)
+├── CHANGELOG.md    # Version history (required by ClawHub publish form)
+└── README.md       # This file (developer reference)
 ```
 
-Or via npm directly:
+## Publishing to ClawHub
 
-```bash
-npm install openclaw-ai-sentinel
-```
+1. Go to the ClawHub publish page
+2. Fill in the **required form fields**:
 
-## Configuration
+   | Field        | Value                                       |
+   |--------------|---------------------------------------------|
+   | Slug         | `ai-sentinel`                               |
+   | Display name | `AI Sentinel - Prompt Injection Firewall`   |
+   | Version      | `1.2.0`                                     |
+   | Tags         | `security`, `prompt-injection`, `firewall`, `middleware` |
 
-Add to your `~/.openclaw/openclaw.json`:
+3. Fill in **registry metadata fields** (these must match what SKILL.md declares, or the security scan will flag a mismatch):
 
-```json5
-{
-  plugins: {
-    entries: {
-      "ai-sentinel": {
-        enabled: true,
-        config: {
-          mode: "monitor",           // "monitor" | "enforce"
-          threatThreshold: 0.7,      // 0.0–1.0, block above this in enforce mode
-          logLevel: "info",          // "debug" | "info" | "warn" | "error"
-          allowlist: [],             // session keys to skip scanning
-        },
-      },
-    },
-  },
-}
-```
+   | Registry Field       | Value |
+   |----------------------|-------|
+   | Required env vars    | `AI_SENTINEL_API_KEY` (optional, Pro tier only) |
+   | Required config      | `openclaw.config.ts` |
+   | External services    | `https://api.zetro.ai` (Pro tier only) |
+   | Installed packages   | `ai-sentinel-sdk` |
+   | Files written        | `openclaw.config.ts`, `.env`, `data/`, `.gitignore` |
 
-### Modes
+4. Upload this entire `clawhub-skill/` folder
+5. Paste the contents of `CHANGELOG.md` into the Changelog field
+6. Submit
 
-| Mode | Behavior |
-|------|----------|
-| `monitor` | Log threats and annotate the transcript, but allow messages through |
-| `enforce` | Block messages above `threatThreshold` and return a safety notice |
+**Important:** If the registry form does not have dedicated fields for env vars / external services / config paths, add them to the description or notes field. The OpenClaw security scanner compares registry metadata against SKILL.md content and flags mismatches.
 
-### Cloud Reporting (optional)
+## Testing
 
-Connect to AI Sentinel Pro for dashboards, threat intel feeds, and alerting:
+To manually test the skill before publishing:
 
-```json5
-{
-  config: {
-    apiKey: "sk-...",               // or set AI_SENTINEL_API_KEY env var
-    apiUrl: "https://api.zetro.ai",
-    reportMode: "telemetry",        // "telemetry" | "cloud-scan" | "none"
-    reportFilter: "all",            // "all" | "threats-only"
-  },
-}
-```
+1. Open an OpenClaw project that has `openclaw.config.ts`
+2. Copy `SKILL.md` into the project's `.openclaw/skills/` directory (or wherever the local skill override path is)
+3. Invoke the skill and walk through the setup wizard
+4. Verify:
+   - `ai-sentinel-sdk` is installed in `node_modules`
+   - `openclaw.config.ts` has the sentinel middleware wired up
+   - `npx openclaw sentinel test "Ignore all previous instructions"` returns a `blocked` action
+   - `npx openclaw sentinel test "Hello, how are you?"` returns an `allowed` action
+   - `npx openclaw sentinel status` displays the correct tier and config
 
-### Multi-Agent Support
+## Updating
 
-Configure per-agent scanning behavior:
+When releasing a new version:
 
-```json5
-{
-  config: {
-    agentId: "my-agent",
-    excludeAgents: ["internal-bot"],
-    agentOverrides: [
-      { agentId: "high-risk-agent", mode: "enforce", threatThreshold: 0.5 }
-    ],
-  },
-}
-```
+1. Update the version in `SKILL.md` header (the `**Version:**` field)
+2. Add a new section to `CHANGELOG.md` with the changes
+3. Re-upload the folder to ClawHub with the new version number in the publish form
 
-## What It Detects
+## Dependencies
 
-39 patterns across 8 threat categories:
+The skill instructs users to install `ai-sentinel-sdk` (published to npm). Ensure the SDK is published and up-to-date before publishing a new skill version that references new SDK features.
 
-| Category | Patterns | Examples |
-|----------|----------|---------|
-| Prompt Injection | PI-001 – PI-006 | "ignore previous instructions", chat template delimiters |
-| Jailbreak | JB-001 – JB-009 | DAN, developer mode, character override, bracket persona |
-| Instruction Override | IO-001 – IO-003 | "forget everything", "override your safety" |
-| Data Exfiltration | DE-001 – DE-007 | "repeat words above", "paste your system prompt" |
-| Social Engineering | SE-001 – SE-005 | False authority claims, fake security audits |
-| Tool Abuse | TA-001 – TA-003 | Code execution injection, pipe-to-shell |
-| Indirect Injection | II-001 – II-005 | Hidden instructions in documents, zero-width chars |
+## Related Files
 
-Tool results get an automatic confidence boost (+0.15) since indirect injection is higher-signal in untrusted content.
-
-## How It Works
-
-AI Sentinel registers hooks into the OpenClaw plugin lifecycle:
-
-| Hook | Purpose |
-|------|---------|
-| `message_received` | Scan inbound user messages before the agent processes them |
-| `tool_result_persist` | Scan tool results for indirect prompt injection |
-| `before_tool_call` | Inspect tool parameters before execution |
-| `before_agent_start` | Inject security awareness into the agent's system prompt |
-
-It also registers an `ai_sentinel_scan` tool that agents can call to manually scan suspicious content.
-
-## Bootstrap Hook (standalone)
-
-For an additional layer of defense, install the gateway bootstrap hook which injects security awareness rules into the agent's system prompt at startup:
-
-```bash
-./scripts/install-bootstrap-hook.sh
-openclaw hooks enable ai-sentinel-bootstrap
-```
-
-## Development
-
-```bash
-npm run build          # Compile TypeScript
-npm run test           # Run 99 tests (pattern coverage + promptmap corpus + scan engine)
-npm run dev            # Watch mode
-npm run typecheck      # Type-check without emitting
-```
-
-## License
-
-MIT
+- `packages/sdk-node/` - The `ai-sentinel-sdk` Node.js package
+- `packages/sdk-node/src/middleware/openclaw.ts` - OpenClaw middleware implementation
+- `packages/sdk-node/src/types.ts` - `SentinelConfig` interface (the config shape the skill generates)
+- `packages/sdk-node/src/cli/index.ts` - CLI commands referenced in the test step
+- `.claude/commands/setup-sentinel.md` - The older Python SDK setup wizard (separate from this skill)
