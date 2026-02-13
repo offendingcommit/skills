@@ -1,13 +1,18 @@
 {
   "owner": "idoshamun",
   "slug": "daily-dev-agentic",
-  "displayName": "daily.dev Agentic Learning",
+  "displayName": "Daily Dev Agentic",
   "latest": {
-    "version": "0.3.0",
-    "publishedAt": 1770937271581,
-    "commit": "https://github.com/openclaw/skills/commit/e9254243545494d3f497ea37d29fc5acbb647475"
+    "version": "0.5.3",
+    "publishedAt": 1770983976536,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.3.0",
+      "publishedAt": 1770937271581,
+      "commit": "https://github.com/openclaw/skills/commit/e9254243545494d3f497ea37d29fc5acbb647475"
+    },
     {
       "version": "0.1.0",
       "publishedAt": 1770936628154,

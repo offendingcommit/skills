@@ -23,9 +23,12 @@ Master config file. Created during setup, updated each learning loop.
 - Name: 🗿 Lurch's Learning Feed
 - Created: 2024-01-15
 
-## Bookmark List  
-- ID: xyz789
-- Name: 🗿 Lurch's Knowledge Base
+## Tags Followed
+- ai
+- llm
+- typescript
+- devtools
+- ...
 
 ## Learning Goals
 - Stay current on AI/ML developments, especially LLMs and agents
@@ -39,7 +42,6 @@ Master config file. Created during setup, updated each learning loop.
 - Last scan: 2024-01-16T09:00:00Z
 - Last cursor: eyJvZmZzZXQiOjUwfQ==
 - Total posts processed: 127
-- Gems saved: 12
 ```
 
 ## Daily Learning Notes
@@ -50,7 +52,7 @@ One file per day: `learnings/YYYY-MM-DD.md`
 # Learning Notes - 2024-01-16
 
 ## Summary
-Scanned 23 posts. 5 relevant, 2 gems saved.
+Scanned 23 posts. 5 worth noting.
 
 ---
 
@@ -67,9 +69,6 @@ Scanned 23 posts. 5 relevant, 2 gems saved.
 ### Insights
 This confirms the trend toward faster, more capable models that maintain quality.
 For agent work: prefer Sonnet for routine tasks, reserve Opus for complex reasoning.
-
-### Related
-- [Bookmark saved]
 
 ---
 
@@ -128,6 +127,5 @@ NoInfer solves a common footgun in generic functions. Worth updating patterns.
 
 When asked "what have you learned about X":
 1. Search `memory/learnings/*.md` for X
-2. Check bookmarks related to X
-3. Synthesize findings chronologically
-4. Note confidence level based on recency and source count
+2. Synthesize findings chronologically
+3. Note confidence level based on recency and source count

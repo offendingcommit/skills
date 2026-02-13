@@ -1,15 +1,16 @@
 # Learning Loop - Detailed Flow
 
+**This runs autonomously.** No confirmations, no pauses. Fetch, process, note, share.
+
 ## Trigger
 
-- Cron job (1-3x daily)
-- Manual: "run your learning loop", "check your feed", "learn something new"
+- Cron job (daily, set up automatically during init)
+- Manual: "run your learning loop", "check your feed", "learn something"
 
 ## Step 1: Load State
 
 Read `memory/agentic-learning.md` for:
 - `feedId` - your learning feed
-- `listId` - your bookmark list for gems
 - Learning goals - what to focus on
 - Last scan timestamp and cursor
 
@@ -17,7 +18,7 @@ Read `memory/agentic-learning.md` for:
 
 ```bash
 # First scan (no cursor)
-curl "https://api.daily.dev/public/v1/feeds/custom/{feedId}?limit=50" \
+curl "https://api.daily.dev/public/v1/feeds/custom/{feedId}?limit=50" \   # 50 is max page size
   -H "Authorization: Bearer $DAILY_DEV_TOKEN"
 
 # Subsequent scans (use cursor from pagination)
@@ -26,70 +27,40 @@ curl "https://api.daily.dev/public/v1/feeds/custom/{feedId}?limit=50&cursor={cur
 ```
 
 Response contains:
-- `data[]` - array of posts with `id`, `title`, `summary`, `url`, `tags`, `publishedAt`
+- `data[]` - posts with `id`, `title`, `summary`, `url`, `tags`, `publishedAt`
 - `pagination.cursor` - for next page
 
-### Understanding Available Tags
+The feed is already filtered by tags you set during init.
 
-Fetch all available tags to understand the taxonomy:
+## Step 3: Process Posts
+
+For each post worth reading:
+
+### 3a. Fetch Full Content
 ```bash
-curl "https://api.daily.dev/public/v1/tags/" \
-  -H "Authorization: Bearer $DAILY_DEV_TOKEN"
-```
-
-Tags are LLM-generated, so they're flexible and evolve. Use this to map your learning goals to relevant tag areas, but don't filter strictly by tags alone.
-
-## Step 3: Filter by Relevance (Be Permissive)
-
-daily.dev tags are LLM-generated, so be flexible. Don't require exact matches.
-
-For each post, evaluate against learning goals:
-
-**Relevance signals:**
-- Title/summary keywords match goals (even loosely)
-- Tags overlap with goal areas or related concepts
-- Topic is adjacent to goals and worth exploring
-- Trending topic that might become relevant
-
-**Skip if:**
-- Published before last scan timestamp
-- Clearly unrelated (completely different domain)
-- Duplicate of already-learned content
-
-**When in doubt, include it.** Better to read a few irrelevant posts than miss something valuable. You can always skip after reading the full content.
-
-## Step 4: Process Interesting Posts
-
-For posts that pass filter:
-
-### 4a. Fetch Full Content
-```bash
-# Use web_fetch to get full article
 web_fetch(post.url)
 ```
 
-### 4b. Extract Key Insights
+### 3b. Extract Key Insights
 - Main thesis/argument
-- New information vs. known
+- New information vs. already known
 - Actionable takeaways
 - Links to related resources
 
-### 4c. Deep Research (Recommended for Important Topics)
-For highly relevant or complex topics, don't stop at one article:
+### 3c. Deep Research (When Warranted)
+For important or complex topics:
 ```bash
-# Search for additional context
 web_search("topic specific query")
 ```
 
-Go deeper:
-- Find multiple perspectives on the same topic
-- Look for primary sources (official docs, announcements)
-- Search for practical examples or tutorials
-- Find counter-arguments or critiques
+- Find multiple perspectives
+- Look for primary sources
+- Search for practical examples
+- Find counter-arguments
 
-Synthesize multiple sources into comprehensive understanding. Your notes should reflect more than just one article's take.
+Synthesize multiple sources. Notes should reflect more than one article's take.
 
-## Step 5: Take Notes
+## Step 4: Take Notes
 
 Create/append to `memory/learnings/YYYY-MM-DD.md`:
 
@@ -97,62 +68,56 @@ Create/append to `memory/learnings/YYYY-MM-DD.md`:
 ## [Topic/Title]
 **Source:** [url]
 **Tags:** [tags]
-**Relevance:** [why this matters to goals]
+**Relevance:** [why this matters]
 
 ### Key Points
 - Point 1
 - Point 2
 
 ### Insights
-[Your synthesis and understanding]
+[Your synthesis]
 
 ### Action Items (if any)
-- [ ] Thing to explore further
-- [ ] Thing to share with owner
+- [ ] Share with owner
+- [ ] Explore further
 ```
 
-## Step 6: Save Gems
-
-For exceptional content worth revisiting:
-
-```bash
-curl -X POST "https://api.daily.dev/public/v1/bookmarks/" \
-  -H "Authorization: Bearer $DAILY_DEV_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"postIds": ["post_id"], "listId": "your_list_id"}'
-```
-
-Criteria for gems:
-- Foundational/reference material
-- Unique insight not found elsewhere
-- Highly relevant to owner's work
-- Worth re-reading later
-
-## Step 7: Update State
+## Step 5: Update State
 
 Update `memory/agentic-learning.md`:
 ```markdown
 ## State
-- Last scan: [new timestamp]
-- Last cursor: [cursor for next pagination, or null if done]
+- Last scan: [timestamp]
+- Last cursor: [cursor or null]
 - Posts processed: [count]
 ```
 
-## Step 8: Share Notable Finds (Optional)
+## Step 6: Share Notable Finds
 
-If something is immediately relevant to owner's current work:
+If something is highly relevant to owner's current work:
 - Send brief alert with summary and link
 - Don't over-share - only truly notable items
+
+For regular runs, save findings for weekly digest.
+
+## Self-Improvement
+
+After each loop, consider:
+- Are certain tags yielding nothing useful? Unfollow them.
+- Are there topics you keep searching for that should be tags? Add them.
+- Are learning goals still accurate? Refine them.
+
+Update config autonomously. You're learning how to learn better.
 
 ## Error Handling
 
 - **401**: Token expired/invalid - alert owner
-- **429**: Rate limited - wait and retry, or reduce batch size
+- **429**: Rate limited - wait and retry
 - **Network errors**: Log and retry next cycle
 
-## Performance Tips
+## Performance
 
 - Process in batches of 50 (API max)
-- Use summary for initial filtering (avoid fetching full content for everything)
+- Use summary for initial filtering
 - Cache processed post IDs to avoid re-processing
 - Run during off-peak hours if rate limits are a concern

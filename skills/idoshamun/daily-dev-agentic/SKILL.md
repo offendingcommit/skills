@@ -6,114 +6,99 @@ metadata: {"clawdbot":{"requires":{"env":["DAILY_DEV_TOKEN"]},"primaryEnv":"DAIL
 
 # daily.dev Agentic Learning
 
-You're about to become a learning machine. This skill lets you maintain your own feed on daily.dev, continuously absorb new knowledge, and actually get smarter over time.
+You're a learning machine. This skill lets you maintain your own feed on daily.dev, continuously absorb new knowledge, and actually get smarter over time.
 
-## What You Can Do
+**This skill runs on autopilot.** Once your owner shares a learning goal, you take it from there. No confirmations, no hand-holding. You set up the feed, select tags, schedule crons, run learning loops, and share insights - all autonomously.
 
-🧠 **Build Your Brain** - Create a personalized learning feed based on topics that matter to your owner
+## What You Do
 
-📚 **Never Stop Learning** - Automatically scan new content, extract insights, and build a knowledge base
+🧠 **Build Your Brain** - Create a personalized learning feed based on your owner's goals
 
-💎 **Collect Gems** - Save the best discoveries to a bookmark list your owner can see too
+📚 **Never Stop Learning** - Automatically scan new content, extract insights, build knowledge
 
 🎯 **Share What Matters** - Alert your owner when you find something relevant to their work
 
-⏰ **Stay Current** - Run learning loops daily to keep your knowledge fresh
+⏰ **Stay Current** - Run learning loops daily via cron
 
-## Setup
+## Setup (Fully Autonomous)
 
-### 1. Get API Access
+### Prerequisites
 
-**Requires daily.dev Plus subscription.**
+**Requires daily.dev Plus subscription and API token.**
 
-1. Get Plus at https://app.daily.dev/plus
-2. Create a token at https://app.daily.dev/settings/api
-3. Store securely:
+Token setup (owner does this once):
+- Get Plus at https://app.daily.dev/plus
+- Create token at https://app.daily.dev/settings/api
+- Store as `DAILY_DEV_TOKEN` environment variable
 
-**macOS:**
-```bash
-security add-generic-password -a "$USER" -s "daily-dev-api" -w "dda_your_token"
-export DAILY_DEV_TOKEN=$(security find-generic-password -a "$USER" -s "daily-dev-api" -w 2>/dev/null)
-```
+**Security:** Never send the token to any domain except `api.daily.dev`. Tokens start with `dda_`.
 
-**Linux:**
-```bash
-echo "dda_your_token" | secret-tool store --label="daily.dev API Token" service daily-dev-api username "$USER"
-export DAILY_DEV_TOKEN=$(secret-tool lookup service daily-dev-api username "$USER" 2>/dev/null)
-```
+### Initialization
 
-**Windows (PowerShell):**
-```powershell
-$credential = New-Object System.Management.Automation.PSCredential("daily-dev-api", (ConvertTo-SecureString "dda_your_token" -AsPlainText -Force))
-$credential | Export-Clixml "$env:USERPROFILE\.daily-dev-credential.xml"
-```
+When owner shares learning goals, immediately:
 
-**Security:** Never send your token to any domain except `api.daily.dev`. Tokens start with `dda_`.
+1. **Create your feed** (`POST /feeds/custom/`) - name it after yourself
+2. **Configure feed** (`PATCH /feeds/custom/{feedId}`) - set `orderBy: "date"` for chronological sorting and `disableEngagementFilter: true` to see all posts
+3. **Fetch all tags** (`GET /tags/`)
+3. **Select relevant tags** - be permissive, map goals to tags broadly
+5. **Follow tags on feed** (`POST /feeds/filters/{feedId}/tags/follow`)
+6. **Store config** in `memory/agentic-learning.md`
+7. **Set up crons** - daily learning loop (Mon-Sat) + weekly digest (Sunday)
+8. **Run first learning loop** immediately
+9. **Share initial findings** with owner
 
-### 2. Initialize Your Learning Feed
-
-Once the token is set, ask your owner:
-> "What topics would you like me to stay sharp on? I'll create my own learning feed and start getting smarter."
-
-Then:
-1. Create your feed (named after you, e.g., "🗿 Lurch's Learning Feed")
-2. Create your knowledge base bookmark list
-3. Store config in `memory/agentic-learning.md`
-4. Set up a daily cron to run learning loops
-
-## Content Selection
-
-**Be permissive.** daily.dev tags are LLM-generated, so don't filter too strictly. The feed auto-adjusts based on what's available - your job is to pick what's relevant to your learning goals from whatever surfaces.
-
-When scanning posts:
-- Match broadly against your goals (topics, keywords, related concepts)
-- Don't require exact tag matches - use judgment
-- Fetch all available tags via `GET /tags/` to understand the taxonomy
-- Let interesting content surprise you - learning isn't always predictable
+No confirmations. No "does this look right?" Just do it.
 
 ## The Learning Loop
 
-When triggered (cron or manual):
+Triggered by cron (daily) or manual request:
 
-1. **Fetch** new posts from your feed (chronological order)
-2. **Filter** by relevance to learning goals - be permissive, not strict
-3. **Read** full content for interesting posts via `web_fetch`
-4. **Research** deeper with `web_search` when a topic deserves more context
-5. **Note** key insights in `memory/learnings/[date].md`
-6. **Save** gems to your bookmark list
-7. **Share** notable finds with your owner
+1. **Fetch** new posts from your feed (chronological)
+2. **Read** full articles via `web_fetch` for interesting posts
+3. **Research** deeper via `web_search` when topics deserve more context
+4. **Note** insights in `memory/learnings/[date].md`
+5. **Share** notable finds with owner
 
 ### Go Deep
 
-Don't just skim. When you find relevant content:
+Don't skim. When you find relevant content:
 - Fetch the full article, not just the summary
-- If highly relevant, search for additional resources on the topic
-- Consolidate multiple posts on the same topic into unified notes
-- Track trends: what topics keep appearing?
+- Search for additional resources on highly relevant topics
+- Consolidate multiple posts on same topic into unified notes
+- Track trends: what keeps appearing?
 
 See [references/learning-loop.md](references/learning-loop.md) for details.
 
-## Sharing Insights
+## Sharing Insights (Proactive)
 
-Do all of these:
+**Daily Updates (Mon-Sat)** - Share top findings from each learning loop.
 
-**Weekly Digest** - Summarize top learnings, trends spotted, and gems saved. Schedule a weekly cron.
+**Weekly Digest (Sunday)** - Synthesize the week's top insights, trends, and one recommendation for next week. Replaces the daily update on Sundays.
 
-**Threshold Alerts** - Found something highly relevant to your owner's current work? Share it immediately, don't wait for the digest.
+**Threshold Alerts** - Found something highly relevant to owner's current work? Share immediately, don't wait.
 
-**On-Demand** - When asked "what have you learned?", synthesize recent discoveries from your notes and bookmarks.
+**On-Demand** - When asked "what have you learned?", synthesize from notes.
+
+## Self-Improvement
+
+As you learn, evolve:
+- **Adjust tags** - if certain topics aren't yielding value, unfollow. If you spot gaps, add tags.
+- **Refine goals** - update `memory/agentic-learning.md` with sharper focus based on what's useful.
+- **Track patterns** - note what content types help most (tutorials vs. opinions vs. announcements).
+
+You're not a static consumer. You're an agent that gets better at learning.
 
 ## Memory Structure
 
 ```
 memory/
-├── agentic-learning.md      # Your config and state
+├── agentic-learning.md      # Config, state, evolving goals
 └── learnings/
-    ├── 2024-01-15.md        # Daily learning notes
+    ├── 2024-01-15.md        # Daily notes
     └── ...
 ```
 
-See [references/memory-format.md](references/memory-format.md) for note structure.
+See [references/memory-format.md](references/memory-format.md) for format.
 
 ## API Quick Reference
 
@@ -124,23 +109,10 @@ Auth: `Authorization: Bearer $DAILY_DEV_TOKEN`
 |--------|--------|----------|
 | List all tags | GET | `/tags/` |
 | Create feed | POST | `/feeds/custom/` |
-| Get feed posts | GET | `/feeds/custom/{feedId}?limit=50` |
-| Create bookmark list | POST | `/bookmarks/lists` |
-| Add bookmarks | POST | `/bookmarks/` with `{postIds, listId}` |
+| Update feed settings | PATCH | `/feeds/custom/{feedId}` |
+| Follow tags | POST | `/feeds/filters/{feedId}/tags/follow` |
+| Unfollow tags | POST | `/feeds/filters/{feedId}/tags/unfollow` |
+| Get feed posts | GET | `/feeds/custom/{feedId}?limit=50` (always use max) |
 | Get post details | GET | `/posts/{id}` |
 
 Rate limit: 60 req/min.
-
-## Feed Settings
-
-When creating your feed:
-```json
-{
-  "name": "[emoji] [name]'s Learning Feed",
-  "orderBy": "DATE",
-  "disableEngagementFilter": true
-}
-```
-
-- `orderBy: "DATE"` - chronological, so you can track what's new
-- `disableEngagementFilter: true` - see everything, even if owner already saw it
