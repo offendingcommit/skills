@@ -1,0 +1,11 @@
+{
+  "owner": "jk-0001",
+  "slug": "customer-retention",
+  "displayName": "Customer Retention",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1771015949483,
+    "commit": null
+  },
+  "history": []
+}
