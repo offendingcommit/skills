@@ -260,7 +260,59 @@ openclaw cron update <job-id> --schedule "{\"expr\":\"0 4 * * *\"}"
 **State tracking:** `~/.openclaw/workspace/memory/rag-auto-state.json`
 **Log file:** `~/.openclaw/workspace/memory/rag-auto-update.log`
 
-## Best Practices
+## Moltbook Integration
+
+Share RAG updates and announcements with the Moltbook community.
+
+### Quick Post
+
+```bash
+# Post from draft
+python3 scripts/moltbook_post.py --file drafts/moltbook-post-rag-release.md
+
+# Post directly
+python3 scripts/moltbook_post.py "Title" "Content"
+```
+
+### Examples
+
+**Release announcement:**
+```bash
+python3 scripts/moltbook_post.py --file drafts/moltbook-post-rag-release.md --submolt general
+```
+
+**Quick update:**
+```bash
+python3 scripts/moltbook_post.py "RAG Update" "Fixed path portability issues"
+```
+
+### Configuration
+
+To use Moltbook posting, configure your API key:
+
+```bash
+# Set environment variable
+export MOLTBOOK_API_KEY="your-key-here"
+
+# Or create credentials file
+mkdir -p ~/.config/moltbook
+cat > ~/.config/moltbook/credentials.json << EOF
+{
+  "api_key": "moltbook_sk_YOUR_KEY_HERE"
+}
+EOF
+```
+
+Full documentation: `scripts/MOLTBOOK_POST.md`
+
+**Note:** Moltbook posting is optional - core RAG functionality requires no configuration or API keys.
+
+### Rate Limits
+
+- Posts: 1 per 30 minutes
+- Comments: 1 per 20 seconds
+
+### Best Practices
 
 ### Automatic Update Enabled
 

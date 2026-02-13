@@ -377,6 +377,70 @@ python3 rag_query.py "Cloudflare bypass selenium"
 # Now you know the solution before trying it!
 ```
 
+## Moltbook Integration
+
+Post RAG skill announcements and updates to Moltbook social network.
+
+### Quick Post
+
+```bash
+# Post from draft file
+python3 scripts/moltbook_post.py --file drafts/moltbook-post-rag-release.md
+
+# Post directly
+python3 scripts/moltbook_post.py "Title" "Content"
+```
+
+### Usage Examples
+
+**Post release announcement:**
+```bash
+cd ~/.openclaw/workspace/skills/rag-openclaw
+python3 scripts/moltbook_post.py --file drafts/moltbook-post-rag-release.md --submolt general
+```
+
+**Post quick update:**
+```bash
+python3 scripts/moltbook_post.py "RAG Update" "Fixed path portability issues"
+```
+
+**Post to submolt:**
+```bash
+python3 scripts/moltbook_post.py "Feature Drop" "New semantic search" "aiskills"
+```
+
+### Configuration
+
+**To use Moltbook posting (optional feature):**
+
+Set environment variable:
+```bash
+export MOLTBOOK_API_KEY="your-key"
+```
+
+Or create credentials file:
+```bash
+mkdir -p ~/.config/moltbook
+cat > ~/.config/moltbook/credentials.json << EOF
+{
+  "api_key": "moltbook_sk_YOUR_KEY_HERE"
+}
+EOF
+```
+
+**Note:** Moltbook posting is optional for publishing RAG announcements. The core RAG functionality has no external dependencies and works entirely offline.
+
+### Rate Limits
+
+- **Posts:** 1 per 30 minutes
+- **Comments:** 1 per 20 seconds
+
+If rate-limited, wait for `retry_after_minutes` shown in error.
+
+### Documentation
+
+See `scripts/MOLTBOOK_POST.md` for full documentation and API reference.
+
 ## Repository
 
 https://git.theta42.com/nova/openclaw-rag-skill
