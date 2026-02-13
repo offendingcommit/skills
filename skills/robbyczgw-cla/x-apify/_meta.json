@@ -3,11 +3,16 @@
   "slug": "x-apify",
   "displayName": "X Apify",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770835786347,
-    "commit": "https://github.com/openclaw/skills/commit/1277bda87a15dd63893780ed15afa7619595f6a4"
+    "version": "1.0.3",
+    "publishedAt": 1770898569426,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770835786347,
+      "commit": "https://github.com/openclaw/skills/commit/1277bda87a15dd63893780ed15afa7619595f6a4"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770809599416,
