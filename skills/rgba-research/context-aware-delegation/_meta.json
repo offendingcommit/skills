@@ -1,0 +1,11 @@
+{
+  "owner": "rgba-research",
+  "slug": "context-aware-delegation",
+  "displayName": "Context-Aware Delegation (SmartBeat)",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1771008732900,
+    "commit": null
+  },
+  "history": []
+}
