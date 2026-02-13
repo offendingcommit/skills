@@ -3,9 +3,15 @@
   "slug": "til",
   "displayName": "OpenTIL",
   "latest": {
-    "version": "1.7.0",
-    "publishedAt": 1770830012530,
-    "commit": "https://github.com/openclaw/skills/commit/575380b60af6808228f54ca74131229825b194a5"
+    "version": "1.11.0",
+    "publishedAt": 1770992521017,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.7.0",
+      "publishedAt": 1770830012530,
+      "commit": "https://github.com/openclaw/skills/commit/575380b60af6808228f54ca74131229825b194a5"
+    }
+  ]
 }

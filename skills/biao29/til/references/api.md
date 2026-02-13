@@ -25,6 +25,7 @@ All fields are nested under `entry`. Additionally, `tag_names` and `category_nam
 | `published` | boolean | no | `false` for draft (default), `true` to publish immediately. |
 | `published_at` | datetime | no | ISO 8601 timestamp. Only relevant when publishing. |
 | `visibility` | string | no | `public` (default), `unlisted`, or `private` |
+| `summary` | string | no | AI-generated summary for listing pages (max 500 chars) |
 | `meta_description` | string | no | SEO meta description |
 | `meta_image` | string | no | URL for social sharing image |
 | `lang` | string | no | Language code (see Supported Languages below) |
@@ -47,6 +48,7 @@ All fields are nested under `entry`. Additionally, `tag_names` and `category_nam
   "first_published_at": null,
   "visibility": "public",
   "hidden": false,
+  "summary": null,
   "meta_description": null,
   "meta_image": null,
   "lang": "en",
@@ -196,7 +198,7 @@ Returns the full EntrySerializer response with `published: false`.
 
 | Status | Code | Action |
 |--------|------|--------|
-| 401 | `unauthorized` | Token invalid or expired. Save locally. Show: `Token expired. Run /til auth to reconnect.` |
+| 401 | `unauthorized` | Token invalid or expired. Save locally (for capture commands). Then follow the inline re-authentication flow defined in SKILL.md Error Handling — prompt to reconnect if token is from `~/.til/credentials`, or show env var guidance if from `$OPENTIL_TOKEN`. |
 | 403 | `insufficient_scope` | Token lacks required scope. Show which scope is needed. |
 | 404 | `not_found` | Entry does not exist or belongs to another user. |
 | 422 | `validation_failed` | Parse `details` array, auto-fix, and retry once. Save locally if retry fails. |
@@ -408,3 +410,56 @@ Content-Type: application/json
 | `slow_down` | Polling too fast | Increase interval by 5 seconds |
 | `expired_token` | Device code expired | Stop polling, show timeout message |
 | `invalid_grant` | Invalid device code | Stop polling, show error |
+
+## Credential Storage
+
+After a successful device flow, credentials are stored locally in `~/.til/credentials` as YAML.
+
+### File Format
+
+```yaml
+active: personal
+profiles:
+  personal:
+    token: til_abc...
+    nickname: hong
+    site_url: https://opentil.ai/@hong
+    host: https://opentil.ai
+  work:
+    token: til_xyz...
+    nickname: hong-corp
+    site_url: https://opentil.ai/@hong-corp
+    host: https://opentil.ai
+```
+
+### Field Reference
+
+| Field | Level | Description |
+|-------|-------|-------------|
+| `active` | top | Name of the currently active profile |
+| `profiles` | top | Map of profile name → profile object |
+| `token` | profile | Bearer token (starts with `til_`) |
+| `nickname` | profile | Username from `GET /site` response (`username` field) |
+| `site_url` | profile | Public site URL, e.g. `https://opentil.ai/@hong` |
+| `host` | profile | API host, e.g. `https://opentil.ai` |
+
+### Backward Compatibility
+
+Old format (`~/.til/credentials` containing only a plain text token):
+
+```
+til_abc123...
+```
+
+On first read, detect the old format (file content starts with `til_` and contains no YAML structure). Migrate automatically:
+
+1. Read the token string
+2. `GET /site` with the token to fetch `username`
+   - On success: use `username` as profile name, populate `nickname` and `site_url`
+   - On failure (401/network): use `default` as profile name, leave `nickname` and `site_url` empty
+3. Write back as YAML with the single profile set as `active`
+4. Preserve file permissions (`chmod 600`)
+
+### File Permissions
+
+Always set `~/.til/credentials` to `chmod 600` (owner read/write only) after any write operation. Create `~/.til/` directory with `chmod 700` if it doesn't exist.
