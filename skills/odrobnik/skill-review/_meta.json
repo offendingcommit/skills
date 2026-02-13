@@ -1,11 +1,17 @@
 {
   "owner": "odrobnik",
   "slug": "skill-review",
-  "displayName": "skill-review",
+  "displayName": "Skill Review",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1770839353694,
-    "commit": "https://github.com/openclaw/skills/commit/8e9a8401afeb954d93b31ce2befdb5549a100176"
+    "version": "0.2.3",
+    "publishedAt": 1770978486095,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1770839353694,
+      "commit": "https://github.com/openclaw/skills/commit/8e9a8401afeb954d93b31ce2befdb5549a100176"
+    }
+  ]
 }
