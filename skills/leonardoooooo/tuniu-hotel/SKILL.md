@@ -22,7 +22,7 @@ metadata: {"openclaw": {"emoji": "🏨", "category": "travel", "tags": ["途牛"
 - **TUNIU_MEMBER_KEY**：途牛开放平台会员 key，用于 `Authorization: Bearer` 请求头
 - **TUNIU_API_KEY**：途牛开放平台 API key，用于 `apiKey` 请求头
 
-用户需在途牛开放平台注册并获取上述密钥。
+用户需在[途牛开放平台](https://platform.tuniu.com)注册并获取上述密钥。
 
 ### 可选配置
 
