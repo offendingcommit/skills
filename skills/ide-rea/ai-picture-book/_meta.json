@@ -1,13 +1,18 @@
 {
   "owner": "ide-rea",
   "slug": "ai-picture-book",
-  "displayName": "Ai Picture Book",
+  "displayName": "AI picture book generate",
   "latest": {
-    "version": "1.0.8",
-    "publishedAt": 1770782037460,
-    "commit": "https://github.com/openclaw/skills/commit/8ac3c9b1d87fd35cf7cc1a03c0e0d55288e771c7"
+    "version": "1.1.0",
+    "publishedAt": 1770956044284,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.8",
+      "publishedAt": 1770782037460,
+      "commit": "https://github.com/openclaw/skills/commit/8ac3c9b1d87fd35cf7cc1a03c0e0d55288e771c7"
+    },
     {
       "version": "1.0.7",
       "publishedAt": 1770709828730,
