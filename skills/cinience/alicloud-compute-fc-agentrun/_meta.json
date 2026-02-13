@@ -3,9 +3,15 @@
   "slug": "alicloud-compute-fc-agentrun",
   "displayName": "Alicloud Compute Fc Agentrun",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770768507203,
-    "commit": "https://github.com/openclaw/skills/commit/d48c0a79d564e532a4fa170bc97b9ca84abef659"
+    "version": "1.0.2",
+    "publishedAt": 1770973210153,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770768507203,
+      "commit": "https://github.com/openclaw/skills/commit/d48c0a79d564e532a4fa170bc97b9ca84abef659"
+    }
+  ]
 }
