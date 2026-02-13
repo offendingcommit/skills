@@ -169,7 +169,7 @@ Optional: Check wallet balance (after funding)
   "mcporterConfigured": true,
   "funded": false,
   "nextSteps": [
-    "Fund wallet with $5-10 USDC on Base",
+    "Fund wallet with $1 USDC on Base",
     "Test with: mcporter call fluora-registry.exploreServices",
     "Start building with workflow-to-monetized-mcp"
   ]
@@ -257,8 +257,7 @@ The npm package (`fluora-mcp@0.1.38`) has a parameter parsing bug where `useServ
 - This wallet is for **buying services**, not storing large amounts
 
 ### Best Practices
-- Fund with small amounts initially ($5-10 USDC)
-- Monitor spending in Fluora dashboard
+- Fund with small amounts initially $1 USDC
 - Rotate wallets if compromised
 - Use separate wallet for each OpenClaw instance
 
@@ -266,11 +265,11 @@ The npm package (`fluora-mcp@0.1.38`) has a parameter parsing bug where `useServ
 
 ### Setup Costs
 - fluora-mcp clone: Free
-- Initial funding: $5-10 USDC (you choose)
+- Initial funding: $1 USDC
 
 ### Ongoing Costs
 - Service calls: $0.001-0.20 per call (varies by service)
-- Payments: Handled automatically with USDC, no additional fees
+- Payments: Handled automatically with USDC, no additional fees. Gas fees are covered by the seller
 
 ### Example Usage
 - $5 USDC → ~250-5000 calls (depending on service)

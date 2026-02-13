@@ -3,11 +3,16 @@
   "slug": "fluora-setup",
   "displayName": "Fluora Setup",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1770836912216,
-    "commit": "https://github.com/openclaw/skills/commit/f10082edf807d188fc7a939ba5aad24b986f7db2"
+    "version": "1.2.1",
+    "publishedAt": 1770935822212,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1770836912216,
+      "commit": "https://github.com/openclaw/skills/commit/f10082edf807d188fc7a939ba5aad24b986f7db2"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1770791103263,
