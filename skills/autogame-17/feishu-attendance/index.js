@@ -3,6 +3,7 @@ const { hideBin } = require('yargs/helpers');
 const { getAllUsers, getAttendance, sendMessage } = require('./lib/api');
 const fs = require('fs');
 const path = require('path');
+const { getCST } = require('../common/time-helper.js');
 
 // Allow overriding Admin ID via env var, fallback to Master's ID
 const ADMIN_ID = process.env.FEISHU_ADMIN_ID;
@@ -54,7 +55,7 @@ async function main() {
       alias: 'd',
       type: 'string',
       description: 'Date to check (YYYY-MM-DD)',
-      default: new Date().toISOString().split('T')[0]
+      default: getCST().toISOString().split('T')[0]
     })
     .option('notify', {
       alias: 'n',
@@ -79,7 +80,7 @@ async function main() {
   let dateStr = argv.date;
   
   // Smart date parsing: Handle "1.27", "01-27" -> "2026-01-27"
-  const currentYear = new Date().getFullYear();
+  const currentYear = getCST().getFullYear();
   const shortDateMatch = dateStr.match(/^(\d{1,2})[.-](\d{1,2})$/);
   if (shortDateMatch) {
       const month = shortDateMatch[1].padStart(2, '0');
