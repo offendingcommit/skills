@@ -3,11 +3,16 @@
   "slug": "diy-pc-ingest",
   "displayName": "Diy Pc Ingest",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1770994407434,
-    "commit": "https://github.com/openclaw/skills/commit/1d49d1871564b71aebc85e2a66d837a498a80518"
+    "version": "1.0.3",
+    "publishedAt": 1771029948908,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1770994407434,
+      "commit": "https://github.com/openclaw/skills/commit/1d49d1871564b71aebc85e2a66d837a498a80518"
+    },
     {
       "version": "0.1.0",
       "publishedAt": 1770905253006,

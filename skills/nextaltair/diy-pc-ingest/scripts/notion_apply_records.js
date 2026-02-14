@@ -100,8 +100,14 @@ async function loadConfig() {
   let p = process.env.DIY_PC_INGEST_CONFIG;
   if (!p) p = path.join(os.homedir(), '.config', 'diy-pc-ingest', 'config.json');
   if (!fs.existsSync(p)) {
-    // Auto-bootstrap: discover Notion IDs via /v1/search when config is missing.
-    // Requires NOTION_API_KEY and that target DBs are shared with the integration.
+    const allowBootstrap = String(process.env.DIY_PC_INGEST_BOOTSTRAP || '').trim() === '1';
+    if (!allowBootstrap) {
+      throw new Error(
+        `config not found: ${p}\n` +
+        `Create it manually from references/config.example.json, or run bootstrap explicitly:\n` +
+        `DIY_PC_INGEST_BOOTSTRAP=1 node skills/diy-pc-ingest/scripts/notion_apply_records.js < records.jsonl`
+      );
+    }
     const cfg = await bootstrapConfig(p);
     return cfg;
   }
@@ -135,6 +141,22 @@ function idsFromConfig(cfg) {
   return out;
 }
 
+function safeEnv(extra = {}) {
+  const env = {
+    PATH: process.env.PATH || '',
+    HOME: process.env.HOME || '',
+    LANG: process.env.LANG || 'C.UTF-8',
+    LC_ALL: process.env.LC_ALL || '',
+    LC_CTYPE: process.env.LC_CTYPE || '',
+    SYSTEMROOT: process.env.SYSTEMROOT || '',
+    WINDIR: process.env.WINDIR || '',
+  };
+  for (const k of ['NOTION_API_KEY', 'NOTION_TOKEN', 'NOTION_API_KEY_FILE']) {
+    if (process.env[k]) env[k] = process.env[k];
+  }
+  return { ...env, ...extra };
+}
+
 async function notionReq(cfg, method, apiPath, body) {
   const p = String(apiPath).startsWith('/v1/') ? String(apiPath) : `/v1${String(apiPath).startsWith('/') ? '' : '/'}${String(apiPath)}`;
   const args = [
@@ -146,8 +168,7 @@ async function notionReq(cfg, method, apiPath, body) {
   ];
   if (body !== undefined && body !== null) args.push('--body-json', JSON.stringify(body));
 
-  const env = { ...process.env };
-  env.NOTION_VERSION = notionVersion(cfg);
+  const env = safeEnv({ NOTION_VERSION: notionVersion(cfg) });
 
   const out = execFileSync('node', args, { encoding: 'utf-8', env }).trim();
   const obj = out ? JSON.parse(out) : {};
