@@ -1,71 +1,73 @@
 ---
 name: clawvault
-description: "Context resilience - recovery detection, auto-checkpoint, and session context injection"
+description: "Context death resilience — auto-checkpoint on /new, recovery detection on startup"
 metadata:
   openclaw:
     emoji: "🐘"
-    events: ["gateway:startup", "command:new", "session:start"]
+    events: ["gateway:startup", "command:new"]
     requires:
       bins: ["clawvault"]
 ---
 
 # ClawVault Hook
 
-Integrates ClawVault's context death resilience into OpenClaw:
+Integrates ClawVault's context death resilience into OpenClaw.
 
-- **On gateway startup**: Checks for context death, alerts agent
-- **On /new command**: Auto-checkpoints before session reset
-- **On session start**: Injects relevant vault context for the initial prompt
+## Active Events
+
+| Event | Action |
+|-------|--------|
+| `gateway:startup` | Checks for context death via `clawvault recover --clear`, injects alert if detected |
+| `command:new` | Auto-checkpoints before session reset via `clawvault checkpoint` |
+
+## Forward-Compatible Events
+
+The handler also includes a `session:start` handler that will activate when OpenClaw ships `session:start` event support (currently listed as a future event in OpenClaw docs). When active, it will:
+
+1. Extract the initial user prompt
+2. Run `clawvault context "<prompt>" --format json --profile auto`
+3. Inject up to 4 relevant context snippets + session recap into the session
 
 ## Installation
 
 ```bash
 npm install -g clawvault
-openclaw hooks install clawvault
 openclaw hooks enable clawvault
 ```
 
 ## Requirements
 
-- ClawVault CLI installed globally
-- Vault initialized (`clawvault setup` or `CLAWVAULT_PATH` set)
+- ClawVault CLI installed globally (`clawvault` on PATH)
+- Vault initialized (`clawvault init` or `CLAWVAULT_PATH` set)
 
 ## What It Does
 
 ### Gateway Startup
 
-1. Runs `clawvault recover --clear`
-2. If context death detected, injects warning into first agent turn
+1. Runs `clawvault recover --clear` against the discovered vault
+2. If context death detected → injects warning message into first agent turn
 3. Clears dirty death flag for clean session start
 
 ### Command: /new
 
-1. Creates automatic checkpoint with session info
-2. Captures state even if agent forgot to handoff
+1. Creates automatic checkpoint with session key and source info
+2. Captures state even if the agent forgot to run `clawvault sleep`
 3. Ensures continuity across session resets
-
-### Session Start
-
-1. Extracts the initial user prompt (`context.initialPrompt` or first user message)
-2. Runs `clawvault context "<prompt>" --format json --profile auto -v <vaultPath>`
-   - Delegates profile selection to the shared context intent policy (`incident`, `planning`, `handoff`, or `default`)
-3. Injects up to 4 relevant context bullets into session messages
-
-Injection format:
-
-```text
-[ClawVault] Relevant context for this task:
-- <title> (<age>): <snippet>
-- <title> (<age>): <snippet>
-```
 
 ### Event Compatibility
 
-The hook accepts canonical OpenClaw events (`gateway:startup`, `command:new`, `session:start`) and tolerates alias payload shapes (`event`, `eventName`, `name`, `hook`, `trigger`) to remain robust across runtime wrappers.
+The hook normalizes event names across separators (`.`, `:`, `/`) and checks alias payload shapes (`event`, `eventName`, `name`, `hook`, `trigger`) for robustness across OpenClaw versions.
 
-## No Configuration Needed
+## Vault Discovery
 
-Just enable the hook. It auto-detects vault path via:
-
+Auto-detects vault path via:
 1. `CLAWVAULT_PATH` environment variable
 2. Walking up from cwd to find `.clawvault.json`
+3. Checking `memory/` subdirectory at each level (OpenClaw convention)
+
+## Security
+
+- Uses `execFileSync` (no shell) to prevent command injection
+- All arguments passed as array, never interpolated
+- Input sanitization on session keys, prompts, and display strings
+- 15-second timeout on all CLI calls
