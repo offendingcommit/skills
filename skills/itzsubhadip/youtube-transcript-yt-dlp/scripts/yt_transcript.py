@@ -30,6 +30,7 @@ import tempfile
 import time
 import hashlib
 import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import Any, Literal
 
@@ -39,6 +40,10 @@ YOUTUBE_URL_RE = re.compile(
     r"^https?://(www\.)?(youtube\.com|youtu\.be|m\.youtube\.com)/.+",
     re.IGNORECASE,
 )
+
+# Extract video id from common URL shapes (best-effort; still validate with YOUTUBE_ID_RE).
+_YT_WATCH_ID_RE = re.compile(r"[?&]v=([a-zA-Z0-9_-]{11})")
+_YT_SHORT_ID_RE = re.compile(r"youtu\.be/([a-zA-Z0-9_-]{11})")
 
 
 class TranscriptError(RuntimeError):
@@ -83,6 +88,21 @@ def _normalize_input(s: str) -> str:
     if YOUTUBE_URL_RE.match(s):
         return s
     raise TranscriptError("Input must be a YouTube URL or 11-character video id")
+
+
+def _extract_video_id(video: str) -> str | None:
+    """Best-effort extraction of 11-char YouTube id from a URL or id."""
+
+    v = video.strip()
+    if YOUTUBE_ID_RE.match(v):
+        return v
+    m = _YT_WATCH_ID_RE.search(v)
+    if m:
+        return m.group(1)
+    m = _YT_SHORT_ID_RE.search(v)
+    if m:
+        return m.group(1)
+    return None
 
 
 def _yt_dlp_info(video: str, cookies: Path | None) -> dict[str, Any]:
@@ -412,6 +432,244 @@ def _extract_json_object_after(text: str, needle: str) -> dict[str, Any] | None:
     return None
 
 
+def _thirdparty_tubetranscript(video_id: str) -> tuple[str, str, list[dict[str, Any]]]:
+    """Last-resort fallback via a third-party transcript provider.
+
+    tubetranscript.com fetches transcripts from an API at:
+      https://yt-to-text.com/api/v1/Subtitles
+
+    We call that API directly (no YouTube cookies) as a last resort.
+
+    This is *not* YouTube and may break / rate-limit / change at any time.
+    Returns (lang, source, segments).
+
+    NOTE: Despite the function name, this returns source="thirdparty:yt-to-text".
+    """
+
+    api = "https://yt-to-text.com/api/v1/Subtitles"
+    body = json.dumps({"video_id": video_id}).encode("utf-8")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "x-source": "tubetranscript",
+        "x-app-version": "1.0",
+    }
+
+    req = urllib.request.Request(api, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8", errors="ignore")
+    except urllib.error.HTTPError as e:
+        msg = e.read().decode("utf-8", errors="ignore")
+        raise TranscriptError(f"Third-party fallback (yt-to-text) HTTP {e.code}: {msg[:200]}")
+    except urllib.error.URLError as e:
+        raise TranscriptError(f"Third-party fallback (yt-to-text) failed: {e}")
+
+    try:
+        obj = json.loads(raw)
+    except Exception as e:
+        raise TranscriptError(f"Third-party fallback (yt-to-text) bad JSON: {e}")
+
+    transcripts = (((obj.get("data") or {}).get("transcripts")) if isinstance(obj, dict) else None)
+    if not transcripts or not isinstance(transcripts, list):
+        raise TranscriptError("Third-party fallback (yt-to-text) returned no transcript")
+
+    segs: list[dict[str, Any]] = []
+    for it in transcripts:
+        if not isinstance(it, dict):
+            continue
+        start = it.get("start")
+        text = it.get("text")
+        if start is None and it.get("s") is not None:
+            start = it.get("s")
+        if text is None and it.get("t") is not None:
+            text = it.get("t")
+        try:
+            start_f = float(start) if start is not None else 0.0
+        except Exception:
+            start_f = 0.0
+        text_s = re.sub(r"\s+", " ", str(text or "")).strip()
+        if not text_s:
+            continue
+        segs.append({"start": start_f, "duration": 0.0, "text": text_s})
+
+    if not segs:
+        raise TranscriptError("Third-party fallback (yt-to-text) returned empty transcript")
+
+    # De-dup consecutive duplicates
+    deduped = []
+    prev = None
+    for s in segs:
+        if s["text"] == prev:
+            continue
+        deduped.append(s)
+        prev = s["text"]
+
+    return "en", "thirdparty:yt-to-text", deduped
+
+
+def _thirdparty_downsub(video_id: str) -> tuple[str, str, list[dict[str, Any]]]:
+    """Third-party fallback using DownSub backends.
+
+    Flow:
+      1) Encrypt video id to an ENC_ID blob (same as DownSub client)
+      2) GET https://get-info.downsub.com/<ENC_ID> to get subtitle tracks + urlSubtitle
+      3) Pick a track and GET <urlSubtitle>/?title=...&url=<ENC_TRACK>
+
+    Returns (lang, source, segments).
+    """
+
+    # Minimal AES-JSON format compatible with DownSub's CryptoJS formatter.
+    # DownSub uses AES encrypt(JSON.stringify(value), key, {format: Mt}).toString(),
+    # where Mt outputs {ct, iv, s} JSON and then base64-url encodes it.
+    # We re-implement using CryptoJS-compatible AES via PyCryptodome would be heavy,
+    # so instead we call their backend indirectly by using an already-generated ENC_ID.
+    # Practically: we can generate ENC_ID by mimicking CryptoJS with openssl? Not reliable.
+    #
+    # Better approach: use the same scheme as their site: AES -> JSON -> base64url.
+    # Implemented below using `Crypto.Cipher.AES` from PyCryptodome if available.
+
+    try:
+        from Crypto.Cipher import AES  # type: ignore
+        from Crypto.Protocol.KDF import EVP_BytesToKey  # type: ignore
+        from Crypto.Random import get_random_bytes  # type: ignore
+    except Exception as e:
+        raise TranscriptError(
+            "DownSub fallback requires pycryptodome (Crypto). Install: pip install pycryptodome"
+        )
+
+    def _b64e(b: bytes) -> str:
+        return base64.b64encode(b).decode("ascii")
+
+    def _b64url(s: str) -> str:
+        # their Pt: btoa -> base64url-like with -_ and strip '='
+        return s.replace("+", "-").replace("/", "_").replace("=", "").strip()
+
+    def _pad_pkcs7(data: bytes, bs: int = 16) -> bytes:
+        pad = bs - (len(data) % bs)
+        return data + bytes([pad]) * pad
+
+    def _cryptojs_encrypt_json(value: str, key: str) -> str:
+        # CryptoJS AES encrypt with passphrase uses OpenSSL EVP_BytesToKey with random salt.
+        salt = get_random_bytes(8)
+        k, iv = EVP_BytesToKey(key.encode("utf-8"), salt, 32, 16)
+        cipher = AES.new(k, AES.MODE_CBC, iv)
+        ct = cipher.encrypt(_pad_pkcs7(value.encode("utf-8")))
+        obj = {"ct": _b64e(ct), "iv": iv.hex(), "s": salt.hex()}
+        raw = json.dumps(obj, separators=(",", ":"))
+        return _b64url(_b64e(raw.encode("utf-8")))
+
+    # Key is embedded in DownSub JS.
+    downsub_key = "zthxw34cdp6wfyxmpad38v52t3hsz6c5"
+
+    enc_id = _cryptojs_encrypt_json(json.dumps(video_id), downsub_key)
+
+    info_url = f"https://get-info.downsub.com/{enc_id}"
+    info_raw = _http_get(info_url, cookies=None, timeout_s=30)
+    try:
+        info = json.loads(info_raw)
+    except Exception:
+        raise TranscriptError("DownSub fallback: get-info returned non-JSON")
+
+    url_sub = info.get("urlSubtitle")
+    subs = info.get("subtitles") or []
+    if not url_sub or not isinstance(url_sub, str) or not subs:
+        raise TranscriptError("DownSub fallback: no subtitles returned")
+
+    # Pick first available track (usually auto-generated English); better selection later.
+    track = subs[0]
+    enc_track = track.get("url") if isinstance(track, dict) else None
+    if not enc_track or not isinstance(enc_track, str):
+        raise TranscriptError("DownSub fallback: subtitle track missing url")
+
+    # Download SRT (default)
+    title = info.get("title") or video_id
+    q = urllib.parse.urlencode({"title": str(title)[:80], "url": enc_track})
+    srt = _http_get(url_sub + "?" + q, cookies=None, timeout_s=30)
+
+    # Parse SRT into segments
+    segs: list[dict[str, Any]] = []
+    cur_start = None
+    cur_text = []
+    for line in srt.splitlines():
+        line = line.strip("\ufeff").rstrip()
+        if re.match(r"^\d+$", line):
+            continue
+        m = re.match(r"^(\d{2}):(\d{2}):(\d{2}),(\d{3})\s+-->\s+(\d{2}):(\d{2}):(\d{2}),(\d{3})", line)
+        if m:
+            # flush
+            if cur_start is not None and cur_text:
+                segs.append({"start": cur_start, "duration": 0.0, "text": " ".join(cur_text).strip()})
+            hh, mm, ss, ms = map(int, m.group(1, 2, 3, 4))
+            cur_start = hh * 3600 + mm * 60 + ss + ms / 1000.0
+            cur_text = []
+            continue
+        if not line:
+            if cur_start is not None and cur_text:
+                segs.append({"start": cur_start, "duration": 0.0, "text": " ".join(cur_text).strip()})
+            cur_start = None
+            cur_text = []
+            continue
+        cur_text.append(line)
+
+    if cur_start is not None and cur_text:
+        segs.append({"start": cur_start, "duration": 0.0, "text": " ".join(cur_text).strip()})
+
+    if not segs:
+        raise TranscriptError("DownSub fallback: empty transcript")
+
+    # best-effort language
+    lang = (track.get("code") if isinstance(track, dict) else None) or "en"
+    return str(lang), "thirdparty:downsub", segs
+
+
+def _thirdparty_noteey(video_id: str) -> tuple[str, str, list[dict[str, Any]]]:
+    """Third-party fallback using Noteey subtitles API.
+
+    Endpoint:
+      GET https://api.noteey.com/api/v1/youtube/subtitles?url=<youtube-url>&language=<lang>
+
+    Returns (lang, source, segments).
+    """
+
+    # Noteey expects full URL
+    yt_url = f"https://youtu.be/{video_id}"
+    api = "https://api.noteey.com/api/v1/youtube/subtitles"
+    qs = urllib.parse.urlencode({"url": yt_url, "language": "en-US"})
+    raw = _http_get(api + "?" + qs, cookies=None, timeout_s=30)
+
+    try:
+        items = json.loads(raw)
+    except Exception:
+        raise TranscriptError("Noteey fallback: non-JSON response")
+
+    if not isinstance(items, list) or not items:
+        raise TranscriptError("Noteey fallback: empty response")
+
+    segs: list[dict[str, Any]] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        try:
+            start = float(it.get("from", 0.0))
+        except Exception:
+            start = 0.0
+        try:
+            dur = float(it.get("dur", 0.0))
+        except Exception:
+            dur = 0.0
+        text = re.sub(r"\s+", " ", str(it.get("content") or "")).strip()
+        if not text:
+            continue
+        segs.append({"start": start, "duration": dur, "text": text})
+
+    if not segs:
+        raise TranscriptError("Noteey fallback: no usable segments")
+
+    return "en", "thirdparty:noteey", segs
+
+
 def _youtubei_transcript(video_id: str, cookies: Path | None) -> tuple[str, str, list[dict[str, Any]]]:
     """Fallback transcript extraction using YouTube's engagement panel transcript endpoint.
 
@@ -510,8 +768,15 @@ def _youtubei_transcript(video_id: str, cookies: Path | None) -> tuple[str, str,
             headers.setdefault("X-Goog-AuthUser", "0")
 
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        raw = resp.read().decode("utf-8", errors="ignore")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8", errors="ignore")
+    except urllib.error.HTTPError as e:
+        # youtubei errors are common under bot checks / gating
+        msg = e.read().decode("utf-8", errors="ignore")
+        raise TranscriptError(f"youtubei get_transcript HTTP {e.code}: {msg[:200]}")
+    except urllib.error.URLError as e:
+        raise TranscriptError(f"youtubei get_transcript failed: {e}")
 
     try:
         obj = json.loads(raw)
@@ -647,6 +912,31 @@ def _cache_put(
     con.commit()
 
 
+def _is_within(child: Path, parent: Path) -> bool:
+    try:
+        child_r = child.resolve()
+        parent_r = parent.resolve()
+    except Exception:
+        return False
+    return parent_r == child_r or parent_r in child_r.parents
+
+
+def _validate_path_allowed(*, path: Path, allowed_dirs: list[Path], must_exist: bool, kind: str) -> Path:
+    p = path.expanduser()
+
+    if must_exist and not p.exists():
+        raise TranscriptError(f"{kind} file not found: {p}")
+
+    # If p doesn't exist yet (e.g., cache DB), validate against its parent dir.
+    check_target = p if p.exists() else p.parent
+    ok = any(_is_within(check_target, d.expanduser()) for d in allowed_dirs)
+    if not ok:
+        allowed = ", ".join(str(d.expanduser()) for d in allowed_dirs)
+        raise TranscriptError(f"{kind} path not allowed: {p} (allowed under: {allowed})")
+
+    return p
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Extract YouTube captions (manual preferred; else auto) via yt-dlp")
     ap.add_argument("video", help="YouTube URL or 11-char video id")
@@ -666,22 +956,40 @@ def main() -> int:
     fmt = "text" if args.text else "json"
 
     base_dir = Path(__file__).resolve().parents[1]
+
+    # Path allowlisting (defense-in-depth; prevents skill misuse even if caller is sloppy).
+    allowed_cache_dirs = [base_dir / "cache", Path("~/.config/yt-transcript")]  # cache DB
+    allowed_cookie_dirs = [Path("~/.config/yt-transcript")]  # cookies must live here
+
     db_path = Path(args.cache) if args.cache else (base_dir / "cache" / "transcripts.sqlite")
+    db_path = _validate_path_allowed(path=db_path, allowed_dirs=allowed_cache_dirs, must_exist=False, kind="Cache")
 
     cookies_env = os.environ.get("YT_TRANSCRIPT_COOKIES")
     cookies_path = Path(args.cookies) if args.cookies else (Path(cookies_env) if cookies_env else None)
-    if cookies_path is None:
-        # default colocated cookie path (optional)
-        default_cookies = base_dir / "cache" / "youtube-cookies.txt"
-        if default_cookies.exists():
-            cookies_path = default_cookies
-    if cookies_path is not None and not cookies_path.exists():
-        raise TranscriptError(f"Cookies file not found: {cookies_path}")
+
+    # Public/publishable behavior: do NOT auto-load cookies from inside the skill directory.
+    # Cookies must be explicitly provided via --cookies or YT_TRANSCRIPT_COOKIES.
+    if cookies_path is not None:
+        cookies_path = _validate_path_allowed(
+            path=cookies_path,
+            allowed_dirs=allowed_cookie_dirs,
+            must_exist=True,
+            kind="Cookies",
+        )
 
     con = _db_connect(db_path)
 
-    info = _yt_dlp_info(video, cookies_path)
-    video_id = info.get("id")
+    # Try yt-dlp info first; if yt-dlp is blocked, fall back to URL/id parsing.
+    info = None
+    try:
+        info = _yt_dlp_info(video, cookies_path)
+        video_id = info.get("id")
+    except TranscriptError:
+        video_id = None
+
+    if not video_id or not isinstance(video_id, str):
+        video_id = _extract_video_id(video)
+
     if not video_id or not isinstance(video_id, str):
         raise TranscriptError("Could not resolve video id")
 
@@ -689,6 +997,8 @@ def main() -> int:
     # Fallback path: YouTube engagement panel transcript endpoint (youtubei/v1/get_transcript).
 
     try:
+        if info is None:
+            raise TranscriptError("yt-dlp metadata unavailable")
         choice = _choose_caption(info, args.lang)
         source = "manual" if choice.kind == "subtitles" else "auto"
         lang_for_cache = choice.lang
@@ -720,13 +1030,11 @@ def main() -> int:
             segs = deduped
 
     except TranscriptError as e:
-        # Only fallback when captions are unavailable (not for arbitrary errors).
-        msg = str(e)
-        if "No captions/subtitles available" not in msg:
-            raise
+        # Fallback order:
+        # 1) YouTube transcript panel (youtubei/v1/get_transcript)
+        # (No third-party fallbacks in the public/publishable version.)
 
-        # Fallback to transcript panel (often works when VTT tracks aren't exposed).
-        # Cache key for panel transcripts is best-effort (lang inferred).
+        # (1) Fallback to transcript panel (often works when VTT tracks aren't exposed).
         cached = _cache_get(con, video_id, "en", "panel", include_ts, fmt)
         if cached is not None:
             try:
@@ -735,7 +1043,11 @@ def main() -> int:
                 return 0
             return 0
 
-        lang_for_cache, source, segs = _youtubei_transcript(video_id, cookies_path)
+        try:
+            lang_for_cache, source, segs = _youtubei_transcript(video_id, cookies_path)
+        except TranscriptError:
+            # No third-party fallbacks in this build.
+            raise
 
     if fmt == "json":
         payload = json.dumps(

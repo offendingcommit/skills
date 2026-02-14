@@ -19,7 +19,20 @@ This skill extracts transcripts from **existing** YouTube captions.
 
 **Reliability behavior**
 - If YouTube blocks anonymous access (bot-check), provide **cookies.txt**.
-- If `yt-dlp` reports no captions for a video, the script includes a fallback that can use YouTube’s **transcript panel** (the same underlying source the UI “Show transcript” panel uses) when accessible.
+- If `yt-dlp` reports no captions for a video, the script tries a fallback:
+  1) YouTube’s **transcript panel** (youtubei `get_transcript`) when accessible
+
+This published version intentionally **does not** call third-party transcript providers.
+
+**Privacy note:** This published version only contacts YouTube directly (via `yt-dlp` and the transcript panel fallback). It does **not** send video IDs/URLs to third-party transcript providers.
+
+**Cookies:** Cookies are treated as secrets.
+- The script supports `--cookies` / `YT_TRANSCRIPT_COOKIES`, but does **not** auto-load cookies from inside the skill directory.
+- Store cookies under `~/.config/yt-transcript/`.
+
+**Path safety:** This skill restricts `--cookies` and `--cache` paths to approved directories.
+- cookies allowed under: `~/.config/yt-transcript/`
+- cache allowed under: `{baseDir}/cache/` and `~/.config/yt-transcript/`
 
 ## How to run
 
@@ -35,9 +48,8 @@ Typical usage:
 Cookies (optional, but often required on VPS IPs):
 - `python3 {baseDir}/scripts/yt_transcript.py <url> --cookies /path/to/youtube-cookies.txt`
 - or set env var: `YT_TRANSCRIPT_COOKIES=/path/to/youtube-cookies.txt`
-- if `{baseDir}/cache/youtube-cookies.txt` exists, the script will use it automatically.
 
-**Publishing safety note:** cookies are *optional* and therefore intentionally **not** listed under `metadata.openclaw.requires.env`. The skill remains usable without cookies.
+**Publishing safety note:** Cookies are optional, so `YT_TRANSCRIPT_COOKIES` is intentionally **not required** by skill metadata. Only set it if you need authenticated access.
 
 **Best practice:** store cookies **outside** the skill folder (so you never accidentally publish them), e.g. `~/.config/yt-transcript/youtube-cookies.txt`, and point to it via `--cookies` or `YT_TRANSCRIPT_COOKIES`.
 
