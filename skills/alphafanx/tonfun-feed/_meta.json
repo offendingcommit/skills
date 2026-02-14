@@ -1,0 +1,11 @@
+{
+  "owner": "alphafanx",
+  "slug": "tonfun-feed",
+  "displayName": "TON.fun Feed Relay",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771078390341,
+    "commit": null
+  },
+  "history": []
+}
