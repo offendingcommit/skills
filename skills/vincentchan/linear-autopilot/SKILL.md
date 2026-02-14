@@ -1,9 +1,13 @@
 ---
 name: linear-autopilot
+version: 1.0.2
 description: Automate Linear task processing with Discord notifications and git sync. Use when setting up a kanban-to-agent workflow where Linear tasks trigger Clawdbot actions via Discord. Handles task intake, status updates, DM notifications, and auto-push to git. Supports any task type - research, content creation, code tasks, or custom workflows.
+author: vincentchan
 ---
 
 # Linear Autopilot
+
+> **🔒 Security Note:** This skill mentions API keys, tokens, and webhook URLs because it teaches you how to set up integrations with Linear, Discord, and automation services (Make.com, Pipedream, Zapier). These are necessary for the tutorial — the skill does NOT collect or transmit your credentials. All setup happens on your local machine and the services you configure.
 
 Automated pipeline: **Linear → Webhook Service → Discord → Clawdbot → Git**
 

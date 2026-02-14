@@ -3,11 +3,16 @@
   "slug": "linear-autopilot",
   "displayName": "Linear Autopilot",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1769582642262,
-    "commit": "https://github.com/clawdbot/skills/commit/ee56cba72f9db959f2f89969416f5040c28b1d85"
+    "version": "1.0.2",
+    "publishedAt": 1771054387721,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1769582642262,
+      "commit": "https://github.com/clawdbot/skills/commit/ee56cba72f9db959f2f89969416f5040c28b1d85"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1769555935085,
