@@ -1,13 +1,18 @@
 {
   "owner": "scottcjn",
   "slug": "clawskill",
-  "displayName": "Clawskill Clawhub",
+  "displayName": "ClawSkill",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1770595633061,
-    "commit": "https://github.com/openclaw/skills/commit/063b1f86d6574272e150f39aa0744326d95d36a0"
+    "version": "1.2.1",
+    "publishedAt": 1771092002078,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1770595633061,
+      "commit": "https://github.com/openclaw/skills/commit/063b1f86d6574272e150f39aa0744326d95d36a0"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770580137338,
