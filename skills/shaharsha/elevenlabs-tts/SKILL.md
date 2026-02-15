@@ -1,13 +1,19 @@
 ---
 name: elevenlabs-tts
-description: ElevenLabs TTS (Text-to-Speech) with emotional audio tags for expressive voice synthesis. WhatsApp-compatible voice messages with Opus conversion. Supports 70+ languages, Hebrew with selective nikud, multi-speaker dialogue, and singing. Includes audio converter utility.
-tags: [elevenlabs, tts, voice, text-to-speech, audio, speech, whatsapp, multilingual, ai-voice, hebrew, nikud, singing]
-allowed-tools: [tts, message, exec]
+description: ElevenLabs TTS - the best ElevenLabs integration for OpenClaw. ElevenLabs Text-to-Speech with emotional audio tags, ElevenLabs voice synthesis for WhatsApp, ElevenLabs multilingual support. Generate realistic AI voices using ElevenLabs API.
+tags: [elevenlabs, tts, voice, text-to-speech, audio, speech, whatsapp, multilingual, ai-voice]
+metadata: {"clawdbot":{"emoji":"🎙️","requires":{"env":["ELEVENLABS_API_KEY"],"system":["ffmpeg"]},"primaryEnv":"ELEVENLABS_API_KEY"}}
+allowed-tools: [exec, tts, message]
 ---
 
 # ElevenLabs TTS (Text-to-Speech)
 
 Generate expressive voice messages using ElevenLabs v3 with audio tags.
+
+## Prerequisites
+
+- **ElevenLabs API Key** (`ELEVENLABS_API_KEY`): Required. Get one at [elevenlabs.io](https://elevenlabs.io) → Profile → API Keys. Configure in `openclaw.json` under `messages.tts.elevenlabs.apiKey`.
+- **ffmpeg**: Required for audio format conversion (MP3 → Opus for WhatsApp compatibility). Must be installed and available on PATH.
 
 ## Quick Start Examples
 
@@ -26,9 +32,9 @@ Generate expressive voice messages using ElevenLabs v3 with audio tags.
 [curious] So what happened at the meeting? [pause] [surprised] Wait, they fired him?! [gasps] [sad] That's terrible... [sighs] He had a family. [thoughtful] I wonder what he'll do now.
 ```
 
-**Hebrew (romantic moment - selective nikud only where needed):**
+**Hebrew (romantic moment):**
 ```
-[soft] היא עמדה שם, מול השקיעה... [pause] הלב שלי פעם כל כך חזק. [nervous] לא ידעתי מה להגיד. [hesitates] אני... [breathes] [tender] אַתְּ יודעת שאני אוהב אותָךְ, נכון?
+[soft] היא עמדה שם, מול השקיעה... [pause] הלב שלי פעם כל כך חזק. [nervous] לא ידעתי מה להגיד. [hesitates] אני... [breathes] [tender] את יודעת שאני אוהב אותך, נכון?
 ```
 
 **Spanish (celebration to reflection):**
@@ -47,7 +53,7 @@ In `openclaw.json`, configure TTS under `messages.tts`:
       "provider": "elevenlabs",
       "elevenlabs": {
         "apiKey": "sk_your_api_key_here",
-        "voiceId": "YOUR_VOICE_ID",
+        "voiceId": "pNInz6obpgDQGcFmaJgB",
         "modelId": "eleven_v3",
         "languageCode": "en",
         "voiceSettings": {
@@ -98,54 +104,19 @@ These premade voices are optimized for v3 and work well with audio tags:
 
 ### Stability Modes
 
-v3 only accepts three values: 0.0, 0.5, 1.0
+| Mode | Stability | Description |
+|------|-----------|-------------|
+| **Creative** | 0.3-0.5 | More emotional/expressive, may hallucinate |
+| **Natural** | 0.5-0.7 | Balanced, closest to original voice |
+| **Robust** | 0.7-1.0 | Highly stable, less responsive to tags |
 
-| Mode | Value | Description |
-|------|-------|-------------|
-| **Creative** | 0.0 | Most emotional/expressive, best for singing, may hallucinate |
-| **Natural** | 0.5 | Balanced, closest to original voice |
-| **Robust** | 1.0 | Highly stable, less responsive to tags |
-
-For audio tags, use **Creative** (0.0) or **Natural** (0.5). Robust reduces tag responsiveness.
+For audio tags, use **Creative** (0.5) or **Natural**. Higher stability reduces tag responsiveness.
 
 ### Speed Control
 
 Range: 0.7 (slow) to 1.2 (fast), default 1.0
 
 Extreme values affect quality. For pacing, prefer audio tags like `[rushed]` or `[drawn out]`.
-
-## Hebrew Nikud (Vowel Points)
-
-Use nikud **selectively** - only on words where pronunciation is ambiguous. Full nikud on every word can degrade quality.
-
-**The rule: only add nikud where the model might guess wrong.**
-
-Common cases where nikud helps:
-1. **Gender suffixes** - שלומֵךְ (f) vs שלומְךָ (m), לָךְ (f) vs לְךָ (m), אותָךְ (f) vs אותְךָ (m)
-2. **Dagesh (hard/soft consonants)** - letters בכפ change sound with dagesh:
-   - פּ = P, פ = F: פִּיצה (pizza), פִּייר (Pierre)
-   - בּ = B, ב = V: בְּרָכָה (brakha), בְּדִיוּק (bediyuk)
-   - כּ = K, כ = Kh: כּוֹס (kos), כַּמָּה (kama)
-3. **Homographs** - same spelling, different meaning/pronunciation:
-   - בּוֹקֶר (morning) vs בּוֹקֵר (cowboy)
-   - עוֹלָם (world) vs עוֹלֵם (concealing)
-   - סֵפֶר (book) vs סָפַר (counted)
-4. **Foreign names and loanwords** - the model often guesses wrong
-5. **Stress placement** - when it changes meaning or sounds unnatural
-
-**When NOT to add nikud:**
-- Common words with only one pronunciation (מה, יש, הרבה, שלום, אני, הוא, etc.)
-- Context makes pronunciation obvious
-- Most of the sentence - keep it clean
-
-**Example:**
-```
-❌ Full nikud: מַה שְׁלוֹמְךָ? יֵשׁ לְךָ הַרְבֵּה כֶּסֶף.
-✅ Selective: מה שלומְךָ? יש לְךָ הרבה כסף.
-✅ Dagesh: ז'אן-פִּייר אפה פִּיצה מושלמת.
-```
-
-**Principle:** If you read the word and there's only one way to say it - skip the nikud. If there's ambiguity - add it.
 
 ## Critical Rules
 
@@ -219,12 +190,17 @@ tts text="[excited] This is amazing! [pause]" channel=whatsapp
 ```
 Returns: `MEDIA:/tmp/tts-xxx/voice-123.mp3`
 
-**2. Convert MP3 → Opus using the included converter:**
-```
-python3 lib/audio_convert.py convert /tmp/tts-xxx/voice-123.mp3 /tmp/tts-xxx/voice-123.ogg
+**2. Convert MP3 → Opus:**
+```bash
+ffmpeg -i /tmp/tts-xxx/voice-123.mp3 -c:a libopus -b:a 64k -vbr on -application voip /tmp/tts-xxx/voice-123.ogg
 ```
 
 **3. Send the Opus file:**
+
+> **Note:** The `message` field below contains a Unicode Left-to-Right Mark (U+200E) between the quotes.
+> This is intentional — WhatsApp requires a non-empty message body to send voice notes.
+> The LTR mark is invisible but satisfies this requirement without displaying any text.
+
 ```
 message action=send channel=whatsapp target="+972..." filePath="/tmp/tts-xxx/voice-123.ogg" asVoice=true message="‎"
 ```
@@ -253,14 +229,15 @@ For content >800 chars:
 
 1. Split into short segments (<800 chars each)
 2. Generate each with `tts` tool
-3. Concatenate using the included converter:
+3. Concatenate with ffmpeg:
+   ```bash
+   cat > list.txt << EOF
+   file '/path/file1.mp3'
+   file '/path/file2.mp3'
+   EOF
+   ffmpeg -f concat -safe 0 -i list.txt -c copy final.mp3
    ```
-   python3 lib/audio_convert.py concat /tmp/final.mp3 /tmp/part1.mp3 /tmp/part2.mp3
-   ```
-4. Convert to Opus for WhatsApp:
-   ```
-   python3 lib/audio_convert.py convert /tmp/final.mp3 /tmp/final.ogg
-   ```
+4. Convert to Opus for WhatsApp
 5. Send as single voice message
 
 **Important**: Don't mention "part 2" or "chapter" - keep it seamless.
@@ -317,5 +294,5 @@ Jessica: [panicking] We need to hide!
 
 **No emotion despite tags?**
 - Voice may not match tag style
-- Try Creative stability mode (0.0)
+- Try Creative stability mode (0.5)
 - Add more context around the tag
