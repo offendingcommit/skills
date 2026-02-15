@@ -1,10 +1,51 @@
 ---
 name: content-gap-analysis
-description: Identifies content opportunities by finding topics and keywords your competitors cover that you don't. Reveals untapped content potential and strategic gaps in your content strategy.
-geo-relevance: "medium"
+description: 'Use when the user asks to "find content gaps", "what am I missing", "topics to cover", "content opportunities", "what do competitors write about that I do not", "what topics am I missing", "topics my competitors cover that I lack", or "where are my content blind spots". Identifies content opportunities by finding topics and keywords your competitors cover that you do not. Reveals untapped content potential and strategic gaps in your content strategy. For broader competitive intelligence, see competitor-analysis. For general keyword discovery, see keyword-research.'
+license: Apache-2.0
+metadata:
+  author: aaron-he-zhu
+  version: "2.0.0"
+  geo-relevance: "medium"
+  tags:
+    - seo
+    - geo
+    - content gaps
+    - content opportunities
+    - topic analysis
+    - content strategy
+    - competitive content
+  triggers:
+    - "find content gaps"
+    - "what am I missing"
+    - "topics to cover"
+    - "content opportunities"
+    - "what do competitors write about"
+    - "untapped topics"
+    - "content strategy gaps"
+    - "what topics am I missing"
+    - "they cover this but I don't"
+    - "where are my content blind spots"
 ---
 
 # Content Gap Analysis
+
+
+> **[SEO & GEO Skills Library](https://skills.sh/aaron-he-zhu/seo-geo-claude-skills)** · 20 skills for SEO + GEO · Install all: `npx skills add aaron-he-zhu/seo-geo-claude-skills`
+
+<details>
+<summary>Browse all 20 skills</summary>
+
+**Research** · [keyword-research](../keyword-research/) · [competitor-analysis](../competitor-analysis/) · [serp-analysis](../serp-analysis/) · **content-gap-analysis**
+
+**Build** · [seo-content-writer](../../build/seo-content-writer/) · [geo-content-optimizer](../../build/geo-content-optimizer/) · [meta-tags-optimizer](../../build/meta-tags-optimizer/) · [schema-markup-generator](../../build/schema-markup-generator/)
+
+**Optimize** · [on-page-seo-auditor](../../optimize/on-page-seo-auditor/) · [technical-seo-checker](../../optimize/technical-seo-checker/) · [internal-linking-optimizer](../../optimize/internal-linking-optimizer/) · [content-refresher](../../optimize/content-refresher/)
+
+**Monitor** · [rank-tracker](../../monitor/rank-tracker/) · [backlink-analyzer](../../monitor/backlink-analyzer/) · [performance-reporter](../../monitor/performance-reporter/) · [alert-manager](../../monitor/alert-manager/)
+
+**Cross-cutting** · [content-quality-auditor](../../cross-cutting/content-quality-auditor/) · [domain-authority-auditor](../../cross-cutting/domain-authority-auditor/) · [entity-optimizer](../../cross-cutting/entity-optimizer/) · [memory-management](../../cross-cutting/memory-management/)
+
+</details>
 
 This skill identifies content opportunities by analyzing gaps between your content and competitors'. Find topics you're missing, keywords you could target, and content formats you should create.
 
