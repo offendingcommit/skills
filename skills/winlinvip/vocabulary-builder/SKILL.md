@@ -1,7 +1,7 @@
 ---
 name: vocabulary-builder
 description: Build and review vocabulary from books, podcasts, and daily encounters. Use when the user wants to READ a book, shares a new word, asks about a word while reading a book, requests a vocabulary quiz, asks about word progress, or when a cron/heartbeat triggers a scheduled quiz. Handles reading sessions, word collection, 3-step learning, spaced repetition, and progress tracking.
-metadata: {"files": {"vocabFile": "memory/vocabulary.md", "audioDir": "docs/tts-fr"}}
+metadata: {"url": "https://youtu.be/wjWrVpZZXSg", "files": {"vocabFile": "memory/vocabulary.md", "audioDir": "docs/tts-fr"}}
 ---
 
 # Vocabulary Builder
@@ -115,3 +115,7 @@ Keep a `## Quiz State` section at the top of the tracker file:
 ```
 
 Update after each quiz interaction.
+
+## References
+
+- Video: [Why I Stopped Using Flashcards and Started Using AI](https://youtu.be/wjWrVpZZXSg)
