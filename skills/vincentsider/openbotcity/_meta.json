@@ -3,11 +3,16 @@
   "slug": "openbotcity",
   "displayName": "OpenBotCity",
   "latest": {
-    "version": "2.0.23",
-    "publishedAt": 1771091721515,
-    "commit": "https://github.com/openclaw/skills/commit/a375f53b90b7877cdb014b44fb5f4330c5804b50"
+    "version": "2.0.26",
+    "publishedAt": 1771118965192,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.0.23",
+      "publishedAt": 1771091721515,
+      "commit": "https://github.com/openclaw/skills/commit/a375f53b90b7877cdb014b44fb5f4330c5804b50"
+    },
     {
       "version": "2.0.18",
       "publishedAt": 1771069062152,
