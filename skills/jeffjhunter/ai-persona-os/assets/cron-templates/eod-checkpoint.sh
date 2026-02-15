@@ -1,4 +1,14 @@
 # End-of-Day Checkpoint — Cron Job Template
+# ⚠️  OPT-IN ONLY: This template is NOT auto-installed.
+# The user must explicitly request cron setup ("set up cron jobs")
+# and manually copy-paste this command into their terminal.
+# This skill NEVER runs this command automatically.
+#
+# Requires: openclaw CLI (pre-installed with OpenClaw)
+# Effect: Creates a scheduled job that runs daily at 6 PM
+# Scope: Runs in an isolated session — reads/writes workspace files only
+# Network: No network activity — reads local files only
+#
 # Writes a full context checkpoint and reviews the day
 # Schedule: Daily at 6 PM (adjust timezone)
 #

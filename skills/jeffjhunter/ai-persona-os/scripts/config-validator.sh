@@ -1,5 +1,9 @@
 #!/bin/bash
 # AI Persona OS — Config Validator
+# READ-ONLY: This script only READS config files to validate settings.
+# It does NOT modify any files, make network calls, or install anything.
+# It checks: workspace structure, openclaw config presence, heartbeat settings.
+#
 # Checks all required OpenClaw/Clawdbot settings and flags what's missing
 # Run: ./scripts/config-validator.sh
 

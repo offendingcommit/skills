@@ -3,6 +3,10 @@
 # AI Persona OS — Security Audit
 # Run monthly to check for security issues
 # By Jeff J Hunter — https://jeffjhunter.com
+#
+# NOTE: This script DETECTS leaked credentials in your workspace files.
+# It does not store, transmit, or handle any secrets itself.
+# All checks are local grep-based pattern scans — no network calls are made.
 
 set -e
 

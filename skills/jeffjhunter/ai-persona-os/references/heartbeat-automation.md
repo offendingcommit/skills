@@ -1,5 +1,11 @@
 # Heartbeat Automation Guide
 
+> **⚠️ OPT-IN ONLY:** Nothing in this guide runs automatically when the skill is installed.
+> Heartbeat configuration and cron jobs described here are **manual setup steps** that the
+> user must explicitly choose to perform. The core skill works fully without any cron jobs.
+> All cron jobs run in **isolated sessions** — they read/write only local workspace files
+> and make **no network calls, no API requests, and require no credentials**.
+
 **Purpose:** Configure heartbeats and cron jobs for reliable, enforced protocol execution.  
 **Added in:** v1.3.0
 

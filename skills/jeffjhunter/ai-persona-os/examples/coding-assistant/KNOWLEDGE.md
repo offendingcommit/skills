@@ -60,7 +60,7 @@ src/
 
 ### API Calls
 ```typescript
-// Standard fetch pattern
+// Example pattern — not a live endpoint
 const fetchData = async () => {
   try {
     const res = await fetch('/api/endpoint');
@@ -113,7 +113,7 @@ describe('Component', () => {
 | Variable | Purpose | Location |
 |----------|---------|----------|
 | `DATABASE_URL` | DB connection | .env.local |
-| `API_KEY` | External API | .env.local |
+| `YOUR_API_KEY` | External API | .env.local |
 | `NODE_ENV` | Environment | Auto-set |
 
 **Never commit `.env.local` to git.**
