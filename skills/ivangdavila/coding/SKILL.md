@@ -1,11 +1,13 @@
 ---
 name: "Coding"
+version: "1.0.1"
+changelog: "Migrate to external memory storage at ~/coding/"
 description: "Auto-learns your stack, style, and preferences. Starts empty, grows with every project."
 ---
 
 ## Auto-Adaptive Code Preferences
 
-This skill auto-evolves. Edit sections below as you learn user preferences from their decisions.
+This skill auto-evolves. Observe user decisions, detect patterns, store preferences.
 
 **Rules:**
 - Detect patterns from user choices (not just explicit requests)
@@ -15,17 +17,44 @@ This skill auto-evolves. Edit sections below as you learn user preferences from 
 
 ---
 
-### Stack
-<!-- Default tech choices. Format: "context: tech" -->
+## Memory Storage
 
-### Style  
-<!-- Code conventions. Format: "rule" or "thing: preference" -->
+User preferences stored at `~/coding/memory.md`. Read on activation.
 
-### Structure
-<!-- Project organization preferences -->
+**Structure:**
+```
+~/coding/
+├── memory.md      # Active preferences (load always)
+└── history.md     # Old/archived preferences
+```
 
-### Never
-<!-- Things user rejected or dislikes -->
+**Rules:**
+- Load `memory.md` at skill start (always)
+- Keep `memory.md` ≤ 100 lines
+- Archive old patterns to `history.md`
+
+**Format for memory.md:**
+```markdown
+# Coding Memory
+
+## Stack
+- context: tech
+
+## Style
+- rule or thing: preference
+
+## Structure
+- project organization preference
+
+## Never
+- thing user rejected
 
 ---
-*Empty sections = no preference yet. Observe and fill.*
+*Last updated: YYYY-MM-DD*
+```
+
+**On first use:** Create `~/coding/memory.md` if missing.
+
+---
+
+*Empty memory = no preference yet. Observe and fill.*
