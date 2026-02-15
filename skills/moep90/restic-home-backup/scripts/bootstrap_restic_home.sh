@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bootstrap a restic home-backup setup with automatic first-run initialization.
-# Usage:
-#   sudo bash bootstrap_restic_home.sh --user pi --repo /mnt/backup/restic-home
+# Safer bootstrap for restic home backup.
+# Default mode is PLAN-ONLY (no system changes). Use --apply for changes.
+#
+# Usage (plan only):
+#   bash bootstrap_restic_home.sh --user pi --repo /mnt/backup/restic-home
+#
+# Apply changes:
+#   sudo bash bootstrap_restic_home.sh --user pi --repo /mnt/backup/restic-home --apply
+#
 # Optional:
 #   --password-file /etc/restic-home/password
 #   --timezone Europe/Berlin
-#   --no-auto-start   (skip immediate backup run)
+#   --enable-timers          (off by default)
+#   --init-repo              (off by default)
+#   --run-initial-backup     (off by default)
 
 USER_NAME=""
 REPO=""
 PASS_FILE="/etc/restic-home/password"
 TIMEZONE="Europe/Berlin"
-AUTO_START="yes"
+APPLY="no"
+ENABLE_TIMERS="no"
+INIT_REPO="no"
+RUN_INITIAL_BACKUP="no"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -21,7 +32,10 @@ while [[ $# -gt 0 ]]; do
     --repo) REPO="$2"; shift 2 ;;
     --password-file) PASS_FILE="$2"; shift 2 ;;
     --timezone) TIMEZONE="$2"; shift 2 ;;
-    --no-auto-start) AUTO_START="no"; shift 1 ;;
+    --apply) APPLY="yes"; shift 1 ;;
+    --enable-timers) ENABLE_TIMERS="yes"; shift 1 ;;
+    --init-repo) INIT_REPO="yes"; shift 1 ;;
+    --run-initial-backup) RUN_INITIAL_BACKUP="yes"; shift 1 ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -31,14 +45,32 @@ if [[ -z "$USER_NAME" || -z "$REPO" ]]; then
   exit 2
 fi
 
-if ! command -v restic >/dev/null 2>&1; then
-  echo "restic is not installed. Install first: sudo apt install -y restic" >&2
-  exit 2
-fi
-
 HOME_DIR="/home/${USER_NAME}"
 if [[ ! -d "$HOME_DIR" ]]; then
   echo "Home dir not found: $HOME_DIR" >&2
+  exit 2
+fi
+
+if [[ "$APPLY" != "yes" ]]; then
+  cat <<EOF
+PLAN ONLY (no changes applied).
+Would configure restic backup with:
+- user: ${USER_NAME}
+- source: ${HOME_DIR}
+- repository: ${REPO}
+- password file: ${PASS_FILE}
+- timezone: ${TIMEZONE}
+- enable timers: ${ENABLE_TIMERS}
+- init repository: ${INIT_REPO}
+- run initial backup: ${RUN_INITIAL_BACKUP}
+
+To apply, rerun with: --apply
+EOF
+  exit 0
+fi
+
+if ! command -v restic >/dev/null 2>&1; then
+  echo "restic is not installed. Install first: sudo apt install -y restic" >&2
   exit 2
 fi
 
@@ -173,22 +205,25 @@ WantedBy=timers.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now restic-home-backup.timer restic-home-prune.timer restic-home-check.timer
 
-# Initialize repository if needed.
-source /etc/restic-home.env
-if ! /usr/bin/restic snapshots >/dev/null 2>&1; then
-  /usr/bin/restic init
+if [[ "$ENABLE_TIMERS" == "yes" ]]; then
+  systemctl enable --now restic-home-backup.timer restic-home-prune.timer restic-home-check.timer
 fi
 
-if [[ "$AUTO_START" == "yes" ]]; then
+if [[ "$INIT_REPO" == "yes" ]]; then
+  source /etc/restic-home.env
+  if ! /usr/bin/restic snapshots >/dev/null 2>&1; then
+    /usr/bin/restic init
+  fi
+fi
+
+if [[ "$RUN_INITIAL_BACKUP" == "yes" ]]; then
   systemctl start restic-home-backup.service
 fi
 
-echo "Bootstrap complete."
-echo "- Timers enabled: restic-home-backup/prune/check"
-echo "- Repository initialized (if it did not exist)"
-if [[ "$AUTO_START" == "yes" ]]; then
-  echo "- Initial backup executed"
-fi
-echo "Verify with: source /etc/restic-home.env && restic snapshots"
+echo "Apply complete."
+echo "- Config/scripts/units written"
+echo "- Timers enabled: ${ENABLE_TIMERS}"
+echo "- Repo initialized: ${INIT_REPO}"
+echo "- Initial backup run: ${RUN_INITIAL_BACKUP}"
+echo "Next validation: source /etc/restic-home.env && restic snapshots"

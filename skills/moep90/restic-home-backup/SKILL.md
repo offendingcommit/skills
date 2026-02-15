@@ -28,6 +28,7 @@ Define and deliver a production-ready restic backup setup for `~/` with encrypti
   - Never delete snapshots/repositories without explicit user confirmation.
   - Never weaken permissions on credential files (`chmod 600` minimum).
   - Never claim backup success without checking command exit status and snapshot listing.
+  - Never apply system changes implicitly: require explicit `--apply` (or explicit user confirmation) before writing to `/etc`, `/usr/local/bin`, or `/etc/systemd/system`.
 
 ## Workflow
 
@@ -44,7 +45,7 @@ If any critical value is missing, ask targeted questions.
 ### 2) Scaffold backup implementation
 
 Use these resources:
-- `scripts/bootstrap_restic_home.sh` to generate deterministic setup artifacts, auto-generate an initial random password, initialize the repository, enable timers, and run an initial backup.
+- `scripts/bootstrap_restic_home.sh` to generate deterministic setup artifacts. It is PLAN-ONLY by default and requires explicit `--apply` for system changes. Optional flags control timer enablement, repository initialization, and initial backup run.
 - `references/ops-checklist.md` for day-2 operations and troubleshooting.
 
 Create:
