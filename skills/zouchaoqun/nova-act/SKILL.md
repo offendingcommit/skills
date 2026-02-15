@@ -1,7 +1,7 @@
 ---
-name: nova-act
-version: 1.0.9
-description: AI-orchestrated usability testing using Amazon Nova Act. The agent generates personas, runs tests to collect raw data, interprets responses to determine goal achievement, and generates HTML reports. Tests real user workflows (booking, checkout, posting) with safety guardrails. Use when asked to "test website usability", "run usability test", "generate usability report", "evaluate user experience", "test checkout flow", "test booking process", or "analyze website UX".
+name: website-usability-test-nova-act
+version: 1.1.7
+description: AI-orchestrated usability testing with digital twin personas powered by Amazon Nova Act.
 metadata:
   openclaw:
     requires:
@@ -11,7 +11,7 @@ metadata:
         - python3
 ---
 
-# Nova Act Usability Testing v1.0.2
+# Website Usability Testing using Nova Act v1.1.7
 
 **AI-orchestrated** usability testing with digital twin personas powered by Amazon Nova Act.
 
@@ -581,7 +581,7 @@ Full usability tests with 3 personas × 3 goals = 9 tests can take 10-20+ minute
 personas = [{"name": "Test User", "archetype": "casual", ...}]
 ```
 
-### What You (the AI) Need to Do:
+### What YOU (the AI) Need to Do:
 
 1. **Check dependencies** (run the check above)
 2. **If missing**: Tell user to run `pip3 install nova-act pydantic playwright && playwright install chromium`

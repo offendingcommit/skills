@@ -4,11 +4,12 @@ Robust wrapper for Nova Act calls with error handling and timeout protection.
 """
 
 import time
-from typing import Any, Optional, Tuple
+import functools
+from typing import Any, Callable, Optional, Tuple
 from dataclasses import dataclass
 
 # ============================================================================
-# Configuration (Centralized defaults)
+# Configuration (Bug #15: Centralized defaults)
 # ============================================================================
 
 DEFAULT_TIMEOUT = 20  # seconds
@@ -18,7 +19,7 @@ HEALTH_CHECK_TIMEOUT = 10  # seconds
 
 
 # ============================================================================
-# Result Types (Consistent error handling)
+# Result Types (Bug #12: Consistent error handling)
 # ============================================================================
 
 @dataclass
@@ -40,7 +41,56 @@ class QueryResult:
 
 
 # ============================================================================
-# Safe Wrappers
+# Exceptions
+# ============================================================================
+
+class NovaActTimeout(Exception):
+    """Raised when a Nova Act operation times out."""
+    pass
+
+
+class NovaActError(Exception):
+    """Raised when a Nova Act operation fails."""
+    pass
+
+
+# ============================================================================
+# Timeout Decorator
+# ============================================================================
+
+def with_timeout(timeout_seconds: int = DEFAULT_TIMEOUT):
+    """
+    Decorator to add timeout protection to Nova Act calls.
+    Uses threading for cross-platform support (Bug #7).
+    """
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise NovaActTimeout(f"Operation timed out after {timeout_seconds}s")
+            
+            # Set up timeout (Unix only - Windows falls back to no timeout)
+            try:
+                old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout_seconds)
+                try:
+                    result = func(*args, **kwargs)
+                finally:
+                    signal.alarm(0)
+                    signal.signal(signal.SIGALRM, old_handler)
+                return result
+            except AttributeError:
+                # Windows doesn't have SIGALRM, fall back to no timeout
+                return func(*args, **kwargs)
+        
+        return wrapper
+    return decorator
+
+
+# ============================================================================
+# Safe Wrappers (Bug #8: Return observations)
 # ============================================================================
 
 def safe_act(nova, action: str, timeout: int = DEFAULT_TIMEOUT, 
@@ -60,17 +110,12 @@ def safe_act(nova, action: str, timeout: int = DEFAULT_TIMEOUT,
             # Extract observation from result if available
             observation = None
             if result is not None:
-                # Use explicit attribute access instead of hasattr/getattr
-                try:
-                    if result.response:
-                        observation = str(result.response)
-                except AttributeError:
-                    try:
-                        if result.matches_response:
-                            observation = str(result.matches_response)
-                    except AttributeError:
-                        if isinstance(result, str):
-                            observation = result
+                if hasattr(result, 'response') and result.response:
+                    observation = str(result.response)
+                elif hasattr(result, 'matches_response') and result.matches_response:
+                    observation = str(result.matches_response)
+                elif isinstance(result, str):
+                    observation = result
             
             # Detect if it took suspiciously long (possible loop)
             if duration > SLOW_OPERATION_THRESHOLD:

@@ -16,12 +16,6 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 
-# Move external imports to top to avoid "suspicious" late imports
-try:
-    import anthropic
-except ImportError:
-    anthropic = None
-
 # Global state for graceful shutdown
 _shutdown_state = {
     'all_results': [],
@@ -36,27 +30,27 @@ def _generate_partial_report():
     """Generate report from whatever results we have on shutdown."""
     if _shutdown_state['interrupted']:
         return  # Already handled
-
+    
     _shutdown_state['interrupted'] = True
-
+    
     results = _shutdown_state['all_results']
     page_analysis = _shutdown_state['page_analysis']
     test_start_time = _shutdown_state['test_start_time']
-
+    
     if not results or not page_analysis:
         print("\n⚠️ No results to save on shutdown")
         return
-
+    
     print("\n" + "="*60)
     print("⚠️ INTERRUPTED - Generating partial report...")
     print("="*60)
-
+    
     try:
         # Save whatever results we have
         with open(RESULTS_FILE, 'w') as f:
             json.dump(results, f, indent=2)
         print(f"✅ Saved {len(results)} test results to {RESULTS_FILE}")
-
+        
         # Get trace files from this run
         if test_start_time:
             trace_pattern = os.path.join(LOGS_DIR, "**", "*.html")
@@ -67,19 +61,19 @@ def _generate_partial_report():
             )
         else:
             traces = []
-
+        
         # Mark page analysis as partial
         page_analysis['_partial_report'] = True
         page_analysis['_completed_tests'] = _shutdown_state['completed_tests']
         page_analysis['_total_planned_tests'] = _shutdown_state['total_planned_tests']
-
+        
         # Generate report
         from enhanced_report_generator import generate_enhanced_report
         report_path = generate_enhanced_report(page_analysis, results, traces)
-
+        
         print(f"✅ Generated PARTIAL report: {report_path}")
         print(f"   ({_shutdown_state['completed_tests']}/{_shutdown_state['total_planned_tests']} tests completed)")
-
+        
     except Exception as e:
         print(f"❌ Failed to generate partial report: {e}")
 
@@ -142,14 +136,14 @@ def analyze_page(url: str) -> Dict:
     """
     print(f"\n🔍 ANALYZING PAGE: {url}")
     print("="*60)
-
+    
     analysis = {
         'title': 'Unknown',
         'navigation': [],
         'purpose': 'Unknown purpose',
         'visible_sections': ''
     }
-
+    
     try:
         with nova_session(url, headless=True, logs_dir=LOGS_DIR) as nova:
             print("→ Reading page title and main heading...")
@@ -164,7 +158,7 @@ def analyze_page(url: str) -> Dict:
                 print(f"  Title: {analysis['title']}")
             else:
                 print(f"  ⚠️ Could not extract title: {error}")
-
+            
             if is_session_healthy(nova):
                 print("→ Analyzing navigation...")
                 ok, response, error = safe_act_get(
@@ -179,7 +173,7 @@ def analyze_page(url: str) -> Dict:
                     print(f"  Navigation: {analysis['navigation']}")
                 else:
                     print(f"  ⚠️ Could not extract navigation: {error}")
-
+            
             if is_session_healthy(nova):
                 print("→ Understanding page purpose...")
                 ok, response, error = safe_act_get(
@@ -193,7 +187,7 @@ def analyze_page(url: str) -> Dict:
                     print(f"  Purpose: {analysis['purpose']}")
                 else:
                     print(f"  ⚠️ Could not extract purpose: {error}")
-
+            
             # Get visible sections/areas on the page for agent analysis
             if is_session_healthy(nova):
                 print("→ Identifying main content sections...")
@@ -208,15 +202,15 @@ def analyze_page(url: str) -> Dict:
                     print(f"  Sections: {analysis['visible_sections']}")
                 else:
                     print(f"  ⚠️ Could not identify sections: {error}")
-
+            
             # Note: The orchestrating AI agent will analyze this data
-            # and determine what's important based on title, navigation,
+            # and determine what's important based on title, navigation, 
             # purpose, and visible sections. No need for hardcoded checks.
-
+    
     except Exception as e:
         print(f"⚠️ Page analysis encountered error: {str(e)}")
         print("   Continuing with default analysis...")
-
+    
     return analysis
 
 def extract_json_safely(text: str) -> Optional[List]:
@@ -234,12 +228,12 @@ def extract_json_safely(text: str) -> Optional[List]:
             return result
     except json.JSONDecodeError:
         pass
-
+    
     # Strategy 2: Find array boundaries
     start_idx = text.find('[')
     if start_idx == -1:
         return None
-
+    
     # Find matching closing bracket
     depth = 0
     end_idx = -1
@@ -251,17 +245,17 @@ def extract_json_safely(text: str) -> Optional[List]:
             if depth == 0:
                 end_idx = i
                 break
-
+    
     if end_idx == -1:
         return None
-
+    
     try:
         result = json.loads(text[start_idx:end_idx + 1])
         if isinstance(result, list):
             return result
     except json.JSONDecodeError:
         pass
-
+    
     # Strategy 3: Clean up common issues
     json_str = text[start_idx:end_idx + 1]
     # Remove trailing commas before ] or }
@@ -272,7 +266,7 @@ def extract_json_safely(text: str) -> Optional[List]:
             return result
     except json.JSONDecodeError:
         pass
-
+    
     return None
 
 
@@ -280,17 +274,13 @@ def infer_plausible_user_types(page_analysis: Dict) -> List[Dict]:
     """
     DEPRECATED (v1.4.0): Use AI agent-generated personas instead.
     
-    This fallback uses AI to infer user types.
+    This fallback uses Claude API to infer user types.
     Prefer passing AI-generated personas via the persona_arg parameter.
     
     Returns list of user type definitions with characteristics and goals.
     """
     print("→ [FALLBACK] Using AI to infer user types (prefer AI agent personas)...")
     
-    if not anthropic:
-        print("  ⚠️ anthropic SDK not installed, using fallback personas")
-        return []
-
     purpose = page_analysis.get('purpose', 'Unknown')
     title = page_analysis.get('title', 'Unknown')
     navigation = ', '.join(page_analysis.get('navigation', []))
@@ -318,6 +308,7 @@ Return EXACTLY 3 user types as a JSON array with this structure:
 ]"""
     
     try:
+        import anthropic
         api_key = os.environ.get('ANTHROPIC_API_KEY')
         if not api_key:
             print("  ⚠️ ANTHROPIC_API_KEY not set, using fallback personas")
@@ -334,7 +325,7 @@ Return EXACTLY 3 user types as a JSON array with this structure:
             }]
         )
         
-        # Extract JSON from response
+        # Extract JSON from response (Bug #13: Use safer extraction)
         content = response.content[0].text
         
         user_types = extract_json_safely(content)
@@ -362,10 +353,10 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
     purpose = page_analysis.get('purpose', '').lower()
     title = page_analysis.get('title', '').lower()
     navigation = ' '.join(page_analysis.get('navigation', [])).lower()
-
+    
     personas = []
     site_category = None
-
+    
     # Sports/Tournament sites
     if any(word in purpose + title + navigation for word in ['sport', 'tournament', 'game', 'score', 'player', 'team', 'league', 'match', 'golf', 'football', 'basketball', 'baseball']):
         site_category = 'sports'
@@ -385,7 +376,7 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "goals": ["Find basic information about favorite team", "Check game times", "Understand what's happening"],
             "description": "Casual sports viewer who checks in occasionally"
         })
-
+    
     # E-commerce/Shopping sites
     elif any(word in purpose + title + navigation for word in ['shop', 'store', 'buy', 'product', 'cart', 'checkout', 'price', 'purchase', 'sale']):
         site_category = 'ecommerce'
@@ -405,7 +396,7 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "goals": ["Research products thoroughly", "Ensure secure checkout", "Understand return policy", "Find customer service if needed"],
             "description": "Cautious shopper who researches before buying"
         })
-
+    
     # News/Media sites
     elif any(word in purpose + title + navigation for word in ['news', 'article', 'story', 'blog', 'media', 'journalism', 'reporter']):
         site_category = 'news'
@@ -425,7 +416,7 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "goals": ["Find news on topics of interest", "Read without confusion", "Understand how to navigate"],
             "description": "Reads news occasionally, prefers simple, clear presentation"
         })
-
+    
     # Booking/Travel sites
     elif any(word in purpose + title + navigation for word in ['book', 'reserve', 'hotel', 'flight', 'travel', 'vacation', 'rental', 'car rental']):
         site_category = 'booking'
@@ -445,7 +436,7 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "goals": ["Research options thoroughly", "Compare prices and amenities", "Read reviews", "Understand cancellation policies"],
             "description": "Plans family vacations and wants to make informed decisions"
         })
-
+    
     # Entertainment/Streaming sites
     elif any(word in purpose + title + navigation for word in ['watch', 'video', 'stream', 'show', 'movie', 'series', 'entertainment']):
         site_category = 'entertainment'
@@ -465,7 +456,7 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "goals": ["Find specific shows or movies", "Navigate without confusion", "Understand how to play content"],
             "description": "Watches occasionally, prefers simple interface"
         })
-
+    
     # Developer/API/Technical sites
     elif any(word in purpose + title + navigation for word in ['developer', 'api', 'code', 'documentation', 'sdk', 'technical']):
         site_category = 'developer'
@@ -482,10 +473,10 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "archetype": "technical_lead",
             "age": 35,
             "tech_proficiency": "high",
-            "goals": ["Review technical capabilities", "Understand pricing/limits", "Assess security", "Check scalability"],
-            "description": "Tech lead reviewing solutions for their team"
+            "goals": ["Evaluate technical capabilities", "Understand pricing/limits", "Assess security", "Check scalability"],
+            "description": "Tech lead evaluating solutions for their team"
         })
-
+    
     # SaaS/Business tools (default for unclear sites)
     else:
         site_category = 'saas'
@@ -502,8 +493,8 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
             "archetype": "business_professional",
             "age": 42,
             "tech_proficiency": "medium",
-            "goals": ["Understand ROI", "Check pricing", "Review ease of use"],
-            "description": "Business professional reviewing tools"
+            "goals": ["Understand ROI", "Check pricing", "Evaluate ease of use"],
+            "description": "Business professional evaluating tools"
         })
         if page_analysis.get('key_elements', {}).get('demo'):
             personas.append({
@@ -514,32 +505,32 @@ def generate_personas_from_fallback_categories(page_analysis: Dict) -> tuple:
                 "goals": ["Understand what it does", "Try simple example", "Get help if stuck"],
                 "description": "First-time user with basic tech skills"
             })
-
+    
     return personas, site_category
 
 def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] = None) -> List[Dict]:
     """
     Step 2: Generate contextual personas.
-
+    
     Args:
         page_analysis: Analysis of the website
         user_persona_request: Optional user-specified persona description (e.g., "golf enthusiast tracking tournaments")
-
+    
     Returns:
         List of persona dictionaries
     """
     print(f"\n👥 GENERATING PERSONAS")
     print("="*60)
-
+    
     personas = []
-
+    
     # If user specified a custom persona, create it
     if user_persona_request:
         print(f"→ Creating custom persona from user request: '{user_persona_request}'")
-
+        
         # Parse the persona description to extract key attributes
         persona_desc_lower = user_persona_request.lower()
-
+        
         # Determine tech proficiency based on description
         if any(word in persona_desc_lower for word in ['tech', 'developer', 'engineer', 'advanced', 'power']):
             tech_level = "high"
@@ -547,7 +538,7 @@ def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] =
             tech_level = "low"
         else:
             tech_level = "medium"
-
+        
         # Determine archetype based on description
         if 'enthusiast' in persona_desc_lower or 'fan' in persona_desc_lower:
             archetype = "enthusiast"
@@ -564,11 +555,11 @@ def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] =
         else:
             archetype = "engaged_user"
             name = "Taylor Davis"
-
+        
         # Extract goals based on context (website purpose + persona desc)
         purpose = page_analysis.get('purpose', '').lower()
         goals = []
-
+        
         # Sport/content site goals
         if any(word in purpose for word in ['tournament', 'sport', 'score', 'game', 'match']):
             if 'following' in persona_desc_lower or 'tracking' in persona_desc_lower:
@@ -602,7 +593,7 @@ def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] =
                 "Find relevant information easily",
                 "Navigate without confusion"
             ]
-
+        
         custom_persona = {
             "name": name,
             "archetype": archetype,
@@ -612,11 +603,11 @@ def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] =
             "description": user_persona_request,
             "custom": True
         }
-
+        
         personas.append(custom_persona)
         print(f"  ✅ Created: {name} ({archetype}, {tech_level} proficiency)")
         print(f"     Goals: {', '.join(goals[:2])}...")
-
+        
         # Add one complementary persona for comparison
         if tech_level != "low":
             # Add a beginner persona for contrast
@@ -632,10 +623,10 @@ def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] =
     else:
         # No custom persona - use AI to infer plausible user types
         print(f"→ Auto-generating personas based on website exploration...")
-
+        
         # Try AI-powered inference first
         ai_user_types = infer_plausible_user_types(page_analysis)
-
+        
         if ai_user_types and len(ai_user_types) >= 2:
             # Success! Use AI-generated personas
             personas = ai_user_types
@@ -645,10 +636,10 @@ def generate_personas(page_analysis: Dict, user_persona_request: Optional[str] =
             print(f"  → Falling back to category-based persona generation...")
             personas, site_category = generate_personas_from_fallback_categories(page_analysis)
             print(f"  Detected site category: {site_category}")
-
+        
         for p in personas:
             print(f"  → {p['name']} ({p['archetype']}): {p['description']}")
-
+    
     return personas
 
 def generate_test_cases(persona: Dict, page_analysis: Dict) -> List[str]:
@@ -659,15 +650,15 @@ def generate_test_cases(persona: Dict, page_analysis: Dict) -> List[str]:
     has_docs = key_elements.get('documentation', False)
     has_demo = key_elements.get('demo', False)
     purpose = page_analysis.get('purpose', '').lower()
-
+    
     test_cases = []
-
+    
     # Detect if this is a transactional/workflow-oriented site
     is_ecommerce = any(kw in purpose for kw in ['shop', 'store', 'buy', 'product', 'purchase'])
     is_booking = any(kw in purpose for kw in ['book', 'reserve', 'schedule', 'hotel', 'flight', 'appointment'])
     is_social = any(kw in purpose for kw in ['post', 'share', 'social', 'community', 'publish'])
     is_saas = any(kw in purpose for kw in ['signup', 'register', 'subscribe', 'trial'])
-
+    
     # Generate workflow tests for transactional sites
     if is_ecommerce and archetype in ["tech_savvy_user", "business_professional"]:
         test_cases.append("Search for a product and add it to cart")
@@ -678,7 +669,7 @@ def generate_test_cases(persona: Dict, page_analysis: Dict) -> List[str]:
         test_cases.append("Create and prepare a post for publishing")
     elif is_saas:
         test_cases.append("Complete signup flow up to final submission")
-
+    
     # Original information-finding tests
     if archetype == "developer" or archetype == "tech_savvy_user":
         if has_docs:
@@ -687,35 +678,35 @@ def generate_test_cases(persona: Dict, page_analysis: Dict) -> List[str]:
             test_cases.append("Try the interactive demo or playground")
         if not is_ecommerce and not is_booking:  # Don't duplicate
             test_cases.append("Understand the core capabilities and features")
-
+        
     elif archetype == "business_professional":
         if has_pricing:
             test_cases.append("Find pricing information and compare plans")
         test_cases.append("Evaluate if this meets business needs")
-
+        
     elif archetype == "beginner":
         test_cases.append("Understand what this website does")
         if has_docs:
             test_cases.append("Find help or getting started guide")
-
+    
     # If we still don't have test cases, use persona goals
     if not test_cases and 'goals' in persona:
         test_cases = [goal for goal in persona['goals'][:3]]
-
+    
     # Fallback
     if not test_cases:
         test_cases = ["Explore the main features of the website"]
-
+    
     return test_cases
 
 def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_index: int = 0, max_attempts: int = 3) -> Dict:
     """
     Execute a single exploration step and capture RAW responses.
-
+    
     IMPORTANT: This function does NOT interpret responses.
     The orchestrating AI agent (OpenClaw/Claude) should analyze the raw_response
     to determine if the goal was achieved.
-
+    
     Returns structured data with:
     - raw_response: The actual text Nova Act returned
     - api_success: Whether the API call worked
@@ -727,13 +718,13 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
     step_name = step.get('step_name', f'Step {step_num}')
     is_safety_stop = step.get('is_safety_stop', False)
     action_type = step.get('action_type', 'query')
-
+    
     print(f"\n   Step {step_num}: {step_name}")
     print(f"   Action: {action[:80]}...")
     print(f"   Expected: {rationale}")
     if is_safety_stop:
         print(f"   ⚠️  SAFETY STOP: Will query only, no execution")
-
+    
     result = {
         'step_number': step_num,
         'step_name': step_name,
@@ -746,11 +737,11 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
         'error': None,
         'needs_agent_analysis': True  # Agent must interpret this!
     }
-
+    
     # Adapt the action prompt for this persona
     adapted_action = adapt_prompt_for_persona(action, persona)
     current_prompt = adapted_action
-
+    
     for attempt in range(1, max_attempts + 1):
         attempt_result = {
             'attempt': attempt,
@@ -758,10 +749,10 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
             'raw_response': None,
             'error': None
         }
-
+        
         try:
             print(f"   → Attempt {attempt}/{max_attempts}: {current_prompt[:60]}...")
-
+            
             if is_safety_stop:
                 query_prompt = f"What would happen if I: {current_prompt}? Describe what you see but DO NOT execute the action."
                 ok, response, error = safe_act_get(
@@ -772,7 +763,7 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
                 response_text = response.get('observation', '') if ok and response else None
                 if not ok:
                     attempt_result['error'] = error
-
+            
             elif action_type == 'navigate':
                 ok, error_or_obs = safe_act(nova, current_prompt, timeout=30)
                 if ok:
@@ -785,7 +776,7 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
                 else:
                     response_text = None
                     attempt_result['error'] = error_or_obs
-
+            
             else:
                 ok, response, error = safe_act_get(
                     nova, current_prompt,
@@ -795,16 +786,16 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
                 response_text = response.get('answer', str(response)) if ok and response else None
                 if not ok:
                     attempt_result['error'] = error
-
+            
             attempt_result['raw_response'] = response_text
-
+            
             if response_text:
                 result['api_success'] = True
                 result['raw_response'] = response_text
                 print(f"   📝 Response: {response_text[:80]}...")
                 print(f"   ⏳ (Agent will analyze if goal achieved)")
                 result['attempts'].append(attempt_result)
-
+                
                 # Check for obvious negatives to try alternatives
                 response_lower = response_text.lower().strip()
                 obvious_negative = response_lower in ['no', 'false'] or \
@@ -812,33 +803,33 @@ def execute_exploration_step_adaptive(nova, step: Dict, persona: Dict, step_inde
                                    'not found' in response_lower or \
                                    'i don\'t see' in response_lower or \
                                    'i do not see' in response_lower
-
+                
                 if obvious_negative and attempt < max_attempts:
                     alt_prompt = generate_alternative_approach(adapted_action, response_text, attempt)
                     if alt_prompt:
                         print(f"   🔄 Response appears negative, trying alternative...")
                         current_prompt = alt_prompt
                         continue
-
+                
                 # Got a response - return it for agent analysis
                 return result
             else:
                 print(f"   ❌ No response: {attempt_result.get('error', 'Unknown error')}")
                 result['error'] = attempt_result.get('error')
-
+                
                 if attempt < max_attempts:
                     alt_prompt = generate_alternative_approach(adapted_action, "No response", attempt)
                     if alt_prompt:
                         current_prompt = alt_prompt
                         print(f"   🔄 Retrying with different approach...")
-
+        
         except Exception as e:
             print(f"   ❌ Exception: {str(e)}")
             attempt_result['error'] = str(e)
             result['error'] = str(e)
-
+        
         result['attempts'].append(attempt_result)
-
+    
     print(f"   ❌ All {max_attempts} attempts exhausted")
     return result
 
@@ -856,7 +847,7 @@ def iterative_test_dynamic(persona: Dict, test_case: str, page_analysis: Dict, c
     print(f"🎭 TESTING: {persona['name']} ({persona['archetype']})")
     print(f"📋 TEST CASE: {test_case}")
     print(f"{'='*80}")
-
+    
     result = {
         'persona': persona,
         'test_case': test_case,
@@ -866,87 +857,82 @@ def iterative_test_dynamic(persona: Dict, test_case: str, page_analysis: Dict, c
         'error': None,
         'trace_files': []
     }
-
+    
     try:
         # Generate exploration strategy for this specific test case and persona
         steps = generate_exploration_strategy(test_case, persona, page_analysis, cookbook)
-
+        
         if not steps:
             print("⚠️ Failed to generate exploration strategy")
             result['error'] = "Failed to generate exploration strategy"
             return result
-
+        
         print(f"\n📝 Generated {len(steps)} exploration steps")
-
+        
         # Capture existing trace files BEFORE this test
         trace_pattern = os.path.join(LOGS_DIR, "**", "*.html")
         existing_traces = set(glob.glob(trace_pattern, recursive=True))
-
+        
         # Execute each step (Bug #11: use parameter instead of global)
         target_url = website_url or WEBSITE_URL
         with nova_session(target_url, headless=True, logs_dir=LOGS_DIR) as nova:
             for idx, step in enumerate(steps):
                 step_result = execute_exploration_step(nova, step, persona, idx)
                 result['steps'].append(step_result)
-
+                
                 # If a step fails completely (API error), stop
                 if not step_result.get('api_success') and not step_result.get('is_safety_stop'):
                     print(f"\n⚠️ Step {idx} failed (API error), stopping test")
                     break
-
+                
                 # If goal not achieved after all retries, continue but note it
                 if step_result.get('api_success') and not step_result.get('goal_achieved'):
                     print(f"   📝 Step {idx}: API worked but goal not achieved")
-
+                
                 # Small delay between steps
                 time.sleep(0.5)
-
+        
         # Capture NEW trace files created during this test
         all_traces = set(glob.glob(trace_pattern, recursive=True))
         new_traces = sorted(all_traces - existing_traces, key=os.path.getmtime)
         result['trace_files'] = new_traces
         if new_traces:
             print(f"\n🎬 Captured {len(new_traces)} trace file(s) for this test")
-
-    # Counting API successes - goal achievement will be determined by the orchestrating agent
-    api_successes = sum(1 for s in result['steps'] if s.get('api_success', False))
-    total_steps = len(result['steps'])
-
-    # Auto-interpret results if possible (v1.4.1 fix)
-    goals_achieved = 0
-    for s in result['steps']:
-        raw = str(s.get('raw_response', '')).lower()
-        # Very basic interpretation
-        if any(p in raw for p in ['yes', 'true', 'found', 'success', 'complete', 'clicked']) and not any(n in raw for n in ['no', 'false', 'not found', 'error', 'failed']):
-            s['goal_achieved'] = True
-            goals_achieved += 1
+        
+        # Count API successes - goal achievement will be determined by the orchestrating agent
+        api_successes = sum(1 for s in result['steps'] if s.get('api_success', False))
+        total_steps = len(result['steps'])
+        
+        # Raw data summary - agent will interpret and set actual success values
+        result['api_successes'] = api_successes
+        result['total_steps'] = total_steps
+        result['needs_agent_analysis'] = True  # Agent MUST interpret raw_response values
+        
+        # Preliminary completion status based on API success only
+        # Agent will update overall_success after interpreting responses
+        if api_successes == total_steps:
+            result['completion_status'] = 'complete'
+        elif api_successes >= total_steps * 0.5:
+            result['completion_status'] = 'partial'
         else:
-            s['goal_achieved'] = len(raw) > 10 # Assume descriptive success
-            if s['goal_achieved']: goals_achieved += 1
-
-    # Raw data summary
-    result['api_successes'] = api_successes
-    result['goals_achieved'] = goals_achieved
-    result['total_steps'] = total_steps
-    result['overall_success'] = (goals_achieved / total_steps >= 0.5) if total_steps > 0 else False
-    result['needs_agent_analysis'] = True
-
+            result['completion_status'] = 'incomplete'
+        
         print(f"\n{'='*80}")
         print(f"📊 Raw data collected: {api_successes}/{total_steps} API calls succeeded")
         print(f"⏳ AWAITING AGENT ANALYSIS")
         print(f"   Agent must interpret raw_response in each step to determine goal achievement")
         print(f"{'='*80}")
-
+    
     except Exception as e:
         print(f"\n❌ Test failed with exception: {str(e)}")
         result['error'] = str(e)
         result['completion_status'] = 'error'
-
+    
     return result
 
 def main():
     global WEBSITE_URL
-
+    
     # Parse command-line arguments
     if len(sys.argv) < 2:
         print("Usage: python3 run_adaptive_test.py <website_url> [persona_arg]")
@@ -963,14 +949,14 @@ def main():
         print('  # AI-generated personas (JSON string)')
         print("  python3 run_adaptive_test.py \"https://www.pgatour.com/\" '[{\"name\":\"Jordan\",...}]'")
         sys.exit(1)
-
+    
     WEBSITE_URL = sys.argv[1]
     persona_arg = sys.argv[2] if len(sys.argv) >= 3 else None
-
+    
     # Determine what type of persona argument we received
     ai_generated_personas = None
     user_persona_request = None
-
+    
     if persona_arg:
         # Check if it's a JSON file path
         if persona_arg.endswith('.json') and os.path.exists(persona_arg):
@@ -984,7 +970,7 @@ def main():
                 print(f"❌ Failed to load personas from {persona_arg}: {e}")
                 print("   Falling back to auto-generation")
                 ai_generated_personas = None
-
+        
         # Check if it's a JSON string (starts with [ or {)
         elif persona_arg.strip().startswith(('[', '{')):
             print(f"\n🎯 Testing {WEBSITE_URL}")
@@ -996,7 +982,7 @@ def main():
                 print(f"❌ Failed to parse JSON personas: {e}")
                 print("   Treating as custom persona description instead")
                 user_persona_request = persona_arg
-
+        
         # Otherwise, treat as custom persona description
         else:
             print(f"\n🎯 Testing {WEBSITE_URL}")
@@ -1005,22 +991,22 @@ def main():
     else:
         print(f"\n🎯 Testing {WEBSITE_URL}")
         print(f"👤 Auto-generating personas (fallback mode)\n")
-
+    
     # Start status reporter (60-second updates)
     reporter_process = start_status_reporter()
-
+    
     # Record test start time for filtering trace files (Bug #10)
     test_start_time = time.time()
     _shutdown_state['test_start_time'] = test_start_time
-
+    
     try:
         update_status("Loading cookbook...")
         cookbook = load_cookbook()
-
+        
         update_status("Analyzing website...")
         page_analysis = analyze_page(WEBSITE_URL)
         _shutdown_state['page_analysis'] = page_analysis
-
+        
         # Generate or use provided personas
         if ai_generated_personas:
             print(f"\n👥 USING AI-GENERATED PERSONAS")
@@ -1031,38 +1017,38 @@ def main():
         else:
             update_status("Generating test personas...")
             personas = generate_personas(page_analysis, user_persona_request)
-
+        
         if not personas:
             print("❌ Failed to generate personas")
             mark_complete(success=False)
             return
-
+        
         # Calculate total planned tests for progress tracking
         total_planned = sum(len(generate_test_cases(p, page_analysis)) for p in personas)
         _shutdown_state['total_planned_tests'] = total_planned
-
+        
         all_results = []
         _shutdown_state['all_results'] = all_results  # Share reference
-
+        
         for i, persona in enumerate(personas, 1):
             update_status(f"Testing persona {i}/{len(personas)}: {persona['name']}...")
-
+            
             test_cases = generate_test_cases(persona, page_analysis)
             print(f"\n📋 Generated {len(test_cases)} test cases for {persona['name']}")
-
+            
             for j, test_case in enumerate(test_cases, 1):
                 update_status(f"Running test {j}/{len(test_cases)} for {persona['name']}...")
-
+                
                 result = iterative_test_dynamic(persona, test_case, page_analysis, cookbook, website_url=WEBSITE_URL)
                 all_results.append(result)
                 _shutdown_state['completed_tests'] = len(all_results)
-
+                
                 # Save intermediate results
                 with open(RESULTS_FILE, 'w') as f:
                     json.dump(all_results, f, indent=2)
-
+        
         update_status("Generating final report...")
-
+        
         # Generate HTML report with trace files from THIS test run only (Bug #10)
         trace_pattern = os.path.join(LOGS_DIR, "**", "*.html")
         all_traces = glob.glob(trace_pattern, recursive=True)
@@ -1072,23 +1058,23 @@ def main():
             key=os.path.getmtime
         )
         report_path = generate_enhanced_report(page_analysis, all_results, traces)
-
+        
         print(f"\n{'='*80}")
         print(f"✅ ALL TESTS COMPLETE")
         print(f"{'='*80}")
         print(f"📊 Report: {report_path}")
         print(f"📁 Results: {RESULTS_FILE}")
         print(f"🎬 Traces: {LOGS_DIR}")
-
+        
         # Calculate success rate
         successful_tests = sum(1 for r in all_results if r['overall_success'])
         total_tests = len(all_results)
         success_rate = (successful_tests / total_tests * 100) if total_tests > 0 else 0
-
+        
         print(f"\n✅ Complete: {successful_tests}/{total_tests} tests passed ({success_rate:.0f}%)")
         mark_complete(success=True)
         emit_final()
-
+    
     except Exception as e:
         print(f"\n❌ FATAL ERROR: {str(e)}")
         import traceback
