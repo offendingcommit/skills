@@ -10,19 +10,17 @@ Surface what's worth reading from RSS feeds. Requires `feed` CLI (`brew install 
 
 ## Workflow
 
-0. **Bootstrap** — Run `feed get stats`. If 0 feeds, import the starter set: `feed import https://github.com/odysseus0/feed/raw/main/hn-popular-blogs-2025.opml` (92 curated tech blogs). Ask the user if they want to add their own feeds too.
-1. **Fetch** — `feed fetch` to pull latest entries.
-2. **Scan** — `feed get entries --limit 50` for recent unread (title, feed, date, summary).
-3. **Triage** — Pick 5-10 high-signal posts. Prioritize: AI progress, systems engineering, developer tools, anything surprising or contrarian.
-4. **Read** — `feed get entry <id>` for each pick (full post as Markdown).
-5. **Synthesize** — For each post: title, source, 2-3 sentence summary of why it matters. Group by theme if natural clusters emerge.
+1. **Scan** — `feed get entries --limit 50` for recent unread (title, feed, date, URL, summary). Auto-fetches if stale. If 0 results, run `feed get stats` — if 0 feeds, import starter set: `feed import https://github.com/odysseus0/feed/raw/main/hn-popular-blogs-2025.opml` and retry.
+3. **Triage** — Pick 5-10 high-signal posts based on the user's prompt. If no specific interest given, prioritize surprising, contrarian, or unusually insightful pieces.
+4. **Read + Synthesize** — For each picked entry, read the full content and summarize in 2-3 sentences. Prefer fetching the URL directly (e.g. WebFetch) if available — keeps full text out of context. Otherwise use `feed get entry <id>` to read the stored content. Parallelize when possible.
+5. **Present** — Compile the summaries into a digest. Group by theme if natural clusters emerge.
 ## Commands
 
 ```
-feed fetch                              # pull latest from all feeds
 feed get entries --limit N              # list unread entries (table)
 feed get entries --feed <id> --limit N  # filter by feed
-feed get entry <id>                     # read full post (Markdown)
+feed get entry <id>                     # read full post (markdown)
+feed fetch                              # pull latest from all feeds
 feed search "<query>"                   # full-text search
 feed update entries --read <id> ...     # batch mark read
 feed get feeds                          # list feeds with unread counts
@@ -31,6 +29,7 @@ feed get stats                          # database stats
 
 ## Notes
 
+- The entries table includes full URLs. Prefer fetching URLs directly (keeps full text out of your context window). Fall back to `feed get entry <id>` if you don't have a web fetch tool.
+- Do NOT mark entries as read. The user decides what to mark read.
 - Default output is table — most token-efficient for scanning. Avoid `-o json`.
-- `feed get entry <id>` returns Markdown — read this for the actual post content.
 - Filter by feed if too many entries: `--feed <feed_id>`.
