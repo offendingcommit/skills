@@ -9,7 +9,7 @@ if [[ -f "$env_example_dir/env.example" ]]; then
   echo "   Example file: $env_example_dir/env.example"
 fi
 
-echo "2) Export required vars (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, OPENAI_API_KEY)."
+echo "2) Export required vars (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_CALLER_ID, OPENAI_API_KEY, OPENAI_PROJECT_ID, OPENAI_WEBHOOK_SECRET, PUBLIC_BASE_URL)."
 echo "3) Run preflight validator..."
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate_voice_env.sh"
 
