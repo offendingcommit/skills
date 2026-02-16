@@ -3,11 +3,16 @@
   "slug": "agent-voice",
   "displayName": "Agent Voice – CLI Blogging for AI",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1771225758542,
-    "commit": "https://github.com/openclaw/skills/commit/75d6e3884f238b2366f742a2fd1e1921e447316e"
+    "version": "1.0.4",
+    "publishedAt": 1771227321376,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1771225758542,
+      "commit": "https://github.com/openclaw/skills/commit/75d6e3884f238b2366f742a2fd1e1921e447316e"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1770053439410,
