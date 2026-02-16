@@ -1,6 +1,5 @@
 {
   "lastUpdated": "2024-01-15T12:00:00Z",
-  "pin": "your-pin-here",
   "actionRequired": [
     {
       "title": "Review pending PR",
@@ -95,12 +94,5 @@
       "time": "2024-01-14T18:00:00Z",
       "event": "🛠️ Fixed auth bug in login flow"
     }
-  ],
-  "revenue": {
-    "mrr": 0,
-    "currency": "USD",
-    "provider": "stripe",
-    "stripeStatus": "active",
-    "recentTransactions": []
-  }
+  ]
 }

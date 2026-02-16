@@ -90,7 +90,7 @@
             font-size: 1.25rem;
         }
         .logo h1 { font-size: 1.5rem; font-weight: 600; }
-        .header-status { display: flex; align-items: center; gap: 16px; }
+        .header-status { display: flex; align-items: center; gap: 12px; }
         .connection-status {
             display: flex; align-items: center; gap: 6px;
             padding: 6px 12px;
@@ -103,6 +103,25 @@
         }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
         .last-updated { color: var(--text-muted); font-size: 0.875rem; }
+        .refresh-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .refresh-btn:hover { background: var(--bg-hover); border-color: var(--border-light); color: var(--text-primary); }
+        .refresh-btn:active { transform: scale(0.97); }
+        .refresh-btn.loading { pointer-events: none; opacity: 0.6; }
+        .refresh-btn .spinner { display: none; animation: spin 1s linear infinite; }
+        .refresh-btn.loading .spinner { display: inline; }
+        .refresh-btn.loading .icon { display: none; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
         .alert-banner {
             background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(249,115,22,0.15));
@@ -241,19 +260,6 @@
         .activity-time { font-size: 0.75rem; color: var(--text-muted); min-width: 60px; }
         .activity-event { font-size: 0.875rem; color: var(--text-secondary); }
         
-        .revenue-display { text-align: center; padding: 20px; }
-        .mrr-value { font-size: 3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
-        .mrr-label { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 20px; }
-        .stripe-status {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 8px 16px;
-            background: var(--bg-tertiary);
-            border-radius: 20px;
-            font-size: 0.875rem;
-        }
-        .stripe-status.active { color: var(--accent-green); }
-        .stripe-status.inactive { color: var(--accent-red); }
-        
         .stats-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
         .stat-pill {
             display: flex; align-items: center; gap: 8px;
@@ -271,7 +277,6 @@
             .card { padding: 20px; }
             .cron-row { grid-template-columns: 1fr auto; }
             .cron-schedule { display: none; }
-            .mrr-value { font-size: 2.5rem; }
             .header-status { flex-direction: column; align-items: flex-end; gap: 8px; }
         }
         
@@ -299,6 +304,11 @@
                 <h1>Mission Control</h1>
             </div>
             <div class="header-status">
+                <button class="refresh-btn" onclick="forceUpdate()" id="refresh-btn" aria-label="Force update">
+                    <span class="icon">🔄</span>
+                    <span class="spinner">⟳</span>
+                    Update
+                </button>
                 <div class="connection-status">
                     <span class="status-dot"></span>
                     <span>Polling</span>
@@ -327,10 +337,10 @@
             </div>
             <div class="card">
                 <div class="card-header">
-                    <span class="icon">💰</span>
-                    <h2>Revenue</h2>
+                    <span class="icon">📋</span>
+                    <h2>Recent Activity</h2>
                 </div>
-                <div class="revenue-display" id="revenue-display"></div>
+                <div class="activity-list" id="activity-list"></div>
             </div>
         </div>
 
@@ -342,21 +352,12 @@
             <div class="product-grid" id="products-grid"></div>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <div class="card-header">
-                    <span class="icon">⏰</span>
-                    <h2>Cron Jobs</h2>
-                </div>
-                <div class="cron-table" id="cron-table"></div>
+        <div class="card">
+            <div class="card-header">
+                <span class="icon">⏰</span>
+                <h2>Cron Jobs</h2>
             </div>
-            <div class="card">
-                <div class="card-header">
-                    <span class="icon">📋</span>
-                    <h2>Recent Activity</h2>
-                </div>
-                <div class="activity-list" id="activity-list"></div>
-            </div>
+            <div class="cron-table" id="cron-table"></div>
         </div>
     </div>
 
@@ -420,9 +421,18 @@
                 renderDashboard(data);
                 document.getElementById('main-content').classList.add('flash-update');
                 setTimeout(() => document.getElementById('main-content').classList.remove('flash-update'), 1000);
+                return true;
             } catch (err) {
                 console.error('Failed to fetch dashboard data:', err);
+                return false;
             }
+        }
+
+        async function forceUpdate() {
+            const btn = document.getElementById('refresh-btn');
+            btn.classList.add('loading');
+            await fetchData();
+            setTimeout(() => btn.classList.remove('loading'), 500);
         }
 
         function initDashboard() {
@@ -485,67 +495,68 @@
                 activeTasks.innerHTML = '<div class="empty-state">✨ All quiet — no active tasks</div>';
             }
 
-            // Revenue
-            const revenueDisplay = document.getElementById('revenue-display');
-            const revenue = data.revenue || { mrr: 0, stripeStatus: 'inactive' };
-            revenueDisplay.innerHTML = `
-                <div class="mrr-value">$${revenue.mrr || 0}</div>
-                <div class="mrr-label">Monthly Recurring Revenue</div>
-                <div class="stripe-status ${revenue.stripeStatus || 'inactive'}">
-                    ${revenue.stripeStatus === 'active' ? '✓' : '✗'} ${revenue.provider || 'Stripe'} ${revenue.stripeStatus || 'inactive'}
-                </div>
-            `;
-
             // Products
             const productsGrid = document.getElementById('products-grid');
-            productsGrid.innerHTML = (data.products || []).map(product => `
-                <a href="${escapeHtml(product.url)}" target="_blank" rel="noopener" class="product-card">
-                    <div class="product-name">${escapeHtml(product.name)}</div>
-                    <div class="product-status ${product.status}">
-                        <span class="dot"></span>
-                        ${product.status.charAt(0).toUpperCase() + product.status.slice(1)}
-                    </div>
-                    <div class="product-checked">Checked ${formatTime(product.lastChecked)}</div>
-                </a>
-            `).join('');
+            if (data.products && data.products.length > 0) {
+                productsGrid.innerHTML = data.products.map(product => `
+                    <a href="${escapeHtml(product.url)}" target="_blank" rel="noopener" class="product-card">
+                        <div class="product-name">${escapeHtml(product.name)}</div>
+                        <div class="product-status ${product.status}">
+                            <span class="dot"></span>
+                            ${product.status.charAt(0).toUpperCase() + product.status.slice(1)}
+                        </div>
+                        <div class="product-checked">Checked ${formatTime(product.lastChecked)}</div>
+                    </a>
+                `).join('');
+            } else {
+                productsGrid.innerHTML = '<div class="empty-state">No products configured</div>';
+            }
 
             // Cron Jobs
             const cronTable = document.getElementById('cron-table');
-            const sortedCrons = [...(data.crons || [])].sort((a, b) => {
-                if (a.errors > 0 && b.errors === 0) return -1;
-                if (b.errors > 0 && a.errors === 0) return 1;
-                if (a.status === 'paused' && b.status !== 'paused') return 1;
-                if (b.status === 'paused' && a.status !== 'paused') return -1;
-                return 0;
-            });
-            cronTable.innerHTML = sortedCrons.map(cron => {
-                const statusIcon = cron.status === 'ok' ? '✅' : cron.status === 'error' ? '❌' : cron.status === 'paused' ? '⏸️' : '⚪';
-                return `
-                    <div class="cron-row ${cron.errors > 0 ? 'has-error' : ''}" onclick="this.classList.toggle('expanded')">
-                        <div>
-                            <div class="cron-name">${escapeHtml(cron.name)}</div>
-                            <div class="cron-schedule">${escapeHtml(cron.schedule)}</div>
+            if (data.crons && data.crons.length > 0) {
+                const sortedCrons = [...data.crons].sort((a, b) => {
+                    if (a.errors > 0 && b.errors === 0) return -1;
+                    if (b.errors > 0 && a.errors === 0) return 1;
+                    if (a.status === 'paused' && b.status !== 'paused') return 1;
+                    if (b.status === 'paused' && a.status !== 'paused') return -1;
+                    return 0;
+                });
+                cronTable.innerHTML = sortedCrons.map(cron => {
+                    const statusIcon = cron.status === 'ok' ? '✅' : cron.status === 'error' ? '❌' : cron.status === 'paused' ? '⏸️' : '⚪';
+                    return `
+                        <div class="cron-row ${cron.errors > 0 ? 'has-error' : ''}" onclick="this.classList.toggle('expanded')">
+                            <div>
+                                <div class="cron-name">${escapeHtml(cron.name)}</div>
+                                <div class="cron-schedule">${escapeHtml(cron.schedule)}</div>
+                            </div>
+                            <div class="cron-status">${statusIcon}</div>
+                            ${cron.errors > 0 ? `<div class="cron-errors">${cron.errors} errors</div>` : ''}
+                            ${cron.lastError ? `<div class="cron-error-detail">${escapeHtml(cron.lastError)}</div>` : ''}
                         </div>
-                        <div class="cron-status">${statusIcon}</div>
-                        ${cron.errors > 0 ? `<div class="cron-errors">${cron.errors} errors</div>` : ''}
-                        ${cron.lastError ? `<div class="cron-error-detail">${escapeHtml(cron.lastError)}</div>` : ''}
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } else {
+                cronTable.innerHTML = '<div class="empty-state">No cron jobs configured</div>';
+            }
 
             // Recent Activity
             const activityList = document.getElementById('activity-list');
-            activityList.innerHTML = (data.recentActivity || []).slice(0, 10).map(activity => {
-                const time = new Date(activity.time);
-                const hours = time.getHours().toString().padStart(2, '0');
-                const mins = time.getMinutes().toString().padStart(2, '0');
-                return `
-                    <div class="activity-item">
-                        <div class="activity-time">${hours}:${mins}</div>
-                        <div class="activity-event">${escapeHtml(activity.event)}</div>
-                    </div>
-                `;
-            }).join('');
+            if (data.recentActivity && data.recentActivity.length > 0) {
+                activityList.innerHTML = data.recentActivity.slice(0, 10).map(activity => {
+                    const time = new Date(activity.time);
+                    const hours = time.getHours().toString().padStart(2, '0');
+                    const mins = time.getMinutes().toString().padStart(2, '0');
+                    return `
+                        <div class="activity-item">
+                            <div class="activity-time">${hours}:${mins}</div>
+                            <div class="activity-event">${escapeHtml(activity.event)}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                activityList.innerHTML = '<div class="empty-state">No recent activity</div>';
+            }
         }
 
         function formatTime(isoString) {

@@ -6,11 +6,12 @@
 #   cat dashboard-data.json | ./push-dashboard.sh
 #
 # Environment variables required:
-#   SUPABASE_URL         - Your Supabase project URL
-#   SUPABASE_SERVICE_KEY - Service role key (NOT anon key!)
+#   SUPABASE_URL      - Your Supabase project URL
+#   SUPABASE_ANON_KEY - Your Supabase anon (public) key
 #
-# Security note: The service_role key has full database access.
-# Keep it secret. Never put it in client-side code.
+# Security: Uses the anon key only. No service_role key needed.
+# The dashboard_state table's RLS allows anon reads and updates.
+# This key is already public in your client-side app — no secret here.
 
 set -e
 
@@ -21,9 +22,9 @@ if [ -z "$SUPABASE_URL" ]; then
     exit 1
 fi
 
-if [ -z "$SUPABASE_SERVICE_KEY" ]; then
-    echo "Error: SUPABASE_SERVICE_KEY environment variable is not set" >&2
-    echo "Set it with: export SUPABASE_SERVICE_KEY='your-service-role-key'" >&2
+if [ -z "$SUPABASE_ANON_KEY" ]; then
+    echo "Error: SUPABASE_ANON_KEY environment variable is not set" >&2
+    echo "Set it with: export SUPABASE_ANON_KEY='your-anon-key'" >&2
     exit 1
 fi
 
@@ -39,11 +40,11 @@ fi
 # Get current timestamp
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Update the dashboard_state table
+# Update the dashboard_state table using anon key
 RESPONSE=$(curl -s -w "\n%{http_code}" -X PATCH \
     "$SUPABASE_URL/rest/v1/dashboard_state?id=eq.main" \
-    -H "apikey: $SUPABASE_SERVICE_KEY" \
-    -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+    -H "apikey: $SUPABASE_ANON_KEY" \
+    -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
     -H "Content-Type: application/json" \
     -H "Prefer: return=minimal" \
     -d "{\"data\": $DATA, \"updated_at\": \"$TIMESTAMP\"}")

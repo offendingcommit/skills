@@ -127,18 +127,18 @@ Add to your `dashboard-data.json`:
 
 ## Hiding Sections
 
-### Remove Revenue Section
+### Remove a Section
 
-Delete or comment out:
+Delete or comment out the card HTML. For example, to remove Products:
 
 ```html
 <!-- Remove this entire card -->
 <div class="card">
     <div class="card-header">
-        <span class="icon">💰</span>
-        <h2>Revenue</h2>
+        <span class="icon">📊</span>
+        <h2>Products</h2>
     </div>
-    <div class="revenue-display" id="revenue-display"></div>
+    <div class="product-grid" id="products-grid"></div>
 </div>
 ```
 
@@ -147,12 +147,12 @@ Delete or comment out:
 Show sections based on data:
 
 ```javascript
-// Only show revenue if MRR > 0
-const revenueCard = document.getElementById('revenue-card');
-if (data.revenue && data.revenue.mrr > 0) {
-    revenueCard.style.display = 'block';
+// Only show products section if there are products
+const productsCard = document.getElementById('products-card');
+if (data.products && data.products.length > 0) {
+    productsCard.style.display = 'block';
 } else {
-    revenueCard.style.display = 'none';
+    productsCard.style.display = 'none';
 }
 ```
 
@@ -401,12 +401,12 @@ const i18n = {
     en: {
         activeNow: 'Active Now',
         actionRequired: 'Action Required',
-        revenue: 'Revenue'
+        cronJobs: 'Cron Jobs'
     },
     es: {
         activeNow: 'Activo Ahora',
         actionRequired: 'Acción Requerida',
-        revenue: 'Ingresos'
+        cronJobs: 'Trabajos Programados'
     }
 };
 
