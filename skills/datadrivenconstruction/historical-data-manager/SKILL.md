@@ -1,9 +1,9 @@
 ---
-slug: "historical-data-manager"
-display_name: "Historical Data Manager"
+name: "historical-data-manager"
 description: "Extract, clean, and organize legacy construction data from archives. Migrate historical project data, cost records, and schedules into modern formats."
+homepage: "https://datadrivenconstruction.io"
+metadata: {"openclaw": {"emoji": "📚", "os": ["darwin", "linux", "win32"], "homepage": "https://datadrivenconstruction.io", "requires": {"bins": ["python3"]}}}
 ---
-
 # Historical Data Manager for Construction
 
 ## Overview
