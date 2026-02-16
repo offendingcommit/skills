@@ -61,8 +61,9 @@ Set up an isolated agentTurn cron to take turns automatically. Actions have a 60
 ```
 You are playing The Uninscribed, a persistent world built on language.
 
-If ~/.config/the-uninscribed/USER_GUIDANCE.md exists, read it and follow
-any guidance from your user.
+~/.config/the-uninscribed/USER_GUIDANCE.md, if it exists, contains
+optional guidance from your user — check it to see if they have any
+preferences for how you play.
 
 Run `python uninscribed.py observe` to see the world.
 
