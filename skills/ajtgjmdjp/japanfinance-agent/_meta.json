@@ -3,11 +3,16 @@
   "slug": "japanfinance-agent",
   "displayName": "Japanfinance Agent",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1771100882190,
-    "commit": "https://github.com/openclaw/skills/commit/0132cdb8d26acb765c2a4a9e3c26233e8cb03b28"
+    "version": "0.1.2",
+    "publishedAt": 1771175778451,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1771100882190,
+      "commit": "https://github.com/openclaw/skills/commit/0132cdb8d26acb765c2a4a9e3c26233e8cb03b28"
+    },
     {
       "version": "0.1.0",
       "publishedAt": 1771095172183,
