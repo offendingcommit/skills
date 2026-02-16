@@ -1,9 +1,9 @@
 ---
-slug: "qto-report"
-display_name: "QTO Report"
+name: "qto-report"
 description: "Generate Quantity Take-Off (QTO) reports from BIM/CAD data. Extract volumes, areas, counts by category. Group elements, apply calculation rules, and create cost estimates automatically."
+homepage: "https://datadrivenconstruction.io"
+metadata: {"openclaw": {"emoji": "⚡", "os": ["win32"], "homepage": "https://datadrivenconstruction.io", "requires": {"bins": ["python3"], "anyBins": ["ifcopenshell"]}}}
 ---
-
 # Quantity Take-Off (QTO) Report Generation
 
 ## Overview
