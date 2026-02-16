@@ -3,11 +3,16 @@
   "slug": "openfunderse-strategy",
   "displayName": "OpenFunderse Strategy",
   "latest": {
-    "version": "1.1.2",
-    "publishedAt": 1771090216756,
-    "commit": "https://github.com/openclaw/skills/commit/d923b4cddc4c1431bb2741514edd749e5a4847ec"
+    "version": "2.0.2",
+    "publishedAt": 1771183517569,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.2",
+      "publishedAt": 1771090216756,
+      "commit": "https://github.com/openclaw/skills/commit/d923b4cddc4c1431bb2741514edd749e5a4847ec"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1771072702777,
