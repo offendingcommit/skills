@@ -1,7 +1,7 @@
 ---
 name: xerolite
 description: "Integrate OpenClaw with Xerolite trading platform. Use when: querying Xerolite API, placing orders, searching contracts, or processing Xerolite webhooks."
-metadata: {"openclaw":{"requires":{"bins":["node"],"env":["XEROLITE_API_URL","XEROLITE_API_KEY"]}}}
+metadata: {"openclaw":{"requires":{"bins":["node"]}}}
 ---
 
 # Xerolite
@@ -73,7 +73,7 @@ node {baseDir}/scripts/xerolite.mjs order place \
   --qty 10
 ```
 
-JSON sent to `POST /api/agent/order/place-order`:
+JSON sent to `POST /api/internal/agent/order/place-order`:
 
 ```json
 {
@@ -103,7 +103,7 @@ node {baseDir}/scripts/xerolite.mjs contract search \
   --exch SMART
 ```
 
-JSON sent to `POST /api/agent/contract/search`:
+JSON sent to `POST /api/internal/agent/contract/search`:
 
 ```json
 {
@@ -180,9 +180,9 @@ To customize the transform, edit `transforms/xerolite.js` before running install
 
 ## Requirements
 
-- Env vars: `XEROLITE_API_URL`, `XEROLITE_API_KEY`
 - Node.js 18+ (for built-in `fetch`)
 - OpenClaw hooks enabled (for webhook delivery)
+- **CLI only**: Optional `XEROLITE_API_URL` — base URL for Xerolite API. If not set, defaults to `http://localhost` (same machine or local network). No API key in this version; may be added in a future version.
 
 ## Troubleshooting
 

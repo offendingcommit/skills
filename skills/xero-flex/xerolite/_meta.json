@@ -3,11 +3,16 @@
   "slug": "xerolite",
   "displayName": "Xerolite",
   "latest": {
-    "version": "0.0.2",
-    "publishedAt": 1771048637522,
-    "commit": "https://github.com/openclaw/skills/commit/3b713a54255670016bfd3e8e424383084cff3e32"
+    "version": "0.0.3",
+    "publishedAt": 1771092302780,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.0.2",
+      "publishedAt": 1771048637522,
+      "commit": "https://github.com/openclaw/skills/commit/3b713a54255670016bfd3e8e424383084cff3e32"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1771006598365,

@@ -3,9 +3,11 @@
 /**
  * Xerolite API CLI
  *
- * Env:
- *   XEROLITE_API_URL  (e.g. https://your-xerolite-host)
- *   XEROLITE_API_KEY  (Bearer token for /api)
+ * Env (optional):
+ *   XEROLITE_API_URL  Base URL for Xerolite API. If not set, defaults to http://localhost.
+ *
+ * This version assumes execution on the same machine or local network; no API key.
+ * API key may be added in a future version.
  *
  * Commands:
  *   node xerolite.mjs order place --symbol AAPL --currency USD --asset-class STOCK --exch SMART --action BUY --qty 10
@@ -21,15 +23,9 @@ if (!cmd || !subcmd) {
   process.exit(1);
 }
 
-let baseUrl = 'http://localhost';
-let apiKey = '';
-
-if (process.env.XEROLITE_API_URL && process.env.XEROLITE_API_URL.trim() !== '') {
-  baseUrl = process.env.XEROLITE_API_URL;
-}
-if (process.env.XEROLITE_API_KEY && process.env.XEROLITE_API_KEY.trim() !== '') {
-  apiKey = process.env.XEROLITE_API_KEY;
-}
+const baseUrl = (process.env.XEROLITE_API_URL && process.env.XEROLITE_API_URL.trim() !== '')
+  ? process.env.XEROLITE_API_URL.trim()
+  : 'http://localhost';
 
 /** Default flag values when not provided (reduces required flags). */
 const FLAG_DEFAULTS = {
@@ -37,11 +33,6 @@ const FLAG_DEFAULTS = {
   'asset-class': 'STOCK',
   exch: 'SMART',
 };
-
-if (!baseUrl || !apiKey || baseUrl.trim() === '' || apiKey.trim() === '' ) {
-  console.error('Missing or invalid XEROLITE_API_URL or XEROLITE_API_KEY in environment or defaults. Please provide them.');
-  process.exit(1);
-}
 
 function parseFlags(rest) {
   const result = {};
@@ -106,10 +97,10 @@ function buildBody(command, subcommand, flags) {
 
 function resolvePath(command, subcommand) {
   if (command === 'contract' && subcommand === 'search') {
-    return '/api/agent/contract/search';
+    return '/api/internal/agent/contract/search';
   }
   if (command === 'order' && subcommand === 'place') {
-    return '/api/agent/order/place-order';
+    return '/api/internal/agent/order/place-order';
   }
   console.error(`No path configured for command: ${command} ${subcommand}`);
   process.exit(1);
@@ -123,7 +114,6 @@ async function main() {
   const url = new URL(path, baseUrl).toString();
 
   const headers = {
-//    'Authorization': `Bearer ${apiKey}`,
     'Accept': 'application/json',
     'Content-Type': 'application/json',
   };

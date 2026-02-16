@@ -4,14 +4,14 @@ This document describes the Xerolite API endpoints used by the skill CLI (`scrip
 
 ## Base Configuration
 
-- **Base URL**: `XEROLITE_API_URL` (e.g. `https://your-xerolite-host` — host only, no `/api` suffix; the script appends the path).
-- **Authentication**: Optional Bearer token via `XEROLITE_API_KEY`. If set, the CLI sends `Authorization: Bearer <key>`.
+- **Base URL**: Optional. Set `XEROLITE_API_URL` to the Xerolite host (e.g. `http://your-xerolite-host`). If not set, the CLI uses `http://localhost`. No `/api` suffix; the script appends the path.
+- **Authentication**: None in this version. Execution is assumed to be on the same machine or local network. API key may be added in a future version.
 
 ## Endpoints
 
 ### Place order
 
-- **Path**: `POST /api/agent/order/place-order`
+- **Path**: `POST /api/internal/agent/order/place-order`
 - **Used by**: `node xerolite.mjs order place ...`
 
 Request body (required: `action`, `qty`, `symbol`; optional with defaults: `currency`, `asset_class`, `exch`):
@@ -30,7 +30,7 @@ Request body (required: `action`, `qty`, `symbol`; optional with defaults: `curr
 
 ### Contract search
 
-- **Path**: `POST /api/agent/contract/search`
+- **Path**: `POST /api/internal/agent/contract/search`
 - **Used by**: `node xerolite.mjs contract search ...`
 
 Request body (required: `symbol`; optional with defaults: `currency`, `xeroAssetClass`; script sends fixed `brokerName: "IBKR"`):
