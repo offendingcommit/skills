@@ -6,7 +6,7 @@ metadata:
     "openclaw":
       {
         "emoji": "🔥",
-        "requires": { "bins": ["soulforge", "claude"], "env": [] },
+        "requires": { "bins": ["soulforge", "claude", "gh", "git"], "env": [] },
         "install":
           [
             {
@@ -94,12 +94,18 @@ The callback system is fully opaque — Soulforge doesn't know what's receiving 
 ## Prerequisites
 
 Soulforge requires:
-- **`soulforge` CLI** — installed globally via `npm install -g @ghostwater/soulforge`
+- **`soulforge` CLI** — installed globally via `npm install -g @ghostwater/soulforge` ([source](https://github.com/ghostwater-ai/soulforge), maintainer: `@ghostwater` npm org)
 - **`claude` CLI** (Claude Code) or **`codex` CLI** — the executor that actually runs code
 - **`gh` CLI** — for PR creation steps (authenticated via `gh auth login`)
-- **Git** — for worktree creation and branch management
+- **`git`** — for worktree creation and branch management
 
-Credentials are managed by the executor CLIs, not by Soulforge. Callbacks are opt-in and caller-controlled — Soulforge only POSTs to URLs you explicitly provide via `--callback-url`.
+Credentials are managed by the executor CLIs, not by Soulforge.
+
+## Security Notes
+
+- **Callbacks are opt-in** — Soulforge only POSTs to URLs you explicitly provide via `--callback-url`. Never embed secrets in `--callback-headers` or `--callback-body` unless you trust the receiving endpoint. Prefer localhost or internal URLs.
+- **Daemon blast radius** — The daemon can modify repos and invoke CLIs with whatever credentials those CLIs have. Run initial tests against non-sensitive repos.
+- **Credential scoping** — Ensure `gh`, `claude`/`codex` are scoped to minimum necessary permissions.
 
 ## Workflow Format
 
