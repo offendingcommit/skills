@@ -1,13 +1,18 @@
 {
   "owner": "logancyang",
   "slug": "headless-vault-cli",
-  "displayName": "Headless Vault Cli",
+  "displayName": "Skill",
   "latest": {
-    "version": "1.2.1",
-    "publishedAt": 1771186222442,
-    "commit": "https://github.com/openclaw/skills/commit/86c133ca86d5fca16c907c25fa18531458dd8215"
+    "version": "1.2.3",
+    "publishedAt": 1771228032366,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.1",
+      "publishedAt": 1771186222442,
+      "commit": "https://github.com/openclaw/skills/commit/86c133ca86d5fca16c907c25fa18531458dd8215"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1769658625422,
