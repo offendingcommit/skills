@@ -1,10 +1,12 @@
 # Clawauth Commands (Agent Reference)
 
-## Get command access
+## Prerequisite
 
-```bash
-npx clawauth --help
-```
+- `clawauth` is expected to be preinstalled by the operator in a trusted runtime image.
+- OpenClaw metadata in `SKILL.md` declares `requires.bins` and an install action for the CLI.
+- If the binary is missing, OpenClaw/Gateway should resolve this via the metadata install action (not ad-hoc agent shell install steps).
+
+Manual fallback:
 
 ```bash
 npm i -g clawauth
@@ -72,14 +74,9 @@ clawauth session-rm <sessionId> --json
 ```bash
 clawauth token list --json
 ```
+Security note:
 
-```bash
-clawauth token get <provider> --json
-```
-
-```bash
-clawauth token env <provider>
-```
+- This skill intentionally avoids commands that materialize raw tokens into output/environment.
 
 ## Detailed manual
 

@@ -1,7 +1,7 @@
 ---
 name: clawauth
-description: Secure delegated OAuth for agents: request user approval, hand off a short auth link, then claim provider access tokens for direct third-party API calls without a central SaaS token vault.
-metadata: {"openclaw":{"emoji":"🔐","homepage":"https://auth.clawauth.app"}}
+description: Let agents request OAuth access from end users via short links, continue working asynchronously, and later claim reusable third-party API tokens from local keychain storage instead of a centralized SaaS token vault.
+metadata: {"openclaw":{"emoji":"🔐","homepage":"https://auth.clawauth.app","requires":{"bins":["clawauth"]},"install":[{"id":"node","kind":"node","package":"clawauth","bins":["clawauth"],"label":"Install clawauth CLI (node)"}]}}
 ---
 
 # Clawauth OAuth Skill
@@ -22,33 +22,46 @@ Most "OAuth gateway" patterns keep user refresh tokens in a central hosted datab
 
 Result: async UX for agents, minimal operator overhead, and no permanent central token vault by design.
 
-## How the agent gets the command
+## Runtime prerequisite
 
-The agent must be able to run `clawauth` commands. Use one of these methods:
+`clawauth` must already be preinstalled in the trusted runtime image/environment by the operator.
+This skill does not instruct dynamic package installation.
 
-1) Zero-install invocation:
+OpenClaw can detect this requirement from frontmatter metadata:
 
-```bash
-npx clawauth --help
-```
+- `metadata.openclaw.requires.bins: ["clawauth"]` gates eligibility.
+- `metadata.openclaw.install` can expose an operator-approved install action in OpenClaw UI/Gateway flows.
 
-2) Global install:
+## How installation is documented and triggered
+
+- Installation intent is declared in frontmatter, not in free-form shell instructions.
+- This skill declares a Node installer in `metadata.openclaw.install` for package `clawauth`.
+- OpenClaw/Gateway uses that metadata to offer a managed install action when `clawauth` is missing.
+- If multiple installer options are present, Gateway selects a preferred one (OpenClaw docs: brew preferred when available, otherwise node manager policy).
+- For this skill we publish a single Node installer path to keep behavior deterministic across hosts.
+- Reference: https://docs.openclaw.ai/tools/skills
+- Reference: https://docs.openclaw.ai/platforms/mac/skills
+
+## Manual install (operator fallback)
+
+If OpenClaw/Gateway does not run the install action automatically, install the CLI manually:
 
 ```bash
 npm i -g clawauth
-clawauth --help
 ```
 
-3) Project-local install:
+Then verify:
 
 ```bash
-npm i clawauth
-npx clawauth --help
+clawauth --help
+openclaw skills check --json
 ```
 
-4) Optional version pinning can be enforced by the operator in the runtime/tooling policy.
+## Install policy (recommended)
 
-If `clawauth` is not found, use `npx clawauth ...` or an operator-approved pinned version.
+- Pre-install `clawauth` in the base image/runner and disable ad-hoc package fetches.
+- Pin and approve the CLI version in operator-managed tooling policy.
+- Keep package source/provenance controls outside this skill (CI image build or internal artifact policy).
 
 ## Hosted service endpoint
 
@@ -113,14 +126,15 @@ clawauth login status <sessionId> --json
 clawauth login claim <sessionId> --json
 ```
 
-6) Use stored token later:
+6) Claim completion and hand off control to the operator-defined API call layer.
+This skill intentionally avoids instructing raw token materialization commands.
 
-```bash
-clawauth token get <provider> --json
-clawauth token env <provider>
-```
+## Token exposure boundaries
 
-Use `token env` only when a downstream command explicitly needs env vars in the same process.
+- `login claim` may return sensitive token payload data in JSON output.
+- Do not paste sensitive command output to chat, logs, traces, or telemetry.
+- Do not materialize tokens into shell environments from this skill.
+- Use operator-controlled secret handling for downstream provider API calls.
 
 ## Command map
 
@@ -139,8 +153,6 @@ Use `token env` only when a downstream command explicitly needs env vars in the 
 ### Token access
 
 - `clawauth token list [--json]`
-- `clawauth token get [provider] [--json]`
-- `clawauth token env [provider] [--json]`
 
 ### Discovery and docs
 
@@ -175,16 +187,6 @@ Use `token env` only when a downstream command explicitly needs env vars in the 
 - `keychainService`
 - `keychainAccount`
 
-### `token get --json`
-
-- `action`
-- `account`
-- `token.provider`
-- `token.access_token`
-- `token.refresh_token`
-- `token.token_type`
-- `token.saved_at`
-
 ## Agent behavior rules
 
 - Prefer `--json` for machine parsing.
@@ -195,8 +197,8 @@ Use `token env` only when a downstream command explicitly needs env vars in the 
 - If session context is lost, recover using `clawauth sessions --json`.
 - If provider unknown, run `clawauth providers --json` and choose supported value.
 - Never print raw tokens into user-facing chat.
-- Do not use `npx ...@latest` in autonomous execution.
-- Avoid shell-wide token exports unless strictly required for the immediate API call.
+- Do not run package install/fetch commands from this skill.
+- Do not export tokens into shell environment variables from this skill.
 
 ## Security model summary
 
@@ -244,8 +246,7 @@ clawauth login status <sessionId> --json
 # 4) Claim when completed
 clawauth login claim <sessionId> --json
 
-# 5) Use token
-clawauth token get notion --json
+# 5) Continue with operator-defined downstream API handling
 ```
 
 ## Reference
