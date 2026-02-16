@@ -513,41 +513,21 @@ async function sendReport(options) {
         else if (statusUpper.includes('ERROR')) headerColor = 'red'; // Fallback for error messages
     }
 
-    // --- ENHANCED HEADER EMOJI ---
-    const statusEmoji = {
-        "success": "✅",
-        "failed": "❌",
-        "running": "🔄",
-        "warning": "⚠️",
-        "info": "ℹ️"
-    };
-    
-    // Auto-detect emoji if status starts with a keyword
-    let emoji = "🧬";
-    const lowerStatus = (options.status || "").toLowerCase();
-    if (lowerStatus.includes("success") || lowerStatus.includes("complete")) emoji = statusEmoji.success;
-    else if (lowerStatus.includes("fail") || lowerStatus.includes("error")) emoji = statusEmoji.failed;
-    else if (lowerStatus.includes("run") || lowerStatus.includes("start")) emoji = statusEmoji.running;
-    else if (lowerStatus.includes("warn")) emoji = statusEmoji.warning;
-    // --- END ENHANCED HEADER ---
+        // Title is passed as-is from caller (already contains 🧬).
+        // No extra emoji in the title -- result goes in the body.
 
         if (options.dashboard && cardData) {
-            // Dashboard mode: use cardData elements
             await sendCard({
                 target: target,
-                title: title, // Pass title for dashboard too
+                title: title,
                 cardData: cardData,
-                note: footerStats, // Keep footer
+                note: footerStats,
                 color: headerColor
             });
         } else {
-            // Standard mode: text + dashboard snapshot
-            // Modify title in sendCard (cannot easily mod here without reconstructing object)
-            // But we can just pass the emoji in the title string
-            
             await sendCard({
                 target: target,
-                title: `${emoji} ${title}`,
+                title: title,
                 text: finalContent,
                 note: footerStats,
                 color: headerColor
