@@ -1,0 +1,11 @@
+{
+  "owner": "rbcp18",
+  "slug": "teller-borrow",
+  "displayName": "Teller MCP – Borrow USDC & Altcoins (no margin calls)",
+  "latest": {
+    "version": "0.2.0",
+    "publishedAt": 1771206861579,
+    "commit": null
+  },
+  "history": []
+}
