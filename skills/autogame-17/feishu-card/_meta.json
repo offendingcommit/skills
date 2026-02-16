@@ -1,13 +1,18 @@
 {
   "owner": "autogame-17",
   "slug": "feishu-card",
-  "displayName": "feishu-card",
+  "displayName": "Feishu Card",
   "latest": {
-    "version": "1.4.10",
-    "publishedAt": 1771040115580,
-    "commit": "https://github.com/openclaw/skills/commit/934cecaf9c998d6bed999440cbce8d57ce792032"
+    "version": "1.4.11",
+    "publishedAt": 1771169197365,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.4.10",
+      "publishedAt": 1771040115580,
+      "commit": "https://github.com/openclaw/skills/commit/934cecaf9c998d6bed999440cbce8d57ce792032"
+    },
     {
       "version": "1.4.14",
       "publishedAt": 1770892441750,
@@ -22,11 +27,6 @@
       "version": "1.4.11",
       "publishedAt": 1770649344266,
       "commit": "https://github.com/openclaw/skills/commit/9dcb1855895e5f12b9d3945a2132fdca96a127cf"
-    },
-    {
-      "version": "1.4.10",
-      "publishedAt": 1770561252124,
-      "commit": "https://github.com/openclaw/skills/commit/e15b8a2a72e2826ba260c82e3fdc47aa9c24ba9d"
     },
     {
       "version": "1.4.7",
