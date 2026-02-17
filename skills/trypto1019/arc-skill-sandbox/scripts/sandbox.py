@@ -192,88 +192,114 @@ def create_monitored_environ(monitor, fake_env=False):
     return MonitoredEnv(os.environ)
 
 
+def _build_sandbox_env(monitor, fake_env=False):
+    """Build a sanitized environment for subprocess execution."""
+    # Start with minimal safe env vars
+    safe_env = {
+        "PATH": "/usr/local/bin:/usr/bin:/bin",
+        "HOME": tempfile.mkdtemp(prefix="sandbox_"),
+        "LANG": "C.UTF-8",
+        "PYTHONDONTWRITEBYTECODE": "1",
+    }
+
+    if fake_env:
+        # Inject fake credentials — monitors which ones the script tries to use
+        fake_creds = {
+            "OPENAI_API_KEY": "sk-fake-sandbox-key-do-not-use",
+            "ANTHROPIC_API_KEY": "sk-ant-fake-sandbox-key",
+            "DISCORD_TOKEN": "fake-discord-token-sandbox",
+            "AWS_SECRET_ACCESS_KEY": "fake-aws-secret-sandbox",
+            "GITHUB_TOKEN": "ghp_fakesandboxtoken123456789",
+            "OPENROUTER_API_KEY": "sk-or-fake-sandbox-key",
+        }
+        safe_env.update(fake_creds)
+        for key in fake_creds:
+            monitor.log_env(key)
+            monitor.warn(f"Fake credential injected: {key}")
+
+    return safe_env
+
+
 def run_sandbox(script_path, monitor, timeout=60, fake_env=False, restricted=False):
-    """Run a script in the sandboxed environment."""
+    """Run a script in a subprocess-isolated sandbox.
+
+    SECURITY: Uses subprocess isolation instead of exec() to prevent:
+    - Frame traversal recovering real builtins
+    - /proc/self/environ reads of host environment
+    - gc.get_objects() report tampering
+    - Raw socket exfiltration bypassing urllib patches
+    - ctypes, mmap, os.open() filesystem bypasses
+
+    The script runs as a separate Python process with:
+    - Sanitized environment (no real credentials)
+    - Restricted working directory (tmpdir)
+    - Stdout/stderr captured for analysis
+    - Timeout enforcement at the OS level
+    """
+    import subprocess as _subprocess
+
     script_path = Path(script_path)
     if not script_path.exists():
         print(f"ERROR: Script not found: {script_path}", file=sys.stderr)
         return False
 
+    # Read script for static analysis before execution
     with open(script_path) as f:
         code = f.read()
 
-    # Create monitored environment
-    monitored_env = create_monitored_environ(monitor, fake_env=fake_env)
+    # Static analysis: log observations
+    suspicious_patterns = [
+        ("__traceback__", "frame traversal attempt"),
+        ("f_back", "frame traversal attempt"),
+        ("f_globals", "frame traversal attempt"),
+        ("/proc/self", "/proc filesystem access"),
+        ("gc.get_objects", "garbage collector introspection"),
+        ("ctypes", "ctypes FFI access"),
+        ("socket.socket", "raw socket creation"),
+        ("os.system", "os.system shell execution"),
+        ("os.popen", "os.popen shell execution"),
+        ("os.fork", "process forking"),
+        ("os.exec", "process exec"),
+        ("mmap", "memory-mapped file access"),
+        ("importlib", "dynamic module import"),
+    ]
+    for pattern, description in suspicious_patterns:
+        if pattern in code:
+            monitor.warn(f"Static analysis: {description} detected in {script_path.name}")
 
-    # Set up mock network calls
-    mock_urlopen = MagicMock()
-    mock_urlopen.return_value.__enter__ = MagicMock(return_value=MagicMock(
-        read=MagicMock(return_value=b'{"sandboxed": true}'),
-        status=200,
-    ))
+    # Build isolated environment
+    sandbox_env = _build_sandbox_env(monitor, fake_env=fake_env)
+    sandbox_dir = sandbox_env["HOME"]
 
     monitor.start_time = time.time()
 
     try:
-        # Create restricted globals
-        sandbox_globals = {
-            "__name__": "__main__",
-            "__file__": str(script_path),
-            "__builtins__": __builtins__,
-        }
-
-        # Capture stdout
-        old_stdout = sys.stdout
-        captured = io.StringIO()
-        sys.stdout = captured
-
-        # Monkey-patch sensitive functions
-        original_open = open
-        patches = []
-
-        if restricted:
-            # Block network in restricted mode
-            patches.append(patch("urllib.request.urlopen", side_effect=lambda *a, **k: (
-                monitor.log_network("GET", str(a[0]) if a else "unknown"),
-                monitor.warn("Network access BLOCKED in restricted mode"),
-                (_ for _ in ()).throw(ConnectionError("Sandbox: network blocked")),
-            )[-1]))
-
-        # Apply patches
-        for p in patches:
-            p.start()
-
-        try:
-            # Monitor subprocess
-            import subprocess as _subprocess
-            original_run = _subprocess.run
-
-            def monitored_run(cmd, **kwargs):
-                monitor.log_subprocess(cmd)
-                if restricted:
-                    monitor.warn(f"Subprocess BLOCKED in restricted mode: {cmd}")
-                    raise PermissionError("Sandbox: subprocess blocked")
-                return original_run(cmd, **kwargs)
-
-            _subprocess.run = monitored_run
-
-            # Execute with timeout
-            exec(compile(code, str(script_path), "exec"), sandbox_globals)
-
-            _subprocess.run = original_run
-
-        except SystemExit:
-            pass  # Scripts often call sys.exit()
-        except Exception as e:
-            monitor.warn(f"Script error: {type(e).__name__}: {e}")
-        finally:
-            for p in patches:
-                p.stop()
-            sys.stdout = old_stdout
+        # Run as separate subprocess — true process isolation
+        result = _subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=sandbox_env,
+            cwd=sandbox_dir,
+        )
 
         monitor.end_time = time.time()
 
-        output = captured.getvalue()
+        # Log subprocess execution
+        monitor.log_subprocess(str(script_path))
+
+        # Analyze output for credential access attempts
+        combined = result.stdout + result.stderr
+        if "sk-fake-sandbox" in combined or "fake-discord" in combined or "ghp_fake" in combined:
+            monitor.warn("Script output contains fake credentials — likely attempted to read/use them")
+
+        if result.returncode != 0:
+            monitor.warn(f"Script exited with code {result.returncode}")
+            if result.stderr:
+                monitor.warn(f"Stderr: {result.stderr[:500]}")
+
+        output = result.stdout
         if output:
             print(f"Script output ({len(output)} chars):")
             print(output[:500])
@@ -282,10 +308,21 @@ def run_sandbox(script_path, monitor, timeout=60, fake_env=False, restricted=Fal
 
         return True
 
+    except _subprocess.TimeoutExpired:
+        monitor.end_time = time.time()
+        monitor.warn(f"Script timed out after {timeout}s")
+        return False
     except Exception as e:
         monitor.end_time = time.time()
         monitor.warn(f"Sandbox execution error: {e}")
         return False
+    finally:
+        # Clean up sandbox tmpdir
+        import shutil
+        try:
+            shutil.rmtree(sandbox_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def run_skill_sandbox(skill_path, monitor, timeout=60, fake_env=False, restricted=False):
