@@ -73,7 +73,7 @@ ctx = ssl._create_unverified_context()
 Use Unicode box-drawing in code blocks for Telegram compatibility. Each coin section includes:
 
 1. **AI500 score** + cumulative return since selection
-2. **OI changes** across 7 timeframes (5m→24h)  
+2. **OI changes** across 7 timeframes (5m→24h) with percentage AND dollar value (from `oi_delta_value`)  
 3. **Institutional fund flows** across timeframes, with ranking when in TOP/LOW 20
 4. **K-line analysis** (15m/1h/4h): trend direction, bull/bear candle ratio, MA3 vs MA7, volume change, support/resistance
 5. **Funding rate** with warning if >0.03%
@@ -86,9 +86,9 @@ After individual coins, include:
 ## K-line Analysis Method
 
 For each timeframe (15m/1h/4h), fetch 10 candles and compute:
-- **Trend**: 3 consecutive candles direction → 📈上涨/📉下跌/↔️震荡
+- **Trend**: 3 consecutive candles direction → 📈Bullish/📉Bearish/↔️Sideways
 - **Bull/bear ratio**: count of green vs red candles out of 10
-- **MA alignment**: MA3 vs MA7 → 多头排列/空头排列
+- **MA alignment**: MA3 vs MA7 → Bullish alignment/Bearish alignment
 - **Volume change**: avg volume of last 3 candles vs previous 3 → percentage
 - **Support**: lowest low of 10 candles
 - **Resistance**: highest high of 10 candles
