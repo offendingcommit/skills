@@ -5,7 +5,7 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AUDIT="$SCRIPT_DIR/audit.sh"
-TEST_DIR="$SCRIPT_DIR/test-skills"
+TEST_DIR="$SCRIPT_DIR/tests"
 PASSED=0
 FAILED=0
 TOTAL=0

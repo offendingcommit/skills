@@ -1,24 +1,21 @@
 #!/bin/bash
 # Skill Auditor - ClawHub Pre-Install Inspector
 # Downloads, audits, and trust-scores a skill before installation
-# Usage: bash inspect.sh <skill-slug> [--install-if-safe] [--json]
+# Usage: bash inspect.sh <skill-slug> [--json]
 #
 # Workflow:
 #   1. Download skill to temp dir via clawhub inspect
 #   2. Run security audit
 #   3. Calculate trust score
-#   4. Show results
-#   5. Optionally install if safe (--install-if-safe with trust >= 75)
+#   4. Show results and recommendation (never auto-installs)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SLUG="${1:?Usage: inspect.sh <skill-slug> [--install-if-safe] [--json]}"
-AUTO_INSTALL=false
+SLUG="${1:?Usage: inspect.sh <skill-slug> [--json]}"
 JSON_MODE=false
 
 shift
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --install-if-safe) AUTO_INSTALL=true; shift ;;
         --json) JSON_MODE=true; shift ;;
         *) shift ;;
     esac
@@ -97,10 +94,6 @@ fi
 if $JSON_MODE; then
     TRUST_SCORE=$(echo "$TRUST_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin).get('trust_score',0))" 2>/dev/null || echo 0)
     echo "{\"slug\":\"$SLUG\",\"audit\":$AUDIT_JSON,\"trust\":$TRUST_JSON,\"install_recommended\":$([ "$TRUST_SCORE" -ge 75 ] && echo true || echo false)}"
-    
-    if $AUTO_INSTALL && [ "$TRUST_SCORE" -ge 75 ]; then
-        clawhub install "$SLUG" 2>/dev/null
-    fi
     exit $AUDIT_CODE
 fi
 
@@ -117,16 +110,12 @@ if [ "$AUDIT_CODE" -eq 2 ]; then
     exit 2
 elif [ "$TRUST_SCORE" -ge 75 ]; then
     echo -e "\033[0;32m  SAFE TO INSTALL - Trust score $TRUST_SCORE/100\033[0m"
-    if $AUTO_INSTALL; then
-        echo "  Auto-installing..."
-        clawhub install "$SLUG"
-    else
-        echo "  Install with: clawhub install $SLUG"
-    fi
+    echo "  Install with: clawhub install $SLUG"
     exit 0
 elif [ "$TRUST_SCORE" -ge 60 ]; then
     echo -e "\033[1;33m  REVIEW BEFORE INSTALLING - Trust score $TRUST_SCORE/100\033[0m"
     echo "  Some quality/transparency gaps. Review the audit output above."
+    echo "  Install with: clawhub install $SLUG"
     exit 1
 else
     echo -e "\033[0;31m  NOT RECOMMENDED - Trust score $TRUST_SCORE/100\033[0m"

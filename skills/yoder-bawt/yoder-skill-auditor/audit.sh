@@ -137,7 +137,7 @@ fi
 LARGE_FILES=$(find "$SKILL_DIR" -type f -size +100k 2>/dev/null \
     | grep -v "$SKILL_DIR/node_modules/" \
     | grep -v "$SKILL_DIR/.git/" \
-    | grep -v "$SKILL_DIR/test-skills/" || true)
+    | grep -v "$SKILL_DIR/test-skills/" | grep -v "$SKILL_DIR/tests/" || true)
 if [ -n "$LARGE_FILES" ]; then
     log_warning "large-files" "Files over 100KB found (review for embedded binaries)"
     if ! $JSON_MODE; then
@@ -153,7 +153,7 @@ SCRIPT_FILES=$(find "$SKILL_DIR" -type f 2>/dev/null \
     | grep -vE '\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|zip|tar|gz|bin|exe|dll|so|dylib)$' \
     | grep -v "$SKILL_DIR/node_modules/" \
     | grep -v "$SKILL_DIR/.git/" \
-    | grep -v "$SKILL_DIR/test-skills/" \
+    | grep -v "$SKILL_DIR/test-skills/" | grep -v "$SKILL_DIR/tests/" \
     | grep -iE '\.(sh|bash|py|js|ts|rb|pl|php|go|rs|java|mjs|cjs)$' \
     || true)
 
@@ -161,7 +161,7 @@ DOC_FILES=$(find "$SKILL_DIR" -type f 2>/dev/null \
     | grep -vE '\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|zip|tar|gz|bin|exe|dll|so|dylib)$' \
     | grep -v "$SKILL_DIR/node_modules/" \
     | grep -v "$SKILL_DIR/.git/" \
-    | grep -v "$SKILL_DIR/test-skills/" \
+    | grep -v "$SKILL_DIR/test-skills/" | grep -v "$SKILL_DIR/tests/" \
     | grep -iE '\.(md|txt|rst|adoc|json|yaml|yml|toml|cfg|ini|conf)$' \
     || true)
 
@@ -169,7 +169,7 @@ ALL_FILES=$(find "$SKILL_DIR" -type f 2>/dev/null \
     | grep -vE '\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|zip|tar|gz|bin|exe|dll|so|dylib)$' \
     | grep -v "$SKILL_DIR/node_modules/" \
     | grep -v "$SKILL_DIR/.git/" \
-    | grep -v "$SKILL_DIR/test-skills/" \
+    | grep -v "$SKILL_DIR/test-skills/" | grep -v "$SKILL_DIR/tests/" \
     || true)
 
 if [ -z "$ALL_FILES" ]; then
@@ -196,9 +196,30 @@ log_info "file-breakdown" "Scripts: $SCRIPT_COUNT, Docs: $DOC_COUNT"
 
 CRED_PATTERNS='\.env|\.ssh|\.aws|\.config.*token|\.config.*key|auth.*token|api[_-]?key|secret[_-]?key|password|credential|\.npmrc|\.pypirc|BW_SESSION|BW_PASSWORD'
 
-# Context-aware filter: lines that define detection patterns (variable assignments storing regex)
-# are NOT actual credential access, exfiltration, or obfuscation - they're scanner rules.
-# Also filters: grep commands checking for patterns, inline comments about patterns
+# ─── PATTERN DEFINITION FILTER (Self-Audit Transparency) ───
+#
+# WHAT: This filter excludes lines that are pattern DEFINITIONS (not actual threats)
+# from being flagged by security checks. Without it, the scanner would flag itself.
+#
+# WHY: A security scanner necessarily contains the exact patterns it detects (e.g.,
+# regex for credential keywords, curl|bash signatures, etc.). These pattern definitions
+# are scanner infrastructure, not malicious behavior. The filter prevents false positives
+# when the auditor scans itself or other security tools.
+#
+# COMPONENTS (each separated by | in the regex):
+#   [A-Z_][A-Z_]*='     - Shell variable assignments with single quotes (e.g., CRED_PATTERNS='...')
+#   [A-Z_][A-Z_]*="     - Shell variable assignments with double quotes
+#   \$(echo             - Command substitutions used in test assertions
+#   xargs grep           - Grep pipelines (scanner searching for patterns)
+#   grep -[flags] '/"   - Grep commands with quoted pattern arguments
+#   log_(critical|...)   - Logging/reporting function calls
+#   echo.*PATTERN        - Debug/status output referencing pattern names
+#   assert_              - Test assertion functions (test.sh)
+#   FILTER=              - Filter variable definitions (including this one)
+#
+# HOW TO VERIFY: Inspect each component above, then compare against the actual regex below.
+# The filter is intentionally conservative - it only matches lines that are clearly
+# defining or searching for patterns, not lines that execute them.
 PATTERN_DEF_FILTER='[A-Z_][A-Z_]*='\''|[A-Z_][A-Z_]*="|\$\(echo|xargs grep|grep -[a-zA-Z]*[ElcnqriP] '\''|grep -[a-zA-Z]*[ElcnqriP] "|log_(critical|warning|info|pass)|echo.*PATTERN|assert_|FILTER='
 
 if [ -n "$SCRIPT_FILES" ]; then
@@ -669,7 +690,7 @@ ALLOWED_DOTFILES='\.gitignore$|\.editorconfig$|\.eslintrc|\.prettierrc|\.clawhub
 HIDDEN_FILES=$(find "$SKILL_DIR" -maxdepth 2 -name '.*' -not -name '.' -not -name '..' -not -name '.git' -not -name '.DS_Store' 2>/dev/null \
     | grep -v "$SKILL_DIR/node_modules/" \
     | grep -v "$SKILL_DIR/.git/" \
-    | grep -v "$SKILL_DIR/test-skills/" \
+    | grep -v "$SKILL_DIR/test-skills/" | grep -v "$SKILL_DIR/tests/" \
     || true)
 if [ -n "$HIDDEN_FILES" ]; then
     SUSPICIOUS_HIDDEN=$(echo "$HIDDEN_FILES" | grep -vE "$ALLOWED_DOTFILES" || true)

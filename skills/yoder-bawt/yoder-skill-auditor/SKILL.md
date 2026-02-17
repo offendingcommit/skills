@@ -1,6 +1,6 @@
 ---
 name: skill-auditor
-version: 3.0.0
+version: 3.1.0
 description: "The definitive security scanner for OpenClaw skills. 18 security checks including prompt injection detection, download-and-execute, privilege escalation, credential harvesting, supply chain attacks, crypto drains, and more. 5-dimension trust scoring with trend tracking."
 metadata:
   openclaw:
@@ -11,7 +11,7 @@ metadata:
     user-invocable: true
 ---
 
-# Skill Auditor v3.0.0
+# Skill Auditor v3.1.0
 
 The definitive security scanner for OpenClaw/ClawHub skills. Best-in-class detection across 18 security checks including **prompt injection detection** — the first scanner to catch agent manipulation attacks in skill documentation. 5-dimension trust scoring, trend tracking, diff analysis, and benchmarking. Zero false positives on legitimate skills.
 

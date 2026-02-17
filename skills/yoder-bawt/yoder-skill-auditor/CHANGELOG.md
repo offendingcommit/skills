@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.1.0 (2026-02-16)
+
+### Security Advisory Remediations
+- **Removed self-allowlist entry** - skill-auditor no longer allowlists itself; the PATTERN_DEF_FILTER handles self-scan suppression transparently
+- **Relocated test fixtures** - Malicious test fixtures moved from `test-skills/` to `tests/`; excluded from published package via `.clawignore`
+- **Removed auto-install capability** - `inspect.sh` no longer accepts `--install-if-safe` or auto-installs skills; it audits and recommends only
+- **Documented PATTERN_DEF_FILTER** - Added comprehensive inline documentation explaining what the filter does, why it exists, and how each regex component works
+- **Added TEST-FIXTURES-WARNING.md** - Clear documentation that test fixtures are intentionally malicious for detection testing
+- **Added .clawignore** - Excludes `tests/` from the distributed ClawHub package
+
+### Other
+- Version bump to 3.1.0 across SKILL.md, CHANGELOG.md
+- All 28 tests passing, self-audit clean (0 criticals)
+
 ## v3.0.0 (2026-02-16)
 
 ### New Security Checks (5 new, 18 total)

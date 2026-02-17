@@ -31,10 +31,6 @@
       "reason": "Eight Sleep CLI - account credentials"
     },
     {
-      "name": "skill-auditor",
-      "reason": "Security scanner - contains patterns it detects"
-    },
-    {
       "name": "learning-loop",
       "reason": "Contains credential patterns in documentation context"
     },
