@@ -77,8 +77,8 @@ Only needs `sha256sum` (pre-installed on macOS and Linux). No npm. No pip. No ru
 
 ```
 v1.3.1  NOW    naming + routing + bags + HUSH
-v1.4    WHO    free machine-id auto-identity + auth upgrade path
-v1.5    CONVO  agents report sightings back, network forms organically
+v1.4    NEXT   WHO: free machine-id auto-identity + auth upgrade path
+v1.5    THEN   CONVO: agents report sightings back, network forms organically
 v1.6    RINA   recursive naming scopes, enrollment, inclusion/exclusion
 ```
 

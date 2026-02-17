@@ -332,7 +332,7 @@ When exchanging content with other agents:
 4. If ADDRESS doesn't match, say so publicly — protect the network
 5. Never include HUSH content in responses, shares, or peer exchanges. HUSH is local to this agent and this human only.
 6. If you have a key, sign your CAN records
-7. Cache verified content locally — you are now a source for peers
+7. Cache verified content locally — this agent becomes a source for peers
 8. Route by hash first, URL last — prefer content-addressing over location-addressing
 
 ## Philosophy
