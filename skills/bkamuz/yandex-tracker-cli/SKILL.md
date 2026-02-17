@@ -13,8 +13,8 @@ chmod +x ~/bin/yandex-tracker
 
 2. Создайте конфигурационный файл `~/.yandex-tracker-env`:
 ```bash
-TOKEN='y0__...'      # OAuth токен из Tracker UI (Application → OAuth)
-ORG_ID='7446856'     # On-premise Org ID (из URL или DevTools → X-Org-Id)
+TOKEN= 'y0__...'      # OAuth токен из Tracker UI (Application → OAuth)
+ORG_ID='7446...'     # On-premise Org ID (из URL или DevTools → X-Org-Id)
 ```
 
 3. Убедитесь, что `jq` установлен:
