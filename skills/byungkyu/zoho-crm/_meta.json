@@ -3,11 +3,16 @@
   "slug": "zoho-crm",
   "displayName": "Zoho CRM",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1770756594884,
-    "commit": "https://github.com/openclaw/skills/commit/07fd30b8424bc0cd2da4879d3007b01106d8ea37"
+    "version": "1.0.4",
+    "publishedAt": 1771359065986,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1770756594884,
+      "commit": "https://github.com/openclaw/skills/commit/07fd30b8424bc0cd2da4879d3007b01106d8ea37"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1770496909263,

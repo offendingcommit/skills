@@ -2,7 +2,7 @@
 name: zoho-crm
 description: |
   Zoho CRM API integration with managed OAuth. Manage leads, contacts, accounts, deals, and other CRM records.
-  Use this skill when users want to read, create, update, or delete CRM records, search contacts, or manage sales pipelines in Zoho CRM.
+  Use this skill when users want to read, create, update, or delete CRM records, search contacts, manage sales pipelines, access organization settings, manage users, or retrieve module metadata in Zoho CRM.
   For other third party apps, use the api-gateway skill (https://clawhub.ai/byungkyu/api-gateway).
   Requires network access and valid Maton API key.
 metadata:
@@ -17,7 +17,7 @@ metadata:
 
 # Zoho CRM
 
-Access the Zoho CRM API with managed OAuth authentication. Manage leads, contacts, accounts, deals, and other CRM modules with full CRUD operations including search and bulk operations.
+Access the Zoho CRM API with managed OAuth authentication. Manage leads, contacts, accounts, deals, and other CRM modules with full CRUD operations including search and bulk operations. Also supports organization details, user management, and module metadata retrieval.
 
 ## Quick Start
 
@@ -155,10 +155,10 @@ Zoho CRM organizes data into modules. Core modules include:
 | Accounts | `Accounts` | Organizations/companies |
 | Deals | `Deals` | Sales opportunities |
 | Campaigns | `Campaigns` | Marketing campaigns |
-| Tasks | `Tasks` | To-do items (requires additional OAuth scope) |
-| Calls | `Calls` | Phone call logs (requires additional OAuth scope) |
-| Events | `Events` | Calendar appointments (requires additional OAuth scope) |
-| Products | `Products` | Items you sell (requires additional OAuth scope) |
+| Tasks | `Tasks` | To-do items |
+| Calls | `Calls` | Phone call logs |
+| Events | `Events` | Calendar appointments |
+| Products | `Products` | Items you sell |
 
 ### List Records
 
@@ -546,6 +546,383 @@ EOF
 }
 ```
 
+### Organization Details
+
+Retrieve your Zoho CRM organization details.
+
+```bash
+GET /zoho-crm/crm/v8/org
+```
+
+**Example:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/org')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "org": [
+    {
+      "id": "7243485000000020005",
+      "company_name": "Acme Corp",
+      "domain_name": "org123456789",
+      "primary_email": "admin@example.com",
+      "phone": "555-555-5555",
+      "currency": "US Dollar - USD",
+      "currency_symbol": "$",
+      "iso_code": "USD",
+      "time_zone": "PST",
+      "country_code": "US",
+      "zgid": "123456789",
+      "type": "production",
+      "mc_status": false,
+      "license_details": {
+        "paid": true,
+        "paid_type": "enterprise",
+        "users_license_purchased": 10,
+        "trial_expiry": null
+      }
+    }
+  ]
+}
+```
+
+### Users
+
+Retrieve users in your Zoho CRM organization.
+
+```bash
+GET /zoho-crm/crm/v8/users
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `type` | string | Filter by user type: `AllUsers`, `ActiveUsers`, `DeactiveUsers`, `ConfirmedUsers`, `NotConfirmedUsers`, `DeletedUsers`, `ActiveConfirmedUsers`, `AdminUsers`, `ActiveConfirmedAdmins`, `CurrentUser` |
+| `page` | integer | Page number (default: 1) |
+| `per_page` | integer | Records per page (default/max: 200) |
+| `ids` | string | Comma-separated user IDs (max 100) |
+
+**Example - List all users:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/users?type=AllUsers')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "users": [
+    {
+      "id": "7243485000000590001",
+      "first_name": "John",
+      "last_name": "Doe",
+      "full_name": "John Doe",
+      "email": "john.doe@example.com",
+      "status": "active",
+      "confirm": true,
+      "role": {
+        "name": "CEO",
+        "id": "7243485000000026005"
+      },
+      "profile": {
+        "name": "Administrator",
+        "id": "7243485000000026011"
+      },
+      "time_zone": "PST",
+      "country": "US",
+      "locale": "en_US"
+    }
+  ],
+  "info": {
+    "per_page": 200,
+    "count": 1,
+    "page": 1,
+    "more_records": false
+  }
+}
+```
+
+**Example - Get specific user:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/users/7243485000000590001')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+### Modules Metadata
+
+Retrieve metadata about all available CRM modules.
+
+```bash
+GET /zoho-crm/crm/v8/settings/modules
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | string | Filter by status: `user_hidden`, `system_hidden`, `scheduled_for_deletion`, `visible` |
+
+**Example:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/modules')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "modules": [
+    {
+      "api_name": "Leads",
+      "module_name": "Leads",
+      "singular_label": "Lead",
+      "plural_label": "Leads",
+      "api_supported": true,
+      "creatable": true,
+      "editable": true,
+      "deletable": true,
+      "viewable": true,
+      "status": "visible",
+      "generated_type": "default",
+      "id": "7243485000000002175",
+      "profiles": [
+        {"name": "Administrator", "id": "7243485000000026011"}
+      ]
+    }
+  ]
+}
+```
+
+### Fields Metadata
+
+Retrieve field metadata for a specific module.
+
+```bash
+GET /zoho-crm/crm/v8/settings/fields?module={module_api_name}
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `module` | string | **Required.** API name of the module (e.g., `Leads`, `Contacts`) |
+| `type` | string | `all` for all fields, `unused` for unused fields only |
+
+**Example:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/fields?module=Leads')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "fields": [
+    {
+      "api_name": "Last_Name",
+      "field_label": "Last Name",
+      "data_type": "text",
+      "system_mandatory": true,
+      "custom_field": false,
+      "visible": true,
+      "searchable": true,
+      "sortable": true,
+      "id": "7243485000000002613"
+    }
+  ]
+}
+```
+
+### Layouts Metadata
+
+Retrieve layout metadata for a specific module.
+
+```bash
+GET /zoho-crm/crm/v8/settings/layouts?module={module_api_name}
+```
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `module` | string | **Required.** API name of the module (e.g., `Leads`, `Contacts`) |
+
+**Example:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/layouts?module=Leads')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "layouts": [
+    {
+      "id": "7243485000000091055",
+      "name": "Standard",
+      "api_name": "Standard",
+      "status": "active",
+      "visible": true,
+      "profiles": [
+        {"name": "Administrator", "id": "7243485000000026011"}
+      ],
+      "sections": [
+        {
+          "display_label": "Lead Information",
+          "api_name": "Lead_Information",
+          "sequence_number": 1,
+          "fields": [...]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Roles
+
+Retrieve roles in your Zoho CRM organization.
+
+```bash
+GET /zoho-crm/crm/v8/settings/roles
+```
+
+**Example:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/roles')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "roles": [
+    {
+      "id": "7243485000000026005",
+      "name": "CEO",
+      "display_label": "CEO",
+      "share_with_peers": true,
+      "description": null,
+      "reporting_to": null
+    },
+    {
+      "id": "7243485000000026008",
+      "name": "Manager",
+      "display_label": "Manager",
+      "share_with_peers": false,
+      "reporting_to": {
+        "name": "CEO",
+        "id": "7243485000000026005"
+      }
+    }
+  ]
+}
+```
+
+**Example - Get specific role:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/roles/7243485000000026005')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+### Profiles
+
+Retrieve profiles (permission sets) in your Zoho CRM organization.
+
+```bash
+GET /zoho-crm/crm/v8/settings/profiles
+```
+
+**Example:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/profiles')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
+**Response:**
+```json
+{
+  "profiles": [
+    {
+      "id": "7243485000000026011",
+      "name": "Administrator",
+      "display_label": "Administrator",
+      "type": "normal_profile",
+      "custom": false,
+      "description": null
+    },
+    {
+      "id": "7243485000000026014",
+      "name": "Standard",
+      "display_label": "Standard",
+      "type": "normal_profile",
+      "custom": false,
+      "description": null
+    }
+  ]
+}
+```
+
+**Example - Get specific profile:**
+
+```bash
+python <<'EOF'
+import urllib.request, os, json
+req = urllib.request.Request('https://gateway.maton.ai/zoho-crm/crm/v8/settings/profiles/7243485000000026011')
+req.add_header('Authorization', f'Bearer {os.environ["MATON_API_KEY"]}')
+print(json.dumps(json.load(urllib.request.urlopen(req)), indent=2))
+EOF
+```
+
 ## Pagination
 
 Zoho CRM uses page-based pagination with optional page tokens for large datasets:
@@ -615,7 +992,7 @@ data = response.json()
 - Maximum 200 records returned per GET request
 - Maximum 2,000 records without page_token; up to 100,000 with page_token
 - Use field API names (not display names) in requests
-- Some modules (Tasks, Events, Calls, Products) require additional OAuth scopes. If you receive a scope error, contact Maton support at support@maton.ai with the specific operations/APIs you need and your use-case
+- If you receive a scope error, contact Maton support at support@maton.ai with the specific operations/APIs you need and your use-case
 - Empty datasets return HTTP 204 (No Content) with empty body
 - IMPORTANT: When using curl commands, use `curl -g` when URLs contain brackets to disable glob parsing
 - IMPORTANT: When piping curl output to `jq` or other commands, environment variables like `$MATON_API_KEY` may not expand correctly in some shell environments
@@ -674,5 +1051,12 @@ EOF
 - [Update Records API](https://www.zoho.com/crm/developer/docs/api/v8/update-records.html)
 - [Delete Records API](https://www.zoho.com/crm/developer/docs/api/v8/delete-records.html)
 - [Search Records API](https://www.zoho.com/crm/developer/docs/api/v8/search-records.html)
+- [Organization API](https://www.zoho.com/crm/developer/docs/api/v8/get-org-data.html)
+- [Users API](https://www.zoho.com/crm/developer/docs/api/v8/get-users.html)
+- [Modules API](https://www.zoho.com/crm/developer/docs/api/v8/modules-api.html)
+- [Fields API](https://www.zoho.com/crm/developer/docs/api/v8/field-meta.html)
+- [Layouts API](https://www.zoho.com/crm/developer/docs/api/v8/layouts-meta.html)
+- [Roles API](https://www.zoho.com/crm/developer/docs/api/v8/get-roles.html)
+- [Profiles API](https://www.zoho.com/crm/developer/docs/api/v8/get-profiles.html)
 - [Maton Community](https://discord.com/invite/dBfFAcefs2)
 - [Maton Support](mailto:support@maton.ai)
