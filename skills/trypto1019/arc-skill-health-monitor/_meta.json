@@ -3,9 +3,15 @@
   "slug": "arc-skill-health-monitor",
   "displayName": "Skill Health Monitor",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771207341609,
-    "commit": "https://github.com/openclaw/skills/commit/270afe411ed1c840a7b689846e3d280b8315036d"
+    "version": "1.1.0",
+    "publishedAt": 1771290097499,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771207341609,
+      "commit": "https://github.com/openclaw/skills/commit/270afe411ed1c840a7b689846e3d280b8315036d"
+    }
+  ]
 }

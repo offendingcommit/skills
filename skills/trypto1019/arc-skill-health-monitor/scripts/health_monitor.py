@@ -31,14 +31,37 @@ def _save_health(skill_name, data):
         json.dump(data, f, indent=2)
 
 
+SHELL_METACHARACTERS = set('|;&$`(){}!><\n')
+
+
+def _sanitize_skill_name(name):
+    """Validate skill name contains only safe characters."""
+    import re
+    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+        raise ValueError(f"Invalid skill name: {name!r} — only alphanumeric, dash, underscore allowed")
+    return name
+
+
+def _validate_cmd(cmd):
+    """Reject commands containing shell metacharacters."""
+    for char in cmd:
+        if char in SHELL_METACHARACTERS:
+            raise ValueError(f"Shell metacharacter '{char}' in command — rejected for safety")
+
+
 def check_skill(skill_name, cmd, timeout=30):
     """Execute a skill command and record health metrics."""
+    _sanitize_skill_name(skill_name)
+    if isinstance(cmd, str):
+        _validate_cmd(cmd)
     health = _load_health(skill_name)
 
     start_time = time.time()
     try:
+        import shlex
+        cmd_parts = shlex.split(cmd) if isinstance(cmd, str) else cmd
         result = subprocess.run(
-            cmd, shell=True, capture_output=True, text=True, timeout=timeout
+            cmd_parts, shell=False, capture_output=True, text=True, timeout=timeout
         )
         elapsed_ms = int((time.time() - start_time) * 1000)
         success = result.returncode == 0
@@ -99,6 +122,7 @@ def check_skill(skill_name, cmd, timeout=30):
 
 def set_threshold(skill_name, max_latency_ms=None, max_errors=None):
     """Set alerting thresholds for a skill."""
+    _sanitize_skill_name(skill_name)
     health = _load_health(skill_name)
     if max_latency_ms is not None:
         health["thresholds"]["max_latency_ms"] = max_latency_ms
@@ -110,6 +134,7 @@ def set_threshold(skill_name, max_latency_ms=None, max_errors=None):
 
 def get_trend(skill_name, period_hours=24):
     """Get health trends for a skill over a time period."""
+    _sanitize_skill_name(skill_name)
     health = _load_health(skill_name)
     checks = health.get("checks", [])
 
