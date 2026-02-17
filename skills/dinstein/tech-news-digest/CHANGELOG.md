@@ -1,5 +1,42 @@
 # Changelog
 
+## v3.4.1
+
+- **KOL Display Names**: KOL Updates section now shows "Sam Altman (@sama)" instead of bare "@sama" across all templates (Discord, Email, Telegram)
+- **`display_name` in Merged JSON**: `merge-sources.py` propagates Twitter source `name` to article-level `display_name` field, eliminating need to re-read raw Twitter data
+- **New Twitter Sources**: Added @OpenClawAI (official) and @steipete (Peter Steinberger), total 49 Twitter KOLs / 133 sources
+- **Enforce Unified Pipeline**: `digest-prompt.md` now says "You MUST use" `run-pipeline.py`, individual steps demoted to `<details>` fallback with `--force` flags
+
+## v3.4.0
+
+- **Unified Pipeline**: New `run-pipeline.py` runs all 5 fetch steps (RSS, Twitter, GitHub, Reddit, Web) in parallel, then merges — total ~30s vs ~3-4min sequential. Digest prompt updated to use this by default.
+- **Reddit Parallel Fetch**: `fetch-reddit.py` now uses `ThreadPoolExecutor(max_workers=4)` instead of sequential requests with `sleep(1)`
+- **Reddit 403 Fix**: Added explicit `ssl.create_default_context()` and `Accept-Language` header to fix Reddit blocking Python's default `urllib` TLS fingerprint
+- **Brave API Auto-Concurrency**: `fetch-web.py` probes `x-ratelimit-limit` header at startup — paid plans auto-switch to parallel queries, free plans stay sequential
+- **GitHub Auto-Auth**: `fetch-github.py` resolves tokens in priority order: `$GITHUB_TOKEN` → GitHub App auto-generate → `gh` CLI → unauthenticated. No manual token setup needed if GitHub App credentials exist.
+- **Timeout Increase**: All fetch scripts 15s → 30s per HTTP request; pipeline per-step subprocess 120s → 180s
+- **Pipeline Metadata**: `run-pipeline.py` saves `*.meta.json` with per-step timing, counts, and status
+
+## v3.3.2
+
+- **Declare tools and file access**: Added `tools` (python3 required, gog optional) and `files` (read/write paths) to SKILL.md metadata, addressing VirusTotal "undeclared tools/binaries" and "modify workspace files" audit findings
+- **Added `metadata.openclaw.requires`**: Declares `python3` binary dependency
+
+## v3.3.1
+
+- **Remove anthropic-rss mirror**: Removed third-party community RSS mirror (`anthropic-rss`) to eliminate supply chain risk flagged by VirusTotal Code Insights. Anthropic coverage remains via Twitter KOL, GitHub releases, and Reddit sources.
+- **Remove Third-Party RSS Sources section** from SKILL.md security docs (no longer applicable)
+
+## v3.3.0
+
+- **RSS Domain Validation**: New `expected_domains` field in sources.json rejects articles from unexpected origins (applied to anthropic-rss mirror)
+- **Email Shell Safety**: HTML body written to temp file before CLI delivery; subjects restricted to static format strings
+- **Discord Embed Suppression**: Footer links wrapped in `<>` to prevent preview embeds
+
+## v3.2.1
+
+- **Mandatory Reddit Execution**: Agent explicitly required to run `fetch-reddit.py` script — cannot skip or generate fake output
+
 ## v3.2.0
 
 - **Unified English Templates**: All prompt instructions, section titles, stats footer, and example content standardized to English. Output language controlled by `<LANGUAGE>` placeholder at runtime.

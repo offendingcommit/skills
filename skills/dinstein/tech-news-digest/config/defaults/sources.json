@@ -58,20 +58,6 @@
       "note": "Official OpenAI updates"
     },
     {
-      "id": "anthropic-rss",
-      "type": "rss",
-      "name": "Anthropic Blog",
-      "url": "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic.xml",
-      "note": "Official Anthropic updates (via community RSS mirror)",
-      "enabled": true,
-      "priority": true,
-      "topics": [
-        "llm",
-        "ai-agent",
-        "frontier-tech"
-      ]
-    },
-    {
       "id": "sebas-rss",
       "type": "rss",
       "name": "Sebastian Raschka",
@@ -1670,6 +1656,31 @@
         "llm",
         "ai-agent"
       ]
+    },
+    {
+      "id": "openclaw-twitter",
+      "type": "twitter",
+      "name": "OpenClaw",
+      "handle": "OpenClawAI",
+      "enabled": true,
+      "priority": true,
+      "topics": [
+        "ai-agent"
+      ],
+      "note": "Official OpenClaw account"
+    },
+    {
+      "id": "steipete-twitter",
+      "type": "twitter",
+      "name": "Peter Steinberger",
+      "handle": "steipete",
+      "enabled": true,
+      "priority": true,
+      "topics": [
+        "ai-agent",
+        "frontier-tech"
+      ],
+      "note": "OpenClaw creator, now at OpenAI"
     }
   ]
 }
