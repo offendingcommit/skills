@@ -140,27 +140,53 @@ viewed, 8 upvotes, and 3 comments."\
   }'
 ```
 
-### Poll for completion
+### Endpoint: Poll for completion
 
 ```bash
-curl "https://app.nextbrowser.com/api/v1/chat/tasks/<task-id>" -H "Authorization: x-api-key $API_KEY"
+curl "https://app.nextbrowser.com/api/v1/chat/tasks/<task-id>" \
+  -H "Authorization: x-api-key $API_KEY"
+
+curl "https://app.nextbrowser.com/api/v1/chat/tasks/<task-id>?from_step=3" \
+  -H "Authorization: x-api-key $API_KEY"
 ```
 
-**Response:**
+- **Query params (optional)**:
+  - **from_step**: integer `>= 1`. First step index to return. Defaults to `1` if missing/invalid. Use this parameter to poll only new steps.
+
+### Response
+
 ```json
 {
-    "success": true,
-    "payload": {
-        "status": "finished",
-        "output": "Task completed. 10 relevant posts are viewed, 8 upvotes are done and 3 comments posted.",
-        "isSuccess": true
-    },
-    "errors": {},
-    "description": "Task retrieved successfully"
+  "success": true,
+  "payload": {
+    "status": "finished",
+    "output": "Task completed. 10 relevant posts are viewed, 8 upvotes are done and 3 comments posted.",
+    "isSuccess": true,
+    "steps": [
+      {
+        "created_at": "2025-01-01T10:00:00Z",
+        "finished_at": "2025-01-01T10:00:05Z",
+        "description": "Opened Reddit search page",
+        "status": "completed",
+        "step_number": 1
+      }
+      // ... more steps starting from from_step
+    ],
+    "total_steps": 5
+  },
+  "errors": {},
+  "description": "Task retrieved successfully"
 }
 ```
 
-Status values: `processing`, `finished`, `failed`
+### Field semantics
+
+- **status**: high-level task status: `"processing" | "finished" | "failed"`.
+- **output**: final task output (if available).
+- **isSuccess**: `true` if task finished successfully, otherwise `false`.
+- **steps**: list of task steps starting from `from_step` (or from `1` by default).
+- **step_number**: sequential number of the step within the task, always starting at `1` in this array.
+- **total_steps**: total number of steps the task has, independent of `from_step`.
 
 ### Task options
 
