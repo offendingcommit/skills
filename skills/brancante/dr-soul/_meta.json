@@ -3,11 +3,16 @@
   "slug": "dr-soul",
   "displayName": "Dr. Frankenstein",
   "latest": {
-    "version": "1.2.1",
-    "publishedAt": 1771263700267,
-    "commit": "https://github.com/openclaw/skills/commit/ea5f95978c967353a1ea6839447a7023402903c3"
+    "version": "1.2.2",
+    "publishedAt": 1771272426320,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.1",
+      "publishedAt": 1771263700267,
+      "commit": "https://github.com/openclaw/skills/commit/ea5f95978c967353a1ea6839447a7023402903c3"
+    },
     {
       "version": "1.1.0",
       "publishedAt": 1771055579709,

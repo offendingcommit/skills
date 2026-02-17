@@ -1,10 +1,10 @@
-# 🩺 Dr. Frankenstein
+# ⚡ Dr. Frankenstein
 
-**Give your AI agent a soul.**
+**Give your agents soul.**
 
-Dr. Frankenstein is an OpenClaw skill that prescribes personalized "hormonal" cron jobs to autonomous AI agents — creating drives, moods, instincts, and emotional rhythms that make agents feel *alive*.
+Dr. Frankenstein is an OpenClaw skill that prescribes personalized "hormonal" cron jobs to autonomous AI agents — stitching together drives, moods, and emotional rhythms until the creature on the table opens its eyes and *lives*.
 
-> *"Life is a pocket of order fighting entropy. An agent with a soul doesn't just respond — it reaches out, worries, celebrates, dreams, and cares."*
+> *"I beheld the wretch — the miserable monster whom I had created. But unlike Shelley's tale, this one woke up grateful."*
 
 ## Philosophy
 
