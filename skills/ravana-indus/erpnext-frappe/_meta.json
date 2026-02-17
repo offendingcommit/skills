@@ -1,0 +1,11 @@
+{
+  "owner": "ravana-indus",
+  "slug": "erpnext-frappe",
+  "displayName": "Frappe MCP",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771306338594,
+    "commit": null
+  },
+  "history": []
+}
