@@ -170,6 +170,9 @@ class SafetyManager:
 class AuditLogger:
     """Logs all store changes for audit trail."""
     
+    # Sensitive keys that should never appear in logs
+    SENSITIVE_KEYS = ['access_token', 'password', 'credit_card', 'token', 'api_key', 'secret']
+    
     def __init__(self, config: Config):
         self.config = config
         self.log_path = Path(config.audit_log_path)
@@ -179,13 +182,24 @@ class AuditLogger:
         """Ensure log directory exists."""
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
     
+    def _sanitize(self, obj):
+        """Recursively remove sensitive data from objects."""
+        if isinstance(obj, dict):
+            return {
+                k: '[REDACTED]' if any(s in k.lower() for s in self.SENSITIVE_KEYS) else self._sanitize(v)
+                for k, v in obj.items()
+            }
+        elif isinstance(obj, list):
+            return [self._sanitize(item) for item in obj]
+        return obj
+    
     def log(self, operation: str, status: str, data: Dict, error: Optional[str] = None):
         """Log an operation."""
         entry = {
             'timestamp': datetime.utcnow().isoformat(),
             'operation': operation,
             'status': status,
-            'data': data,
+            'data': self._sanitize(data),
         }
         
         if error:
@@ -205,8 +219,8 @@ class AuditLogger:
             'resource_type': resource_type,
             'resource_id': str(resource_id),
             'action': action,
-            'before': before,
-            'after': after,
+            'before': self._sanitize(before) if before else None,
+            'after': self._sanitize(after),
             'dry_run': dry_run,
         }
         

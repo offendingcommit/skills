@@ -1,3 +1,27 @@
+---
+name: shopify-manager
+version: 0.2.0
+description: AI-powered Shopify store management through natural language prompts
+requirements:
+  config:
+    - path: shopify-config.yaml
+      description: Shopify store credentials and permissions
+      template: shopify-config-example.yaml
+  env:
+    - name: SHOPIFY_ACCESS_TOKEN
+      description: Shopify Admin API access token (overrides config file)
+      required: false
+      sensitive: true
+    - name: SHOPIFY_DOMAIN
+      description: Shopify store domain, e.g., 'your-store.myshopify.com' (overrides config file)
+      required: false
+  permissions:
+    - network: true
+      description: Makes HTTPS calls to Shopify Admin API
+    - filesystem: true
+      description: Reads config files and writes audit logs to memory/shopify-changes.jsonl
+---
+
 # Shopify Store Manager
 
 AI-powered Shopify store management through natural language prompts.
@@ -64,6 +88,10 @@ safety:
    - `read_analytics`
    - `read_themes`, `write_themes`  # Required for theme editing
 5. Save → "Install app" → Reveal token
+
+### Security & Audit Logs
+
+All store operations are logged to `memory/shopify-changes.jsonl` for audit purposes. Sensitive fields (`access_token`, `password`, `credit_card`, `token`, `api_key`, `secret`) are automatically redacted from logs. Keep this log file secure as it contains operation history.
 
 ## Commands
 

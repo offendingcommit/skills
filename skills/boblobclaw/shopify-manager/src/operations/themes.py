@@ -150,7 +150,12 @@ class ThemeOperations:
         elif asset_key.endswith('.js'):
             return f"// AI Generated JS based on: {prompt}\n\n// TODO: Implement LLM-generated script\n"
         elif asset_key.endswith('.liquid'):
-            return f"{% comment %} AI Generated Liquid based on: {prompt} {% endcomment %}\n\n<!-- TODO: Implement LLM-generated template -->\n"
+            # Use .format() with placeholders to avoid f-string interpolation issues with Liquid syntax
+            return "{{comment_start}} AI Generated Liquid based on: {prompt} {{comment_end}}\n\n<!-- TODO: Implement LLM-generated template -->\n".format(
+                prompt=prompt,
+                comment_start="{% comment %}",
+                comment_end="{% endcomment %}"
+            )
         else:
             return f"# AI Generated content based on: {prompt}\n\n# TODO: Implement LLM-generated content\n"
     
