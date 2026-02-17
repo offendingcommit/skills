@@ -2,7 +2,7 @@
 name: roster
 description: Creates weekly shift rosters (KW-JSON) from CSV availability data and pushes them to GitHub.
 user-invocable: true
-version: 1.0.3
+version: 1.0.4
 metadata:
   openclaw:
     requires:
@@ -364,7 +364,8 @@ The JSON file must follow exactly this format. **IMPORTANT: No `team` field! The
             "date": "16.02",
             "slots": [
                 {
-                    "time": "15:30--18:00",
+                    "timeStart": "15:30",
+                    "timeEnd": "18:00",
                     "driver": "Alex",
                     "groups": [["Alex", "Kim"], ["Jordan"], ["Taylor"]]
                 }
@@ -375,12 +376,14 @@ The JSON file must follow exactly this format. **IMPORTANT: No `team` field! The
             "date": "18.02",
             "slots": [
                 {
-                    "time": "15:30--18:30",
+                    "timeStart": "15:30",
+                    "timeEnd": "18:30",
                     "driver": "Alex",
                     "groups": [["Alex", "Sam"], ["Casey"]]
                 },
                 {
-                    "time": "15:30--19:00",
+                    "timeStart": "15:30",
+                    "timeEnd": "19:00",
                     "driver": "Morgan",
                     "groups": [["Jordan"], ["Taylor"], ["Robin"]]
                 }
@@ -405,7 +408,7 @@ The JSON file must follow exactly this format. **IMPORTANT: No `team` field! The
 - Group labels (A, B, C, ...) are numbered **per day**, not per slot!
     - Wed. Slot 1: Groups A, B -> Wed. Slot 2: Groups C, D, E (continue counting!)
 - `"week"` is always a **two-digit string** with leading zero (e.g. "07", "08")
-- `"time"` uses **double dash** `--` as separator
+- `"timeStart"` and `"timeEnd"` are separate fields (e.g. `"timeStart": "15:30"`, `"timeEnd": "18:00"`). Do NOT use a combined `"time"` field with `--` separator.
 - `"employees"` contains the **keys** (lowercase), `groups` uses **first names**
 - `"days"` always contains Mon-Sat (6 days)
 - `"shifts"` must have an entry for **every day**
