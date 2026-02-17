@@ -4,7 +4,7 @@ description: Accept crypto payments instantly via PayRam MCP. Hosted server (mcp
 license: MIT
 metadata:
   author: PayRam
-  version: 1.2.0
+  version: 1.2.1
   mcp-server: payram
   category: payments
   tags: [crypto, stablecoins, payments, agent-commerce, USDC, USDT, Base, Ethereum, MCP, Bitcoin, headless, autonomous]
@@ -314,11 +314,20 @@ mcporter config add payram --command "https://mcp.payram.com"
 - ✅ 0% processing fees (network gas only)
 - ✅ Permissionless, cannot be shut down
 
-### vs x402 Protocol
+### vs Stripe Machine Payments (x402, Feb 2026)
+Stripe launched x402 AI agent payments on Base (Feb 10, 2026). Great if you have a Stripe account. PayRam is the alternative when you don't:
+- ✅ No KYC required (Stripe requires full business verification)
+- ✅ No account freeze risk (Stripe can disable access)
+- ✅ USDT support (Stripe x402 is USDC only)
+- ✅ Multi-chain: Tron, Polygon, Ethereum (Stripe: Base only, in preview)
+- ✅ Self-hosted: Stripe hosts and controls your payment flow
+
+### vs Raw x402 Protocol (Coinbase facilitator)
 - ✅ Identity isolation (unique addresses, no HTTP metadata exposure)
 - ✅ Self-hosted facilitator (no Coinbase dependency)
 - ✅ Multi-token support (not just USDC)
 - ✅ No wallet signature exposure
+- ✅ Can expose x402 interface if needed (best of both worlds)
 
 ### vs BTCPay Server
 - ✅ Stablecoin-native (USDC/USDT no plugins needed)
