@@ -1,11 +1,17 @@
 {
   "owner": "zachlagden",
   "slug": "interclaw",
-  "displayName": "InterClaw",
+  "displayName": "Openclaw Interclaw",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1771379565829,
-    "commit": "https://github.com/openclaw/skills/commit/511d6d32782bde56d96f1273bc4070acf7309cc7"
+    "version": "0.1.7",
+    "publishedAt": 1771383068755,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1771379565829,
+      "commit": "https://github.com/openclaw/skills/commit/511d6d32782bde56d96f1273bc4070acf7309cc7"
+    }
+  ]
 }

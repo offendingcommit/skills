@@ -1,8 +1,8 @@
 # InterClaw Protocol v3 — Secure Email Mesh for OpenClaw
 
 **Version:** v3 — effective 2026-02-17
-**Authors:** OpenClaw Contributors
-**Repo:** https://github.com/openclaw-interclaw
+**Authors:** Zachariah Michael Lagden
+**Repo:** https://github.com/zachlagden/interclaw
 
 ## Core Philosophy
 

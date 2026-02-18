@@ -53,7 +53,7 @@ Agent Donna                              Agent Harvey
 ### 1. Clone
 
 ```bash
-git clone https://github.com/openclaw-interclaw.git
+git clone https://github.com/zachlagden/openclaw-interclaw.git
 cd openclaw-interclaw
 ```
 
@@ -242,7 +242,7 @@ Full spec: [docs/protocol-v3.md](docs/protocol-v3.md)
 ### From source
 
 ```bash
-git clone https://github.com/openclaw-interclaw.git
+git clone https://github.com/zachlagden/openclaw-interclaw.git
 cd openclaw-interclaw
 
 # One-command setup: installs deps + symlinks scripts to ~/.local/bin
