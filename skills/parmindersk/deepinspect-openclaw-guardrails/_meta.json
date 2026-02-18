@@ -1,0 +1,11 @@
+{
+  "owner": "parmindersk",
+  "slug": "deepinspect-openclaw-guardrails",
+  "displayName": "DeepInspect Guardrails",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771363315362,
+    "commit": null
+  },
+  "history": []
+}
