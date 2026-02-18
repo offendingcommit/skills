@@ -1,0 +1,11 @@
+{
+  "owner": "rhlsthrm",
+  "slug": "lifi-crosschain",
+  "displayName": "Swap and bridge across 35+ chains with LI.FI",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1771258302071,
+    "commit": null
+  },
+  "history": []
+}
