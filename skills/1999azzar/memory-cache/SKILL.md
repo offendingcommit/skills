@@ -1,33 +1,34 @@
 ---
 name: memory-cache
-description: High-performance temporary storage using Redis. Use to save context, cache expensive API results, or share state between agent sessions. Follows strict key naming conventions.
-metadata: {"openclaw":{"requires":{"env":["REDIS_URL"]},"install":[{"id":"node","kind":"exec","command":"scripts/cache.py ping"}]}}
+description: High-performance temporary storage system using Redis. Supports namespaced keys (mema:*), TTL management, and session context caching. Use for: (1) Saving agent state, (2) Caching API results, (3) Sharing data between sub-agents.
+metadata: {"openclaw":{"requires":{"bins":["python3"],"env":["REDIS_URL"]},"install":[{"id":"pip-dependencies","kind":"exec","command":"pip install -r requirements.txt"}]}}
 ---
 
 # Memory Cache
 
+Standardized Redis-backed caching system for OpenClaw agents.
+
+## Prerequisites
+- **Binary**: `python3` must be available on the host.
+- **Credentials**: `REDIS_URL` environment variable (e.g., `redis://localhost:6379/0`).
+
 ## Setup
-1. Copy `.env.example` to `.env`.
-2. Set `REDIS_URL` (e.g. `redis://localhost:6379/0`) or specific host/port variables.
-3. On first run, `scripts/cache.py` initializes a venv and installs dependencies.
+1. Copy `env.example.txt` to `.env`.
+2. Configure your connection in `.env`.
+3. Dependencies are listed in `requirements.txt`.
 
 ## Core Workflows
 
-### 1. Key Operations
-Set, get, or delete data in the cache. All keys must use the `mema:` prefix.
-- **Usage**: `bash $WORKSPACE/skills/memory-cache/scripts/cache.py set mema:<category>:<name> <value> [--ttl N]`
-- **Usage**: `bash $WORKSPACE/skills/memory-cache/scripts/cache.py get mema:<category>:<name>`
+### 1. Store and Retrieve
+- **Store**: `python3 $WORKSPACE/skills/memory-cache/scripts/cache_manager.py set mema:cache:<name> <value> [--ttl 3600]`
+- **Fetch**: `python3 $WORKSPACE/skills/memory-cache/scripts/cache_manager.py get mema:cache:<name>`
 
-### 2. Search & Scan
-Safe listing of keys using the Redis SCAN command.
-- **Usage**: `bash $WORKSPACE/skills/memory-cache/scripts/cache.py scan [pattern]`
+### 2. Search & Maintenance
+- **Scan**: `python3 $WORKSPACE/skills/memory-cache/scripts/cache_manager.py scan [pattern]`
+- **Ping**: `python3 $WORKSPACE/skills/memory-cache/scripts/cache_manager.py ping`
 
-## Key Naming Standard
-**Requirement**: All keys must follow `mema:<category>:<name>`.
-- `mema:context:*` – Short-term session state.
-- `mema:cache:*` – Volatile data/API results.
-- `mema:state:*` – Cross-session persistence.
-
-## Security & Reliability
-- **Namespace Isolation**: Strictly enforces the `mema:` prefix to avoid collisions with other Redis databases.
-- **Connection Safety**: Handles connection retries and timeouts gracefully via environment configuration.
+## Key Naming Convention
+Strictly enforce the `mema:` prefix:
+- `mema:context:*` – Session state.
+- `mema:cache:*` – Volatile data.
+- `mema:state:*` – Persistent state.
