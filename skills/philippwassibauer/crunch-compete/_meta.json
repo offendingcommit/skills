@@ -3,9 +3,15 @@
   "slug": "crunch-compete",
   "displayName": "Crunch Compete",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1770992862198,
-    "commit": "https://github.com/openclaw/skills/commit/3a5e68e2488c7b759635df7afb5a8d410fb57468"
+    "version": "0.1.1",
+    "publishedAt": 1771348445343,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1770992862198,
+      "commit": "https://github.com/openclaw/skills/commit/3a5e68e2488c7b759635df7afb5a8d410fb57468"
+    }
+  ]
 }

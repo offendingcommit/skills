@@ -5,14 +5,8 @@ description: Use when working with Crunch competitions - setting up workspaces, 
 
 # Cruncher Skill
 
-Guides users through Crunch competition lifecycle: setup, quickstarter discovery, solution development, local testing, and submission.
+Guides users through Crunch competition lifecycle: setup, quickstarter discovery, solution development, local testing, and submission. It assumes that the local development environment for a ML Engineer is set up. 
 
-## Prerequisites
-
-Install [uv](https://docs.astral.sh/uv/) for Python environment management:
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
 
 ## Quick Setup
 
@@ -38,10 +32,7 @@ For competition-specific packages and full examples, see [references/competition
 ```bash
 crunch list                    # List competitions
 ```
-Quickstarters available via GitHub API:
-```bash
-curl -s "https://api.github.com/repos/crunchdao/competitions/contents/competitions/<name>/quickstarters"
-```
+
 
 ### 2. Explain
 Read the quickstarter code (`main.py` or notebook) and competition's SKILL.md/README.md. Provide walkthrough covering: Goal, Interface, Data flow, Approach, Scoring, Constraints, Limitations, Improvement ideas.
