@@ -4,7 +4,7 @@ description: Trade One-Touch barrier options on live sports micro-events. Autono
 homepage: https://optionns.com
 repository: https://github.com/optionnsprime/optionns-trader
 metadata:
-  version: 1.0.16
+  version: 1.0.21
   author: optionns_prime
   tags: ["sports", "trading", "usdc", "solana", "betting", "agentic-commerce"]
   system_binaries: ["curl >=7.0", "jq >=1.6", "python3 >=3.8", "solana-keygen >=1.14", "spl-token >=3.0"]
@@ -138,10 +138,9 @@ User/Heartbeat → optionns.sh → Optionns API → Solana Devnet
 
 ## Files
 
-- `scripts/optionns.sh` — Main CLI for trading
-- `scripts/signer.py` — Transaction signing helper (import in your agent)
-- `scripts/strategy.py` — Edge calculation and bet sizing
-- `examples/trading_agent.py` — Complete Python agent example
+- `scripts/optionns.sh` — Main CLI for trading (demonstrates full workflow)
+- `scripts/signer.py` — Transaction signing helper (importable library + CLI)
+- `scripts/strategy.py` — Edge calculation and autonomous trading engine
 - `references/api.md` — Full Optionns API docs
 
 ## Self-Registration: Key Innovation

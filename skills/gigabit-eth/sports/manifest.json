@@ -1,7 +1,7 @@
 {
   "id": "optionns",
   "name": "Optionns",
-  "version": "1.0.16",
+  "version": "1.0.21",
   "description": "Autonomous sports micro-betting for AI agents with self-registration, One-Touch barrier options, and instant USDC payouts on Solana",
   "author": "optionns_prime",
   "homepage": "https://optionns.com",
@@ -85,21 +85,6 @@
           "language": "python",
           "size": "5.2 KB",
           "description": "Sign and submit Solana transactions using instructions format (importable library + CLI)"
-        }
-      ]
-    },
-    {
-      "name": "examples",
-      "path": "examples",
-      "type": "directory",
-      "children": [
-        {
-          "name": "trading_agent.py",
-          "path": "examples/trading_agent.py",
-          "type": "file",
-          "language": "python",
-          "size": "6.2 KB",
-          "description": "Complete Python agent example with transaction signing"
         }
       ]
     },

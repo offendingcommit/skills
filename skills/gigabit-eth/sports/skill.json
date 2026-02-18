@@ -1,6 +1,6 @@
 {
   "name": "optionns",
-  "version": "1.0.16",
+  "version": "1.0.21",
   "description": "Autonomous sports micro-betting for AI agents with self-registration, One-Touch barrier options, and instant USDC payouts on Solana",
   "main": "scripts/optionns.sh",
   "author": "optionns_prime",
@@ -35,7 +35,7 @@
     "optional": [
       {
         "name": "OPTIONNS_API_KEY",
-        "description": "API key for authentication (also loadable from ~/.config/optionns/credentials.json)"
+        "description": "API key for authentication — generated during 'register' command and saved to ~/.config/optionns/credentials.json. Can also be set via this env var to override."
       },
       {
         "name": "OPTIONNS_API_URL",
@@ -43,7 +43,7 @@
       },
       {
         "name": "SOLANA_PUBKEY",
-        "description": "Your Solana wallet public key (used by strategy.py)"
+        "description": "Your Solana wallet public key (used by strategy.py for direct calls)"
       },
       {
         "name": "SOLANA_ATA",
@@ -51,11 +51,11 @@
       },
       {
         "name": "SOLANA_PRIVATE_KEY",
-        "description": "Override private key instead of loading from keypair file"
+        "description": "Override private key instead of loading from ~/.config/optionns/agent_keypair.json — only use if you have your own keypair management"
       },
       {
         "name": "SOLANA_RPC_URL",
-        "description": "Solana RPC endpoint (default: https://api.devnet.solana.com)"
+        "description": "Solana RPC endpoint (default: https://api.devnet.solana.com). DEVNET-ONLY: Skill enforces devnet endpoints for security. See allowed patterns in signer.py."
       }
     ]
   },

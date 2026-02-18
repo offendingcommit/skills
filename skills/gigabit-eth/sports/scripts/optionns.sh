@@ -776,12 +776,28 @@ cmd_deposit() {
         return 1
     fi
     
+    # SECURITY: Validate inputs contain only safe characters
+    # Allows any league name (NBA, DOTA2, VALORANT, etc.) while preventing shell injection
+    if ! [[ "$league" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        echo -e "${RED}❌ Invalid league parameter: $league${NC}"
+        echo "League name must contain only letters, numbers, underscores, and hyphens"
+        return 1
+    fi
+    
+    # SECURITY: Validate amount is a number
+    if ! [[ "$amount" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo -e "${RED}❌ Invalid amount: $amount${NC}"
+        echo "Amount must be a positive number"
+        return 1
+    fi
+    
     echo "League: $league"
     echo "Amount: $amount USDC"
     echo "Wallet: $WALLET"
     echo ""
     
     # Call Python strategy directly for on-chain deposit
+    # Validated inputs, safe to use
     python3 "$SCRIPT_DIR/strategy.py" deposit "$league" "$amount"
 }
 
@@ -823,18 +839,42 @@ cmd_withdraw() {
         return 1
     fi
     
+    # SECURITY: Validate inputs contain only safe characters
+    # Allows any league name (NBA, DOTA2, VALORANT, etc.) while preventing shell injection
+    if ! [[ "$league" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        echo -e "${RED}❌ Invalid league parameter: $league${NC}"
+        echo "League name must contain only letters, numbers, underscores, and hyphens"
+        return 1
+    fi
+    
+    # SECURITY: Validate shares is a number
+    if ! [[ "$shares" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+        echo -e "${RED}❌ Invalid shares quantity: $shares${NC}"
+        echo "Shares must be a positive number"
+        return 1
+    fi
+    
     echo "League: $league"
     echo "Burning Shares: $shares"
     echo "Wallet: $WALLET"
     echo ""
     
     # Call Python strategy directly for on-chain withdrawal
+    # Validated inputs, safe to use
     python3 "$SCRIPT_DIR/strategy.py" withdraw "$league" "$shares"
 }
 
 # Autonomous trading mode
 cmd_autonomous() {
     local sport="${1:-ANY}"
+    
+    # SECURITY: Validate input contains only safe characters (alphanumeric, underscore, hyphen)
+    # Prevents shell injection while allowing any league name (NBA, DOTA2, VALORANT, etc.)
+    if ! [[ "$sport" =~ ^[A-Za-z0-9_-]+$ ]]; then
+        echo -e "${RED}❌ Invalid sport parameter: $sport${NC}"
+        echo "Sport name must contain only letters, numbers, underscores, and hyphens"
+        exit 1
+    fi
     
     echo -e "${BLUE}Starting autonomous trading mode...${NC}"
     echo "Sport preference: $sport (will scan all sports for live games)"
@@ -852,6 +892,7 @@ cmd_autonomous() {
     fi
     
     # Run strategy engine in autonomous mode
+    # $sport validated via regex, safe to use
     if [[ "$sport" == "ANY" ]]; then
         python3 "$SCRIPT_DIR/strategy.py" --mode autonomous
     else

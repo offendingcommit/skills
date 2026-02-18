@@ -29,6 +29,30 @@ USER_ATA = os.getenv('SOLANA_ATA', '')
 KEYPAIR_PATH = os.getenv('OPTIONNS_KEYPAIR_PATH', os.path.expanduser('~/.config/optionns/agent_keypair.json'))
 RPC_URL = os.getenv('SOLANA_RPC_URL', 'https://api.devnet.solana.com')
 
+# Devnet-only enforcement
+ALLOWED_DEVNET_PATTERNS = [
+    "devnet.solana.com",
+    "api.devnet.solana.com",
+    "devnet.helius-rpc.com",
+    "rpc.devnet.soo.network",
+    "devnet.rpcpool.com",
+    "localhost",
+    "127.0.0.1"
+]
+
+def _validate_devnet_rpc(rpc_url: str) -> None:
+    """Enforce devnet-only operation."""
+    url_lower = rpc_url.lower()
+    if not any(pattern in url_lower for pattern in ALLOWED_DEVNET_PATTERNS):
+        raise ValueError(
+            f"SECURITY: RPC URL must be a devnet endpoint. Got: {rpc_url}\n"
+            f"Allowed patterns: {', '.join(ALLOWED_DEVNET_PATTERNS)}\n"
+            "This skill is devnet-only for security. Never use mainnet keys or endpoints."
+        )
+
+# Validate RPC URL on import
+_validate_devnet_rpc(RPC_URL)
+
 # Solana Constants
 PROGRAM_ID = '7kHCtJrAuHAg8aQPtkf2ijjWyEEZ2fUYWaCT7sXVwMSn'
 TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'

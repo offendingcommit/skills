@@ -22,6 +22,33 @@ import urllib.request
 import urllib.error
 
 
+def _validate_devnet_rpc(rpc_url: str) -> None:
+    """
+    Enforce devnet-only operation by validating RPC URL.
+    
+    Raises:
+        ValueError: If RPC URL does not contain a devnet pattern
+    """
+    ALLOWED_DEVNET_PATTERNS = [
+        "devnet.solana.com",
+        "api.devnet.solana.com",
+        "devnet.helius-rpc.com",
+        "rpc.devnet.soo.network",
+        "devnet.rpcpool.com",
+        "localhost",  # Allow local devnet validator
+        "127.0.0.1"   # Allow local devnet validator
+    ]
+    
+    # Check if URL contains any allowed devnet pattern
+    url_lower = rpc_url.lower()
+    if not any(pattern in url_lower for pattern in ALLOWED_DEVNET_PATTERNS):
+        raise ValueError(
+            f"SECURITY: RPC URL must be a devnet endpoint. Got: {rpc_url}\n"
+            f"Allowed patterns: {', '.join(ALLOWED_DEVNET_PATTERNS)}\n"
+            "This skill is devnet-only for security. Never use mainnet keys or endpoints."
+        )
+
+
 def sign_and_submit(
     instructions: list,
     keypair_path: str,
@@ -48,6 +75,9 @@ def sign_and_submit(
     Raises:
         Exception: If construction, signing, or submission fails
     """
+    # Validate RPC URL is devnet-only
+    _validate_devnet_rpc(rpc_url)
+    
     try:
         from solders.keypair import Keypair
         from solders.transaction import Transaction

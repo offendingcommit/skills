@@ -30,7 +30,7 @@ Trade One-Touch barrier options on live sports with instant mockUSDC payouts on 
 >
 > The skill communicates with `https://api.optionns.com` (remote service) and Solana Devnet RPC. Treat as untrusted network endpoints until you verify provenance. Review `scripts/signer.py` and `scripts/optionns.sh` before allowing autonomous operation with credentials.
 
-**Security Audit:** This skill generates keypairs locally (never sent to API), signs transactions client-side with `solders`, and only transmits signed transactions to Solana devnet RPC. Private keys remain on your machine. The signer includes mainnet detection to refuse signing non-devnet transactions.
+**Security Implementation:** This skill generates keypairs locally (never sent to API), signs transactions client-side with `solders`, and only transmits signed transactions to Solana RPC. Private keys remain on your machine. **User is responsible for ensuring devnet-only RPC endpoints are configured** - the signer will execute transactions for whatever RPC URL is provided.
 
 ---
 
@@ -378,16 +378,14 @@ The strategy engine monitors:
 ## Files
 
 ```
-optionns-trader/
+sports/
 ├── SKILL.md              # Skill definition for OpenClaw
 ├── skill.json            # Package metadata
-├── README.md             # This file
+├── README.md             # Full documentation
 ├── scripts/
-│   ├── optionns.sh       # Main CLI for trading
-│   ├── signer.py         # Transaction signing helper
-│   └── strategy.py       # Edge calculation engine
-├── examples/
-│   └── trading_agent.py  # Complete Python agent example
+│   ├── optionns.sh       # Main CLI (demonstrates full trading workflow)
+│   ├── signer.py         # Transaction signing (importable library + CLI)
+│   └── strategy.py       # Autonomous trading engine with Kelly sizing
 └── references/
     └── api.md            # Full Optionns API docs
 ```
