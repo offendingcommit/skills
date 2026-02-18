@@ -3,9 +3,15 @@
   "slug": "swift-architecture-skill",
   "displayName": "Swift Architecture Skill",
   "latest": {
-    "version": "0.3.0",
-    "publishedAt": 1771223353909,
-    "commit": "https://github.com/openclaw/skills/commit/1a2719daecac68652d7366d612d2c00437316d32"
+    "version": "0.3.1",
+    "publishedAt": 1771316871113,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.3.0",
+      "publishedAt": 1771223353909,
+      "commit": "https://github.com/openclaw/skills/commit/1a2719daecac68652d7366d612d2c00437316d32"
+    }
+  ]
 }
