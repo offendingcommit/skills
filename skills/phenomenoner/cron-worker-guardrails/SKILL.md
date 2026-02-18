@@ -1,10 +1,11 @@
 ---
 name: cron-worker-guardrails
 slug: cron-worker-guardrails
-version: 1.0.0
+version: 1.0.1
 license: MIT
 description: |
-  Use when hardening OpenClaw isolated cron jobs (agentTurn) against exec/bash quoting failures (unexpected EOF), command-substitution pitfalls ($()), pipefail+head SIGPIPE issues, and when designing a Cron Agent contract (AGENTS.md-like rules) or moving fragile shell into small scripts.
+  Use when hardening OpenClaw cron workers (especially isolated agentTurn jobs) against quoting failures, brittle shell patterns, SIGPIPE false failures, and cwd/env drift.
+  Output: a scripts-first hardening checklist + portable patterns.
 metadata:
   openclaw:
     emoji: "🧯"
@@ -12,80 +13,82 @@ metadata:
 
 # Cron Worker Guardrails
 
-A reliability-first checklist for **isolated cron workers** (agentTurn) and any automation that runs unattended.
+A reliability-first checklist for **OpenClaw cron workers** (especially `sessionTarget="isolated"` + `payload.kind="agentTurn"`) and any automation that runs unattended.
+
+## Why this skill exists
+Cron failures are rarely “logic bugs.” They’re usually:
+- brittle shell quoting (`bash -lc '...'` nested quotes)
+- command substitution surprises (`$(...)`)
+- cwd/env drift (“works locally, fails in cron”)
+- pipelines that fail for the wrong reason (`pipefail` + `head` / SIGPIPE)
+
+The fix is boring but effective: **scripts-first + deterministic execution + silent-on-success**.
 
 ## Quick Start
 
-Use this skill when you see errors like:
-- `unexpected EOF while looking for matching ')'`
-- brittle `bash -lc '...'` quoting failures
-- false failures from `pipefail` + `head` (SIGPIPE)
-- “works locally, fails in cron” due to cwd/env drift
+If your cron payload is getting long or fragile:
+1) Move logic into a script (recommended location: `tools/` in the target repo)
+2) Cron runs **one short command**
+3) Script prints `NO_REPLY` on success
 
-Default rule: **scripts-first**. If the cron payload is getting long or fragile, move logic into a small script and have cron run exactly one short command.
+If you want a portable “contract” to standardize your cron workers, use the file included with this skill:
+- `references/cron-agent-contract.md`
 
-## Canonical contract pointers
-- Primary contract (keep cron payloads short; refer here):
-  - `/root/.openclaw/workspace/openclaw-async-coding-playbook/protocol/cron-agent.md`
-- Longer pitfall list: `references/pitfalls.md`
+Also see:
+- `references/pitfalls.md`
+
+## Portability rule (important)
+
+Do **not** hardcode deployment-specific absolute paths tied to one machine.
+
+People install OpenClaw on different OSes and directory layouts (Linux/macOS/Windows; different home dirs; containers). Prefer:
+- repo-relative paths
+- environment variables you document
+- minimal wrappers that `cd` into the repo
 
 ## Default stance (reliability-first)
+
 - Prefer **scripts-first** over multi-line `bash -lc '...'`.
-- Prefer **one exec = one short command**.
-- Prefer **python3 explicitly** (don’t assume `python`). For project deps / reproducibility use:
-  - `uv run --python 3.13 --frozen -- <cmd>`
-  - Module form: `uv run --python 3.13 --frozen -- python -m <module> ...`
-  - **Do not** write `uv run ... -m <module>` (unsupported; will fail).
-- Avoid in generated shell:
-  - **command substitution** `$(...)` / backticks
-  - **heredocs** (`<<EOF`)
-  - nested quotes inside a single `bash -lc ' ... '` block
-  - `set -o pipefail` when piping into `head` (SIGPIPE → false failure)
-  - `rg` (ripgrep) unless you *know* it’s installed
+- Prefer **one command per cron job**.
+- Prefer explicit interpreters (`python3`, `node`, etc.) rather than ambiguous shims.
+- Keep success output silent: **`NO_REPLY`**.
 
 ## Common failure patterns → fixes
 
-### 0) Scripts-first wrapper pattern (recommended)
-When a cron payload is getting long or you see quoting failures, wrap the whole job into one script and have cron run **exactly one command**.
-
-Rules of thumb:
-- use subprocess argv lists (no `shell=True`)
-- `chdir` to repo root before `uv run --frozen ...` so lockfile resolution is deterministic
-- print either `NO_REPLY` or a short alert
-
-Example (this deployment):
-- `/root/.openclaw/workspace/openclaw-async-coding-playbook/tools/openclaw_mem_harvest_triage_job.py` (hardens openclaw-mem harvest+triage)
-
 ### 1) `unexpected EOF while looking for matching ')'`
+
 Likely causes:
 - unclosed `$(...)` from command substitution
 - broken nested quotes in `bash -lc ' ... '`
 
 Fix pattern:
-1) Replace the whole multi-line bash with a tiny Python script under the target repo’s `tools/` (or `/root/.openclaw/workspace/tools/`).
-2) Cron prompt calls exactly one short command, e.g.:
-   - `python3 /abs/path/to/tools/<script>.py --date today`
+- Replace the whole multi-line shell block with a small script.
+- Cron calls exactly one short command, e.g.:
+  - `python3 tools/<job>.py`
 
-### 2) `ModuleNotFoundError` during pytest collection (cron/dev)
+### 2) False failure from `pipefail` + `head` (SIGPIPE)
+
+Symptom:
+- command exits non-zero even though the output you wanted is fine
+
+Fix pattern:
+- avoid `pipefail` when piping into `head`
+- or better: do the filtering in a script (read only what you need)
+
+### 3) “Works locally, fails in cron”
+
 Common causes:
-- running tests **not from repo root** (so the module isn’t on `sys.path`)
-- calling the `pytest` entrypoint when it isn’t installed in the env
+- wrong working directory
+- missing env vars
+- different PATH
 
-Safe pattern:
-- `cd /path/to/repo`
-- ensure pytest exists
-- run:
-  - `uv run -- python -m pytest -q`
+Fix pattern:
+- `cd` into the repo (or have the script do it)
+- keep dependencies explicit and documented
 
-## Safe shell patterns (if you must)
-- Print counts without `$(...)`:
-  - `echo -n 'lines='; wc -l < "$FILE"`
-- “No matches” should not be fatal in exploration:
-  - `git grep -n -- 'pattern' path || true`
+## Copy/paste hardening header (portable)
 
-## Copy/paste hardening header for cron payloads
+Use this near the top of a cron prompt (2 lines, low-noise):
 
-Use this near the top of a cron `payload.message` (2 lines, low-noise):
-
-- **Hardening (MUST):** read+follow `/root/.openclaw/workspace/openclaw-async-coding-playbook/protocol/cron-agent.md`.
-- Also apply `cron-worker-guardrails` (this skill). If anything needs parsing/multi-step logic, write/run a small `tools/*.py` script.
+- **Hardening (MUST):** follow `references/cron-agent-contract.md` (scripts-first, deterministic cwd, silent-on-success).
+- Also apply `cron-worker-guardrails` (this skill). If parsing/multi-step logic is needed, write/run a small `tools/*.py` script.
