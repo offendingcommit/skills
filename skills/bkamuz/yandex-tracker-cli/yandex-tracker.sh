@@ -37,8 +37,111 @@ if [[ -z "$TOKEN" || -z "$ORG_ID" ]]; then
 fi
 
 BASE="https://api.tracker.yandex.net/v2"
+BASE_V3="https://api.tracker.yandex.net/v3"
 AUTH="Authorization: OAuth $TOKEN"
 ORG="X-Org-Id: $ORG_ID"
+
+# ---- First-run: ask user for attachments directory (only when interactive and not yet set) ----
+PREF_FILE="${HOME}/.yandex-tracker-attachments-dir"
+DEFAULT_ATTACHMENTS_DIR="${HOME}/Downloads/YandexTrackerCLI"
+
+ensure_attachment_dir_configured() {
+  [[ -n "${YANDEX_TRACKER_ATTACHMENTS_DIR}" ]] && return 0
+  if [[ -f "$PREF_FILE" && -r "$PREF_FILE" ]]; then
+    read -r YANDEX_TRACKER_ATTACHMENTS_DIR < "$PREF_FILE" || true
+    [[ -n "$YANDEX_TRACKER_ATTACHMENTS_DIR" ]] && export YANDEX_TRACKER_ATTACHMENTS_DIR
+    return 0
+  fi
+  if [[ ! -t 0 ]]; then
+    return 0
+  fi
+  echo "First run: choose folder for attachments (download/upload)."
+  echo "  1) Default: $DEFAULT_ATTACHMENTS_DIR"
+  echo "  2) Enter your own path"
+  printf "Use default? [Y/n]: "
+  read -r reply
+  reply="${reply#"${reply%%[![:space:]]*}"}"
+  reply="${reply%"${reply##*[![:space:]]}"}"
+  if [[ -z "$reply" || "$reply" == [Yy]* ]]; then
+    YANDEX_TRACKER_ATTACHMENTS_DIR="$DEFAULT_ATTACHMENTS_DIR"
+  else
+    printf "Enter path: "
+    read -r YANDEX_TRACKER_ATTACHMENTS_DIR
+    YANDEX_TRACKER_ATTACHMENTS_DIR="${YANDEX_TRACKER_ATTACHMENTS_DIR#"${YANDEX_TRACKER_ATTACHMENTS_DIR%%[![:space:]]*}"}"
+    YANDEX_TRACKER_ATTACHMENTS_DIR="${YANDEX_TRACKER_ATTACHMENTS_DIR%"${YANDEX_TRACKER_ATTACHMENTS_DIR##*[![:space:]]}"}"
+    if [[ -z "$YANDEX_TRACKER_ATTACHMENTS_DIR" ]]; then
+      YANDEX_TRACKER_ATTACHMENTS_DIR="$DEFAULT_ATTACHMENTS_DIR"
+    fi
+  fi
+  [[ "$YANDEX_TRACKER_ATTACHMENTS_DIR" == ~* ]] && YANDEX_TRACKER_ATTACHMENTS_DIR="${HOME}${YANDEX_TRACKER_ATTACHMENTS_DIR:1}"
+  mkdir -p "$YANDEX_TRACKER_ATTACHMENTS_DIR"
+  printf '%s\n' "$YANDEX_TRACKER_ATTACHMENTS_DIR" > "$PREF_FILE"
+  export YANDEX_TRACKER_ATTACHMENTS_DIR
+}
+
+# ---- Attachment path security: resolve to absolute and check under allowed base ----
+_resolve_absolute() {
+  local path="$1"
+  [[ -z "$path" ]] && return 1
+  [[ "$path" == ~* ]] && path="${HOME}${path:1}"
+  if [[ "$path" != /* ]]; then
+    [[ -z "$PWD" ]] && return 1
+    path="$PWD/$path"
+  fi
+  local result="/"
+  local part
+  while [[ -n "$path" ]]; do
+    path="${path#/}"
+    part="${path%%/*}"
+    path="${path#$part}"
+    path="${path#/}"
+    [[ -z "$part" || "$part" == . ]] && continue
+    if [[ "$part" == .. ]]; then
+      result=$(dirname "$result")
+      continue
+    fi
+    result="${result%/}/$part"
+  done
+  [[ -z "$result" ]] && result="/"
+  echo "$result"
+}
+
+_get_attachment_base() {
+  if [[ -n "${YANDEX_TRACKER_ATTACHMENTS_DIR}" ]]; then
+    local expanded="${YANDEX_TRACKER_ATTACHMENTS_DIR}"
+    [[ "$expanded" == ~* ]] && expanded="${HOME}${expanded:1}"
+    if [[ "$expanded" != /* ]]; then
+      expanded="$PWD/$expanded"
+    fi
+    _resolve_absolute "$expanded"
+  else
+    _resolve_absolute "$PWD"
+  fi
+}
+
+
+_path_under_base() {
+  local resolved="$1"
+  local base="$2"
+  [[ -z "$resolved" || -z "$base" ]] && return 1
+  [[ "$resolved" == "$base" ]] && return 0
+  [[ "$resolved" == "$base/"* ]] && return 0
+  return 1
+}
+
+_ensure_attachment_path_allowed() {
+  local kind="$1"  # "download" or "upload"
+  local path="$2"
+  local resolved
+  resolved=$(_resolve_absolute "$path") || { echo "Error: invalid path: $path" >&2; return 1; }
+  local base
+  base=$(_get_attachment_base) || { echo "Error: could not determine allowed attachment directory" >&2; return 1; }
+  if ! _path_under_base "$resolved" "$base"; then
+    echo "Error: attachment path must be under the allowed directory (current directory or YANDEX_TRACKER_ATTACHMENTS_DIR)." >&2
+    return 1
+  fi
+  return 0
+}
 
 urlencode() {
   local s="${1:-}"
@@ -78,14 +181,14 @@ issue_create() {
     body=$(echo "$base" | jq --argjson extra "$extra" '. + $extra')
   fi
   curl -sS -X POST -H "$AUTH" -H "$ORG" -H "Content-Type: application/json" \
-    -d "$body" "$BASE/issues/_new"
+    -d "$body" "$BASE/issues"
 }
 
 issue_update() {
   local id="$1"
   local payload
   payload=$(cat)
-  curl -sS -X POST -H "$AUTH" -H "$ORG" -H "Content-Type: application/json" \
+  curl -sS -X PATCH -H "$AUTH" -H "$ORG" -H "Content-Type: application/json" \
     -d "$payload" "$BASE/issues/$(urlencode "$id")"
 }
 
@@ -132,16 +235,24 @@ issue_attachments() {
 }
 
 attachment_download() {
+  ensure_attachment_dir_configured
   local issue_id="$1"
   local file_id="$2"
   local output="${3:-/dev/stdout}"
+  if [[ -n "$output" && "$output" != "/dev/stdout" ]]; then
+    _ensure_attachment_path_allowed "download" "$output" || exit 1
+  fi
   curl -sS -H "$AUTH" -H "$ORG" "$BASE/issues/$(urlencode "$issue_id")/attachments/$(urlencode "$file_id")" -o "$output"
 }
 
 attachment_upload() {
+  ensure_attachment_dir_configured
   local issue_id="$1"
   local filepath="$2"
   local comment="${3:-}"
+  _ensure_attachment_path_allowed "upload" "$filepath" || exit 1
+  [[ -f "$filepath" ]] || { echo "Error: file does not exist or is not a regular file: $filepath" >&2; exit 1; }
+  [[ -r "$filepath" ]] || { echo "Error: file is not readable: $filepath" >&2; exit 1; }
   local file_name
   file_name=$(basename "$filepath")
   local form_data
@@ -228,6 +339,41 @@ issue_types_list() {
   curl -sS -H "$AUTH" -H "$ORG" "$BASE/issue-types"
 }
 
+# ---- Checklist (API v3 only: /v3/issues/<id>/checklistItems) ----
+issue_checklist() {
+  local id="$1"
+  curl -sS -H "$AUTH" -H "$ORG" "$BASE_V3/issues/$(urlencode "$id")/checklistItems"
+}
+
+checklist_add() {
+  local issue_id="$1"
+  local text="$2"
+  # API v3: POST body uses "text", not "content"
+  curl -sS -X POST -H "$AUTH" -H "$ORG" -H "Content-Type: application/json" \
+    -d "$(jq -n --arg t "$text" '{text: $t}')" "$BASE_V3/issues/$(urlencode "$issue_id")/checklistItems"
+}
+
+checklist_complete() {
+  local issue_id="$1"
+  local item_id="$2"
+  # API v3: no /complete endpoint; use PATCH with {"text":"...","checked":true}. We need item text — GET first or pass as 3rd arg.
+  local text
+  text=$(curl -sS -H "$AUTH" -H "$ORG" "$BASE_V3/issues/$(urlencode "$issue_id")/checklistItems" \
+    | jq -r --arg id "$item_id" '.[] | select(.id == $id) | .text // empty')
+  if [[ -z "$text" ]]; then
+    text="(item)"
+  fi
+  curl -sS -X PATCH -H "$AUTH" -H "$ORG" -H "Content-Type: application/json" \
+    -d "$(jq -n --arg t "$text" --argjson ch true '{text: $t, checked: $ch}')" \
+    "$BASE_V3/issues/$(urlencode "$issue_id")/checklistItems/$(urlencode "$item_id")"
+}
+
+checklist_delete() {
+  local issue_id="$1"
+  local item_id="$2"
+  curl -sS -X DELETE -H "$AUTH" -H "$ORG" "$BASE_V3/issues/$(urlencode "$issue_id")/checklistItems/$(urlencode "$item_id")"
+}
+
 case "$1" in
   queues) queues ;;
   queue-get) queue_get "$2" ;;
@@ -256,5 +402,9 @@ case "$1" in
   statuses-list) statuses_list ;;
   resolutions-list) resolutions_list ;;
   issue-types-list) issue_types_list ;;
-  *) echo "Usage: $0 {queues|queue-get <key>|queue-fields <key>|issue-get <id>|issue-create <queue> <summary>|issue-update <id>|issue-delete <id>|issue-comment <id> <text>|issue-comment-edit <id> <comment-id> <new-text>|issue-comment-delete <id> <comment-id>|issue-transitions <id>|issue-close <id> <resolution>|issue-worklog <id> <duration> [comment]|issue-attachments <id>|attachment-download <issue-id> <fileId> [output]|attachment-upload <issue-id> <filepath> [comment]|issues-search|projects-list|project-get <id>|project-issues <id>|sprints-list|sprint-get <id>|sprint-issues <id>|users-list|statuses-list|resolutions-list|issue-types-list}" >&2; exit 1 ;;
+  issue-checklist) issue_checklist "$2" ;;
+  checklist-add) shift; checklist_add "$1" "$2" ;;
+  checklist-complete) shift; checklist_complete "$1" "$2" ;;
+  checklist-delete) shift; checklist_delete "$1" "$2" ;;
+  *) echo "Usage: $0 {queues|queue-get <key>|queue-fields <key>|issue-get <id>|issue-create <queue> <summary>|issue-update <id>|issue-delete <id>|issue-comment <id> <text>|issue-comment-edit <id> <comment-id> <new-text>|issue-comment-delete <id> <comment-id>|issue-transitions <id>|issue-close <id> <resolution>|issue-worklog <id> <duration> [comment]|issue-attachments <id>|attachment-download <issue-id> <fileId> [output]|attachment-upload <issue-id> <filepath> [comment]|issues-search|projects-list|project-get <id>|project-issues <id>|sprints-list|sprint-get <id>|sprint-issues <id>|users-list|statuses-list|resolutions-list|issue-types-list|issue-checklist <id>|checklist-add <issue-id> <text>|checklist-complete <issue-id> <item-id>|checklist-delete <issue-id> <item-id>}" >&2; exit 1 ;;
 esac
