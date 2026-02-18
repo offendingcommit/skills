@@ -97,7 +97,7 @@ def run(args):
     try:
         credentials = load_credentials()
         trains = search_trains(credentials, args)
-        save_search_results(trains)
+        save_search_results(trains, args)
         _display_results(trains)
         sys.exit(0)
     except Exception as e:

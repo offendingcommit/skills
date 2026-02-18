@@ -83,8 +83,14 @@ def main():
 
         elif args.command == 'log':
             from check_retry_log import tail_log
-            from pathlib import Path
-            log_file = Path.home() / '.openclaw' / 'tmp' / 'srt' / 'reserve.log'
+            from utils import get_data_dir
+            log_dir = get_data_dir()
+            candidates = sorted(log_dir.glob('reserve_*.log'), key=lambda p: p.stat().st_mtime, reverse=True)
+            if not candidates:
+                print(f"❌ 로그 파일이 없습니다. ({log_dir}/reserve_*.log)")
+                sys.exit(1)
+            log_file = candidates[0]
+            print(f"📄 로그 파일: {log_file}")
             tail_log(log_file, args.lines)
 
     except KeyboardInterrupt:

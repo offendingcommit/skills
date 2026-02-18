@@ -6,6 +6,7 @@ Check retry log file for SRT reservation progress.
 import sys
 import argparse
 from pathlib import Path
+from utils import get_data_dir
 
 
 def tail_log(log_file, lines=20):
@@ -41,7 +42,7 @@ def main():
     parser.add_argument('--lines', '-n', type=int, default=20,
                         help='표시할 라인 수 (기본값: 20)')
     parser.add_argument('--log-file', type=str,
-                        help='로그 파일 경로 (기본값: ~/.openclaw/tmp/srt/reserve.log)')
+                        help='로그 파일 경로 (기본값: 최신 reserve_*.log 자동 탐색)')
     
     args = parser.parse_args()
     
@@ -49,8 +50,16 @@ def main():
     if args.log_file:
         log_file = Path(args.log_file)
     else:
-        log_file = Path.home() / '.openclaw' / 'tmp' / 'srt' / 'reserve.log'
-    
+        # Auto-detect latest reserve_*.log file from data dir
+        log_dir = get_data_dir()
+        candidates = sorted(log_dir.glob('reserve_*.log'), key=lambda p: p.stat().st_mtime, reverse=True)
+        if candidates:
+            log_file = candidates[0]
+            print(f"📄 로그 파일: {log_file}")
+        else:
+            print(f"❌ 로그 파일이 없습니다. ({log_dir}/reserve_*.log)")
+            sys.exit(1)
+
     tail_log(log_file, args.lines)
 
 

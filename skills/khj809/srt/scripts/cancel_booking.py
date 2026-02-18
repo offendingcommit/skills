@@ -50,7 +50,7 @@ def cancel_booking(credentials, args):
 
     # Confirm cancellation
     if not getattr(args, 'confirm', False):
-        print(f"\n⚠️  예약을 취소하시겠습니까?")
+        print("\n⚠️  예약을 취소하시겠습니까?")
         print(f"   예약번호: {getattr(reservation, 'reservation_number', 'N/A')}")
         print(f"   열차번호: {getattr(reservation, 'train_number', 'N/A')}")
         print(f"   출발: {getattr(reservation, 'dep_station_name', 'N/A')} {getattr(reservation, 'journey_time', 'N/A')}")
@@ -61,7 +61,7 @@ def cancel_booking(credentials, args):
             sys.exit(0)
 
     # Cancel reservation
-    print(f"\n🗑️  예약 취소 중...")
+    print("\n🗑️  예약 취소 중...")
     srt.cancel(reservation)
 
     return reservation

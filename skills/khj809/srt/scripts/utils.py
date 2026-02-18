@@ -8,8 +8,21 @@ import os
 import json
 import time
 import sys
+import tempfile
 from pathlib import Path
-from datetime import datetime
+
+
+def get_data_dir() -> Path:
+    """
+    Return the directory used for SRT data files (logs, cache, rate-limit state).
+
+    Override by setting SRT_DATA_DIR in the environment.
+    Defaults to a 'srt' subdirectory under the system temp dir.
+    """
+    custom = os.environ.get('SRT_DATA_DIR')
+    base = Path(custom) if custom else Path(tempfile.gettempdir()) / 'srt'
+    base.mkdir(parents=True, exist_ok=True)
+    return base
 
 
 class RateLimiter:
@@ -17,7 +30,7 @@ class RateLimiter:
 
     def __init__(self, state_file=None):
         if state_file is None:
-            state_file = Path.home() / '.openclaw' / 'tmp' / 'srt' / 'rate_limit.json'
+            state_file = get_data_dir() / 'rate_limit.json'
         self.state_file = Path(state_file)
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         self.load_state()
@@ -47,6 +60,7 @@ class RateLimiter:
         try:
             with open(self.state_file, 'w') as f:
                 json.dump(self.state, f)
+            os.chmod(self.state_file, 0o600)
         except IOError as e:
             print(f"⚠️  Warning: Could not save rate limit state: {e}", file=sys.stderr)
 
@@ -312,41 +326,94 @@ def print_table(headers, rows):
         print(" | ".join(str(cell).ljust(w) for cell, w in zip(row, col_widths)))
 
 
-def save_search_results(trains):
+def save_search_results(trains, search_args=None):
     """
-    Save search results to temporary file for later reservation.
+    Save search params and train metadata as JSON for later reservation.
+    Replaces previous pickle-based approach to avoid deserialization risks.
 
     Args:
-        trains: List of train objects
+        trains: List of SRT train objects
+        search_args: argparse namespace with departure/arrival/date/time (optional)
     """
-    import pickle
-    cache_dir = Path.home() / '.openclaw' / 'tmp' / 'srt'
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_file = cache_dir / 'last_search.pkl'
+    cache_file = get_data_dir() / 'last_search.json'
+
+    trains_meta = []
+    for train in trains:
+        trains_meta.append({
+            'train_number': getattr(train, 'train_number', None),
+            'dep_time': getattr(train, 'dep_time', None),
+            'arr_time': getattr(train, 'arr_time', None),
+            'dep_station_name': getattr(train, 'dep_station_name', None),
+            'arr_station_name': getattr(train, 'arr_station_name', None),
+        })
+
+    cache = {
+        'trains': trains_meta,
+        'search_params': {
+            'departure': getattr(search_args, 'departure', trains[0].dep_station_name if trains else None),
+            'arrival': getattr(search_args, 'arrival', trains[0].arr_station_name if trains else None),
+            'date': getattr(search_args, 'date', None),
+            'time': getattr(search_args, 'time', '000000'),
+        }
+    }
 
     try:
-        with open(cache_file, 'wb') as f:
-            pickle.dump(trains, f)
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+        os.chmod(cache_file, 0o600)
     except Exception as e:
         print(f"⚠️  Warning: Could not save search results: {e}", file=sys.stderr)
 
 
-def load_search_results():
+def load_search_results(credentials=None):
     """
-    Load previously saved search results.
+    Load previously cached search results by performing a fresh SRT search.
+    Uses cached search params to re-query live data; avoids unsafe deserialization.
+
+    Args:
+        credentials: dict with phone and password (loaded automatically if None)
 
     Returns:
-        list: List of train objects, or None if not found
+        list: Live SRT train objects filtered to cached train numbers, or None if unavailable.
     """
-    import pickle
-    cache_file = Path.home() / '.openclaw' / 'tmp' / 'srt' / 'last_search.pkl'
+    cache_file = get_data_dir() / 'last_search.json'
 
     if not cache_file.exists():
         return None
 
     try:
-        with open(cache_file, 'rb') as f:
-            return pickle.load(f)
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            cache = json.load(f)
     except Exception as e:
-        print(f"⚠️  Warning: Could not load search results: {e}", file=sys.stderr)
+        print(f"⚠️  Warning: Could not load search cache: {e}", file=sys.stderr)
+        return None
+
+    params = cache.get('search_params', {})
+    cached_numbers = [t['train_number'] for t in cache.get('trains', [])]
+
+    if not params.get('departure') or not params.get('arrival') or not params.get('date'):
+        print("❌ 캐시에 검색 정보가 없습니다. 먼저 'search' 명령으로 열차를 검색해주세요.", file=sys.stderr)
+        return None
+
+    if credentials is None:
+        credentials = load_credentials()
+
+    try:
+        from SRT import SRT
+        srt = SRT(credentials['phone'], credentials['password'])
+        trains = srt.search_train(
+            dep=params['departure'],
+            arr=params['arrival'],
+            date=params['date'],
+            time=params.get('time', '000000'),
+            available_only=False
+        )
+
+        if cached_numbers:
+            train_map = {t.train_number: t for t in trains}
+            filtered = [train_map[n] for n in cached_numbers if n in train_map]
+            return filtered if filtered else trains
+        return trains
+    except Exception as e:
+        print(f"⚠️  Warning: Re-search failed: {e}", file=sys.stderr)
         return None
