@@ -1,6 +1,20 @@
 ---
 name: find-my
+version: 1.0.1
 description: Control Apple Find My app via Peekaboo to locate people, devices, and items (AirTags). Use when asked to find keys, wallet, AirTags, locate family members and friends, play sound on lost items, or check device locations. Native app control - no third-party APIs or credential sharing required.
+metadata:
+  os: [darwin]
+  requires:
+    bins: [peekaboo, jq]
+    env:
+      PEEKABOO_BRIDGE_SOCKET: "Path to OpenClaw.app Peekaboo bridge socket (default: ~/Library/Application Support/OpenClaw/bridge.sock)"
+    env_optional:
+      FM_OUTPUT_DIR: "Directory for screenshot output (default: /tmp)"
+  contains_scripts: true
+  privacy:
+    screenshots: true
+    location_data: true
+    ui_automation: true
 ---
 
 # Find My
@@ -8,6 +22,33 @@ description: Control Apple Find My app via Peekaboo to locate people, devices, a
 Control the native Find My app via Peekaboo. No sketchy APIs or credential sharing.
 
 **Run scripts from:** `cd {skillDir}`
+
+## Requirements
+
+| Requirement | Details |
+|-------------|---------|
+| **OS** | macOS only |
+| **Apps** | Find My.app (must be open), OpenClaw.app (provides Peekaboo bridge) |
+| **Permissions** | OpenClaw.app needs Screen Recording + Accessibility permissions |
+| **Peekaboo** | CLI must be installed and configured |
+
+## Privacy & Security
+
+**What this skill accesses:**
+- Location data for people, devices, and items in your Find My app
+- Screenshots of the Find My window (stored locally in `/tmp/`)
+
+**What this skill does NOT do:**
+- No network requests to third-party services
+- No credential storage or Apple ID access
+- No data exfiltration — all operations are local UI automation
+
+**Data scope:** The skill can see/interact with anything visible in your Find My app, including:
+- Shared locations of family/friends
+- Device locations (yours and Family Sharing members)
+- AirTag/item locations
+
+**User awareness:** This skill uses mouse clicks and UI automation. You will see the actions happening on screen.
 
 ## Known Limitations
 
