@@ -10,6 +10,12 @@
 
 ## Установка
 
+0. Простейший способ:
+   попросить openclaw бота установить yandex-tracker-cli скилл
+   или дать ссылку https://clawhub.ai/bkamuz/yandex-tracker-cli
+
+или
+
 1. Скачайте скрипт и сделайте его исполняемым:
 
    ```bash
