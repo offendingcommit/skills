@@ -3,9 +3,15 @@
   "slug": "bondterminal-x402",
   "displayName": "Bondterminal X402",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1771383140032,
-    "commit": "https://github.com/openclaw/skills/commit/1875e05e5196e2a24667e01e59904548bfca38aa"
+    "version": "0.2.1",
+    "publishedAt": 1771437206574,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1771383140032,
+      "commit": "https://github.com/openclaw/skills/commit/1875e05e5196e2a24667e01e59904548bfca38aa"
+    }
+  ]
 }
