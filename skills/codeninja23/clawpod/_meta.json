@@ -3,11 +3,16 @@
   "slug": "clawpod",
   "displayName": "Clawpod",
   "latest": {
-    "version": "0.1.3",
-    "publishedAt": 1771247654613,
-    "commit": "https://github.com/openclaw/skills/commit/3e2e7fb411d0a31eb77e18a348b7e370ff3d7a4d"
+    "version": "0.1.4",
+    "publishedAt": 1771415043154,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.3",
+      "publishedAt": 1771247654613,
+      "commit": "https://github.com/openclaw/skills/commit/3e2e7fb411d0a31eb77e18a348b7e370ff3d7a4d"
+    },
     {
       "version": "0.1.2",
       "publishedAt": 1771034557111,
