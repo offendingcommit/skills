@@ -1,17 +1,13 @@
 ---
 name: widgets-ui
-description: |
-  Declarative UI widgets from JSON for React/Next.js from ui.inference.sh.
-  Render rich interactive UIs from structured agent responses.
-  Capabilities: forms, buttons, cards, layouts, inputs, selects, checkboxes.
-  Use for: agent-generated UIs, dynamic forms, data display, interactive cards.
-  Triggers: widgets, declarative ui, json ui, widget renderer, agent widgets,
-  dynamic ui, form widgets, card widgets, shadcn widgets, structured output ui
+description: "Declarative UI widgets from JSON for React/Next.js from ui.inference.sh. Render rich interactive UIs from structured agent responses. Capabilities: forms, buttons, cards, layouts, inputs, selects, checkboxes. Use for: agent-generated UIs, dynamic forms, data display, interactive cards. Triggers: widgets, declarative ui, json ui, widget renderer, agent widgets,"  dynamic ui, form widgets, card widgets, shadcn widgets, structured output ui
 ---
 
 # Widget Renderer
 
 Declarative UI from JSON via [ui.inference.sh](https://ui.inference.sh).
+
+![Widget Renderer](https://cloud.inference.sh/u/33sqbmzt3mrg2xxphnhw5g5ear/01kah2rcteycyxw8ffmtpq1zec.png)
 
 ## Quick Start
 
@@ -158,13 +154,13 @@ const handleAction = (action: WidgetAction, formData?: WidgetFormData) => {
 
 ```bash
 # Full agent component
-npx skills add inference-sh/agent-skills@agent-ui
+npx skills add inference-sh/skills@agent-ui
 
 # Chat UI blocks
-npx skills add inference-sh/agent-skills@chat-ui
+npx skills add inference-sh/skills@chat-ui
 
 # Tool UI
-npx skills add inference-sh/agent-skills@tools-ui
+npx skills add inference-sh/skills@tools-ui
 ```
 
 ## Documentation
