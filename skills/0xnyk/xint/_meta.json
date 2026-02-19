@@ -1,13 +1,18 @@
 {
   "owner": "0xnyk",
   "slug": "xint",
-  "displayName": "Xint",
+  "displayName": "Xint Clawdhub Xint GACSw7",
   "latest": {
-    "version": "2026.2.18-8",
-    "publishedAt": 1771397325291,
-    "commit": "https://github.com/openclaw/skills/commit/2b8b9514fcd2b068ae8377c47fa3f2bc5b7bc5bc"
+    "version": "2026.2.19-1",
+    "publishedAt": 1771474143303,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2026.2.18-8",
+      "publishedAt": 1771397325291,
+      "commit": "https://github.com/openclaw/skills/commit/2b8b9514fcd2b068ae8377c47fa3f2bc5b7bc5bc"
+    },
     {
       "version": "2026.2.18-3",
       "publishedAt": 1771355531285,

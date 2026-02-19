@@ -344,12 +344,12 @@ sync_cargo_lock() {
   fi
 
   if [[ "$DRY_RUN" == "true" ]]; then
-    log "Would sync $repo/Cargo.lock via cargo metadata"
+    log "Would sync $repo/Cargo.lock via cargo check"
     return
   fi
 
   command -v cargo >/dev/null 2>&1 || die "cargo is required to sync Cargo.lock for $repo"
-  run_in_repo "$repo" cargo metadata --format-version=1 --no-deps >/dev/null
+  run_in_repo "$repo" cargo check --quiet >/dev/null
 }
 
 cargo_semver_version() {
@@ -525,18 +525,52 @@ push_repo() {
 publish_clawdhub() {
   local repo="$1"
   local claw_version
+  local source_path
+  local publish_path
+  local temp_dir=""
   claw_version="$(cargo_semver_version "$VERSION")"
+  source_path="$(repo_path "$repo")"
+  publish_path="$source_path"
+
+  # Publish from a temporary export to avoid tool-side mutations (e.g. Cargo.lock rewrites).
+  if [[ "$DRY_RUN" != "true" ]]; then
+    temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/xint-clawdhub-$repo-XXXXXX")"
+    if git -C "$source_path" archive --format=tar HEAD | tar -xf - -C "$temp_dir"; then
+      publish_path="$temp_dir"
+    else
+      warn "Failed to create temp export for $repo; falling back to live repo path"
+      publish_path="$source_path"
+    fi
+  fi
+
   if command -v clawdhub >/dev/null 2>&1; then
-    run clawdhub publish "$(repo_path "$repo")" --slug "$repo" --version "$claw_version" --changelog "Release v$VERSION"
+    if ! run clawdhub publish "$publish_path" --slug "$repo" --version "$claw_version" --changelog "Release v$VERSION"; then
+      warn "ClawdHub publish failed for $repo; continuing release pipeline"
+    fi
   else
     warn "clawdhub not found; skipping"
+  fi
+
+  if [[ -n "$temp_dir" && -d "$temp_dir" ]]; then
+    rm -rf "$temp_dir"
   fi
 }
 
 publish_skillsh() {
   local repo="$1"
+  local npm_cache
+  npm_cache="${NPM_CONFIG_CACHE:-${npm_config_cache:-${TMPDIR:-/tmp}/xint-npm-cache}}"
+
   if command -v npx >/dev/null 2>&1; then
-    run npx skills add "https://github.com/$GITHUB_ORG/$repo" --yes
+    if [[ "$DRY_RUN" == "true" ]]; then
+      run npx skills add "https://github.com/$GITHUB_ORG/$repo" --yes
+      return
+    fi
+
+    mkdir -p "$npm_cache"
+    if ! env npm_config_cache="$npm_cache" npx skills add "https://github.com/$GITHUB_ORG/$repo" --yes; then
+      warn "skills.sh publish failed for $repo; continuing release pipeline"
+    fi
   else
     warn "npx not found; skipping"
   fi
