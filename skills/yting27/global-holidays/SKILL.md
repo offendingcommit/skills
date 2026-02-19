@@ -1,7 +1,8 @@
 ---
-name: holidays
+name: global-holidays
 description: |
   Use this skill whenever a task involves checking, generating, or working with public holidays — for any country or subdivision (state, province, region). Triggers include: "is [date] a holiday?", "list all holidays in [country/year]", "find holidays in [date range]", "working days", "business days", "skip holidays", "holiday calendar", or any task that requires knowing whether a date is a government-designated public holiday. Also use when combining public holidays with custom or personal holiday dates. Do NOT use for general date arithmetic, timezone conversion, or calendar rendering unless holidays are explicitly involved.
+metadata: {"clawdbot":{"emoji":"🗓️","requires":{"bins":["python","pip"]}, "install":[{"id":"pip","kind":"pip","package":"holidays","label":"Install holidays package"}]}}
 ---
 
 # holidays — Python Holiday Library
@@ -16,20 +17,26 @@ The central object is `HolidayBase`, which behaves like a Python `dict` mapping 
 python <<'EOF'
 # your code here
 EOF
+# OR (if the package is installed via uv)
+uv run - <<EOF
+# your code here
+EOF
 ```
 
 ---
 
 ## Installation
 
+**IMPORTANT: Always use a virtual environment or `--break-system-packages` flag.**
+
 ```bash
-pip install --upgrade holidays
+pip install holidays --break-system-packages
 ```
 
-For the latest development version:
+**For production use, pin to a specific version:**
 
 ```bash
-pip install --upgrade https://github.com/vacanza/holidays/tarball/dev
+pip install holidays==0.58 --break-system-packages
 ```
 
 ---
@@ -126,30 +133,42 @@ print(name)   # → None
 
 ### 5. Working with Custom Holidays
 
-Custom holidays are stored as a JSON file at `$HOME/openclaw-personal/custom-holidays.json`:
+**SECURITY NOTE:** Only use custom holidays if the user explicitly provides or requests them. Never assume a file location exists.
 
-```json
-{
-  "2024-07-10": "My Birthday!",
-  "2024-10-01": "Family Celebration"
-}
-```
+**ALWAYS ask the user for the file path** rather than using a default location. If they don't have a custom holidays file, skip this feature.
 
-Load and merge with a country's calendar using `.update()`:
+Example workflow:
+1. Ask user: "Do you have a custom holidays JSON file you'd like to include?"
+2. If yes, ask: "What's the full path to your custom holidays file?"
+3. Only then load and merge:
 
 ```python
 import json
 from pathlib import Path
 from holidays import country_holidays
 
-custom_file = Path("~/openclaw-personal/custom-holidays.json").expanduser()
-with open(custom_file) as f:
-    custom_data = json.load(f)
+# ONLY use this if user explicitly provided the path
+custom_file = Path("/path/user/provided/custom-holidays.json")
 
-holidays_2024 = country_holidays('US', years=2024)
-holidays_2024.update(custom_data)
+# Verify file exists before reading
+if custom_file.exists():
+    with open(custom_file) as f:
+        custom_data = json.load(f)
 
-print(holidays_2024.get('2024-07-10'))  # → 'My Birthday!'
+    holidays_2024 = country_holidays('US', years=2024)
+    holidays_2024.update(custom_data)
+
+    print(holidays_2024.get('2024-07-10'))  # → 'My Birthday!' (if defined)
+else:
+    print(f"File not found: {custom_file}")
+```
+
+**Custom holidays file format:**
+```json
+{
+  "2024-07-10": "My Birthday!",
+  "2024-10-01": "Family Celebration"
+}
 ```
 
 ### 6. List All Supported Countries and Subdivisions
@@ -164,19 +183,39 @@ print(supported['US'])   # → list of supported US subdivision codes
 
 ### 7. Use Localized (Translated) Holiday Names
 
-Some countries support multiple languages for holiday name output.
+**Language codes:**
+- Use ISO 639-1 codes (e.g., `en`, `de`, `fr`)
+- Some countries use locale-specific codes (e.g., `en_US`, `zh_CN`)
+- If an unsupported language is requested, the library falls back to the default language
+
+**Step 1: Find countries with localization support**
 
 ```python
-from holidays import list_localized_countries, country_holidays
+from holidays import list_localized_countries
 
+# Get all countries that support multiple languages
 localized = list_localized_countries(include_aliases=True)
 
-# Get supported languages for Malaysia
-langs = localized['MY']   # e.g. ['en_MY', 'ms_MY', 'zh_CN']
+# Check if a specific country supports localization
+if 'MY' in localized:
+    print(f"Malaysia supports: {localized['MY']}")
+    # Output: Malaysia supports: ['en_MY', 'ms_MY', 'zh_CN', ...]
+```
 
-# Generate holidays in the first available language
-for date, name in sorted(country_holidays('MY', years=2025, language=langs[0]).items()):
-    print(date, name)
+**Step 2: Generate holidays in a specific language**
+
+```python
+from holidays import country_holidays
+
+# Malaysia holidays in Malay language
+my_holidays_ms = country_holidays('MY', years=2025, language='ms_MY')
+for date, name in sorted(my_holidays_ms.items())[:3]:
+    print(f"{date}: {name}")
+
+# Same holidays in English
+my_holidays_en = country_holidays('MY', years=2025, language='en_MY')
+for date, name in sorted(my_holidays_en.items())[:3]:
+    print(f"{date}: {name}")
 ```
 
 ---
@@ -193,6 +232,12 @@ for date, name in sorted(country_holidays('MY', years=2025, language=langs[0]).i
 
 ## Dependencies
 
-- **Python:** 3.8+
-- **Package:** `holidays` (PyPI). Install with `pip install --upgrade holidays`.
-- No external system dependencies required.
+- **Python:** 3.10+
+- **Package:** `holidays` (PyPI). Install with: `pip install holidays --break-system-packages`
+- **No external system dependencies required**
+
+## Security Considerations
+
+1. **Package installation:** Use `--break-system-packages` flag (required in this environment) and consider pinning to a specific version
+2. **Custom holidays files:** Only load custom holidays when explicitly requested by the user with a user-provided path
+3. **File access:** Verify file existence before reading to avoid exposing directory structure

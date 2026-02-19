@@ -3,9 +3,15 @@
   "slug": "global-holidays",
   "displayName": "Global Holidays",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771318258798,
-    "commit": "https://github.com/openclaw/skills/commit/8a4df344195b64ff0457e739d91289b9bac591c5"
+    "version": "1.0.2",
+    "publishedAt": 1771390686403,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771318258798,
+      "commit": "https://github.com/openclaw/skills/commit/8a4df344195b64ff0457e739d91289b9bac591c5"
+    }
+  ]
 }
