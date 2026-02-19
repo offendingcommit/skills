@@ -3,9 +3,15 @@
   "slug": "clawapi",
   "displayName": "ClawAPI",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771366686691,
-    "commit": "https://github.com/openclaw/skills/commit/00796672ce7fcf526e78c068a16d92de9377be75"
+    "version": "1.0.1",
+    "publishedAt": 1771367467683,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771366686691,
+      "commit": "https://github.com/openclaw/skills/commit/00796672ce7fcf526e78c068a16d92de9377be75"
+    }
+  ]
 }
