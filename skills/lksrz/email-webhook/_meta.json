@@ -3,11 +3,16 @@
   "slug": "email-webhook",
   "displayName": "Email Webhook",
   "latest": {
-    "version": "1.6.0",
-    "publishedAt": 1771406388072,
-    "commit": "https://github.com/openclaw/skills/commit/7d3c15e5a0c16b4ddb462da0dfbcc1b4f521af61"
+    "version": "2.6.0",
+    "publishedAt": 1771410107189,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.6.0",
+      "publishedAt": 1771406388072,
+      "commit": "https://github.com/openclaw/skills/commit/7d3c15e5a0c16b4ddb462da0dfbcc1b4f521af61"
+    },
     {
       "version": "1.2.0",
       "publishedAt": 1771360293721,
