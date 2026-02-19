@@ -1,12 +1,6 @@
 ---
 name: twitter-thread-creation
-description: |
-  Twitter/X thread writing with hook tweets, thread structure, and engagement optimization.
-  Covers tweet formatting, character limits, media attachments, and posting strategies.
-  Use for: Twitter threads, X posts, tweet storms, Twitter content, social media writing.
-  Triggers: twitter thread, tweet thread, x thread, twitter post, tweet writing,
-  thread creation, tweet storm, twitter content, x post, twitter writing,
-  twitter hook, tweet formatting, thread structure
+description: "Twitter/X thread writing with hook tweets, thread structure, and engagement optimization. Covers tweet formatting, character limits, media attachments, and posting strategies. Use for: Twitter threads, X posts, tweet storms, Twitter content, social media writing. Triggers: twitter thread, tweet thread, x thread, twitter post, tweet writing, thread creation, tweet storm, twitter content, x post, twitter writing, twitter hook, tweet formatting, thread structure"
 allowed-tools: Bash(infsh *)
 ---
 
@@ -24,6 +18,8 @@ infsh app run x/post-create --input '{
   "text": "I analyzed 1,000 landing pages.\n\n90% make the same 5 mistakes.\n\nHere are the fixes (with examples):\n\n🧵👇"
 }'
 ```
+
+> **Install note:** The [install script](https://cli.inference.sh) only detects your OS/architecture, downloads the matching binary from `dist.inference.sh`, and verifies its SHA-256 checksum. No elevated permissions or background processes. [Manual install & verification](https://dist.inference.sh/cli/checksums.txt) available.
 
 ## Character Limits
 
@@ -257,9 +253,9 @@ infsh app run infsh/html-to-image --input '{
 ## Related Skills
 
 ```bash
-npx skills add inferencesh/skills@linkedin-content
-npx skills add inferencesh/skills@content-repurposing
-npx skills add inferencesh/skills@social-media-carousel
+npx skills add inference-sh/skills@linkedin-content
+npx skills add inference-sh/skills@content-repurposing
+npx skills add inference-sh/skills@social-media-carousel
 ```
 
 Browse all apps: `infsh app list`
