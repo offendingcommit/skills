@@ -1,13 +1,18 @@
 {
   "owner": "odrobnik",
   "slug": "george",
-  "displayName": "George",
+  "displayName": "George Banking",
   "latest": {
-    "version": "1.4.1",
-    "publishedAt": 1770964159516,
-    "commit": "https://github.com/openclaw/skills/commit/764b793f3c757d4e992a7c082d156530d01491bb"
+    "version": "1.5.1",
+    "publishedAt": 1771481918761,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.4.1",
+      "publishedAt": 1770964159516,
+      "commit": "https://github.com/openclaw/skills/commit/764b793f3c757d4e992a7c082d156530d01491bb"
+    },
     {
       "version": "1.3.1",
       "publishedAt": 1770912978012,
