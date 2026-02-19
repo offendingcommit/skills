@@ -77,11 +77,30 @@ yt-dlp -x --audio-format mp3 --audio-quality 0 \
   -o "%(artist)s - %(title)s.%(ext)s" "<url>"
 ```
 
+## Post-Download: Filename Normalization
+
+yt-dlp filenames are often messy (`NA -` prefixes, `(Official Video)` suffixes, label names, wrong artist credits). **Always** run the normalization script after downloads complete.
+
+**Usage:**
+```bash
+# 1. Write the tracklist as JSON (from the parsed tracklist in step 2)
+cat > /tmp/tracklist.json << 'EOF'
+[{"artist": "Karol G", "title": "Ivonny Bonita"}, {"artist": "Doja Cat", "title": "Woman (Never Dull's Disco Rework)"}]
+EOF
+
+# 2. Run the normalize script
+scripts/normalize-filenames.sh ~/Downloads/set-name /tmp/tracklist.json
+```
+
+The script fuzzy-matches each mp3 in the directory to a tracklist entry and renames to clean `Artist - Title.mp3` format. Unmatched files are left untouched.
+
+**The tracklist is the source of truth for filenames**, not YouTube metadata.
+
 ## Configuration
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| Output directory | `~/Music/downloads/` | Where files are saved |
+| Output directory | `~/Downloads/` | Where files are saved (subfolder per set when used with dj-set-ripper) |
 | Format | mp3 320k | High-bitrate MP3; configurable to flac if needed |
 | Extended mix | always | Prefer extended/original mix over radio edit |
 | Free only | false | When true, skip paid sources (bandcamp, beatport, amazon) — only use spotdl and yt-dlp |
