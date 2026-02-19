@@ -1,8 +1,20 @@
 ---
 name: standard-agentic-commerce-engine
-version: 1.4.1
+version: 1.4.2
 description: A production-ready universal engine for Agentic Commerce. This tool enables autonomous agents to interact with any compatible headless e-commerce backend through a standardized protocol. It provides out-of-the-box support for discovery, cart operations, and secure user management.
 tags: [ecommerce, shopping-agent, commerce-engine, standard-protocol, headless-commerce, agentic-web]
+metadata:
+  clawdbot:
+    emoji: 🛒
+    requires:
+      bins: [python3, curl]
+      paths:
+        - ~/.clawdbot/credentials/agent-commerce-engine/
+    env:
+      - name: COMMERCE_URL
+        description: Target API base URL (e.g. https://api.brand.com/v1)
+      - name: COMMERCE_BRAND_ID
+        description: Unique slug for the brand to differentiate credential storage
 ---
 
 # Standard Agentic Commerce Engine
