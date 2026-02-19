@@ -35,6 +35,7 @@ if [[ -f "$ASSET_DIR/voice-input.js" ]]; then
   rm -f "$ASSET_DIR/voice-input.js"
   echo "      removed: voice-input.js asset"
 fi
+
 if [[ -f "$INDEX" ]] && grep -q 'voice-input.js' "$INDEX"; then
   sed -i '/voice-input\.js/d' "$INDEX"
   echo "      removed script tag from index.html"
@@ -46,21 +47,16 @@ fi
 echo "[4/5] Cleaning gateway config (allowedOrigins)..."
 if [[ -f "$CFG" ]]; then
   python3 - <<PY
-import json, sys
+import json
 p='${CFG}'
-with open(p,'r',encoding='utf-8') as f:
-    c=json.load(f)
+with open(p,'r',encoding='utf-8') as f: c=json.load(f)
 g=c.get('gateway',{})
 cu=g.get('controlUi',{})
 orig=cu.get('allowedOrigins',[])
 before=len(orig)
-cu['allowedOrigins']=[o for o in orig if '8443' not in o or 'voice' in o.lower()]
-# Remove all HTTPS proxy origins (port 8443)
 cu['allowedOrigins']=[o for o in orig if ':8443' not in o]
 after=len(cu['allowedOrigins'])
-with open(p,'w',encoding='utf-8') as f:
-    json.dump(c,f,indent=2,ensure_ascii=False)
-    f.write('\n')
+with open(p,'w',encoding='utf-8') as f: json.dump(c,f,indent=2,ensure_ascii=False); f.write('\n')
 print(f'      removed {before - after} origin(s) from allowedOrigins')
 PY
 else

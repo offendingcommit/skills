@@ -16,6 +16,7 @@ KEY = "/home/openclaw/.openclaw/workspace/voice-input/certs/voice-key.pem"
 CONTROL_UI = "/home/openclaw/.npm-global/lib/node_modules/openclaw/dist/control-ui"
 TRANSCRIBE = "http://127.0.0.1:18790/transcribe"
 GATEWAY_WS = "ws://127.0.0.1:18789"
+ALLOWED_ORIGIN = os.environ.get("VOICE_ALLOWED_ORIGIN", f"https://localhost:{PORT}")
 
 
 async def handle_transcribe(request):
@@ -34,7 +35,7 @@ async def handle_transcribe(request):
         return web.Response(
             body=data,
             content_type="application/json",
-            headers={"Access-Control-Allow-Origin": "*"},
+            headers={"Access-Control-Allow-Origin": ALLOWED_ORIGIN},
         )
     except Exception as e:
         return web.json_response({"error": str(e)}, status=502)
@@ -44,7 +45,7 @@ async def handle_options(_request):
     return web.Response(
         status=204,
         headers={
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
             "Access-Control-Allow-Methods": "POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
         },

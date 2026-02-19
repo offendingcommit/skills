@@ -3,14 +3,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
-
 WORKSPACE="${WORKSPACE:-$HOME/.openclaw/workspace}"
 VOICE_DIR="$WORKSPACE/voice-input"
-UI_DIR="/home/openclaw/.npm-global/lib/node_modules/openclaw/dist/control-ui"
+UI_DIR="${OPENCLAW_UI_DIR:-$(npm -g root 2>/dev/null)/openclaw/dist/control-ui}"
 INDEX="$UI_DIR/index.html"
 ASSET_DIR="$UI_DIR/assets"
 CFG="${OPENCLAW_CONFIG_PATH:-$HOME/.openclaw/openclaw.json}"
-
 VOICE_HTTPS_PORT="${VOICE_HTTPS_PORT:-8443}"
 VOICE_HOST="${VOICE_HOST:-}"
 
@@ -30,7 +28,9 @@ cp -f "$SKILL_DIR/assets/voice-input.js" "$VOICE_DIR/voice-input.js"
 cp -f "$SKILL_DIR/assets/https-server.py" "$VOICE_DIR/https-server.py"
 
 # 1) Deploy voice-input asset + inject index (idempotent)
+mkdir -p "$ASSET_DIR"
 cp -f "$VOICE_DIR/voice-input.js" "$ASSET_DIR/voice-input.js"
+
 if ! grep -q 'voice-input.js' "$INDEX"; then
   sed -i 's|</body>|    <script src="./assets/voice-input.js"></script>\n  </body>|' "$INDEX"
 fi
@@ -40,17 +40,14 @@ python3 - << PY
 import json
 p='${CFG}'
 origin='${ALLOWED_ORIGIN}'
-with open(p,'r',encoding='utf-8') as f:
-    c=json.load(f)
+with open(p,'r',encoding='utf-8') as f: c=json.load(f)
 g=c.setdefault('gateway',{})
 cu=g.setdefault('controlUi',{})
 orig=cu.setdefault('allowedOrigins',[])
 if origin not in orig:
     orig.append(origin)
-with open(p,'w',encoding='utf-8') as f:
-    json.dump(c,f,indent=2,ensure_ascii=False)
-    f.write('\n')
-print(f'allowedOrigin ensured: {origin}')
+    with open(p,'w',encoding='utf-8') as f: json.dump(c,f,indent=2,ensure_ascii=False); f.write('\n')
+    print(f'allowedOrigin ensured: {origin}')
 PY
 
 # 3) Install/refresh HTTPS proxy service
@@ -66,6 +63,7 @@ ExecStart=${WORKSPACE}/.venv-faster-whisper/bin/python ${VOICE_DIR}/https-server
 Restart=always
 RestartSec=2
 Environment=VOICE_HTTPS_PORT=${VOICE_HTTPS_PORT}
+Environment=VOICE_ALLOWED_ORIGIN=${ALLOWED_ORIGIN}
 
 [Install]
 WantedBy=default.target
@@ -79,8 +77,8 @@ systemctl --user restart openclaw-voice-https.service
 HOOK_DIR="$HOME/.openclaw/hooks/voice-input-inject"
 mkdir -p "$HOOK_DIR"
 cp -f "$SKILL_DIR/hooks/handler.ts" "$HOOK_DIR/handler.ts"
-cp -f "$SKILL_DIR/hooks/inject.sh"  "$HOOK_DIR/inject.sh"
-cp -f "$SKILL_DIR/hooks/HOOK.md"    "$HOOK_DIR/HOOK.md"
+cp -f "$SKILL_DIR/hooks/inject.sh" "$HOOK_DIR/inject.sh"
+cp -f "$SKILL_DIR/hooks/HOOK.md" "$HOOK_DIR/HOOK.md"
 chmod +x "$HOOK_DIR/inject.sh"
 echo "hook installed: $HOOK_DIR"
 

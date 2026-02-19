@@ -1,6 +1,35 @@
 ---
 name: webchat-voice-proxy
-description: Voice input and microphone button for OpenClaw WebChat Control UI. Adds a mic button to chat, records audio via browser MediaRecorder, transcribes locally via faster-whisper, and injects text into the conversation. Includes HTTPS/WSS reverse proxy, TLS cert management, and gateway hook for update safety. Fully local speech-to-text, no API costs. Keywords: voice input, microphone, WebChat, Control UI, speech to text, STT, local transcription, MediaRecorder, HTTPS proxy, voice button, mic button.
+description: >
+  Voice input and microphone button for OpenClaw WebChat Control UI. Adds a mic
+  button to chat, records audio via browser MediaRecorder, transcribes locally
+  via faster-whisper, and injects text into the conversation. Includes HTTPS/WSS
+  reverse proxy, TLS cert management, and gateway hook for update safety. Fully
+  local speech-to-text, no API costs. Real-time VU meter shows voice activity.
+  Keywords: voice input, microphone, WebChat, Control UI, speech to text, STT,
+  local transcription, MediaRecorder, HTTPS proxy, voice button, mic button.
+requires:
+  config_paths:
+    - ~/.openclaw/openclaw.json (appends allowedOrigins entry)
+  modified_paths:
+    - <npm-global>/openclaw/dist/control-ui/index.html (injects script tag)
+    - <npm-global>/openclaw/dist/control-ui/assets/voice-input.js (copies asset)
+    - ~/.config/systemd/user/openclaw-voice-https.service (creates unit)
+    - ~/.openclaw/hooks/voice-input-inject/ (creates startup hook)
+    - ~/.openclaw/workspace/voice-input/ (copies runtime files)
+    - ~/.openclaw/workspace/voice-input/certs/ (generates self-signed TLS cert)
+  env:
+    - VOICE_HTTPS_PORT (optional, default: 8443)
+    - VOICE_HOST (optional, auto-detected from hostname -I)
+    - VOICE_ALLOWED_ORIGIN (optional, default: https://<VOICE_HOST>:<VOICE_HTTPS_PORT>)
+  persistence:
+    - "User systemd service: openclaw-voice-https.service (HTTPS/WSS proxy)"
+    - "Gateway startup hook: voice-input-inject (re-injects JS after updates)"
+  privileges: user-level only, no root/sudo required
+  dependencies:
+    - python3 with aiohttp (pip)
+    - faster-whisper transcription service on port 18790
+    - openssl (for self-signed cert generation)
 ---
 
 # WebChat Voice Proxy
@@ -10,17 +39,16 @@ Set up a reboot-safe voice stack for OpenClaw WebChat (including the current pol
 - `/transcribe` proxy to local faster-whisper service
 - WebSocket passthrough to gateway (`ws://127.0.0.1:18789`)
 - Voice button script injection into Control UI
+- Real-time VU meter: button shadow/scale reacts to voice level
 
 ## Prerequisites (required)
 
 This skill requires a **local faster-whisper HTTP service**.
-
 Expected default:
 - URL: `http://127.0.0.1:18790/transcribe`
 - systemd user service: `openclaw-transcribe.service`
 
 Verify before deployment:
-
 ```bash
 systemctl --user is-active openclaw-transcribe.service
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:18790/transcribe -X POST -H 'Content-Type: application/octet-stream' --data-binary 'x'
@@ -43,13 +71,11 @@ Related skills:
 ## Deploy
 
 Run (auto-detect host IP):
-
 ```bash
 bash scripts/deploy.sh
 ```
 
 Or set host/port explicitly:
-
 ```bash
 VOICE_HOST=10.0.0.42 VOICE_HTTPS_PORT=8443 bash scripts/deploy.sh
 ```
@@ -59,7 +85,6 @@ This script is idempotent.
 ## Quick verify
 
 Run:
-
 ```bash
 bash scripts/status.sh
 ```
@@ -96,6 +121,11 @@ Before installing, be aware of all system changes `deploy.sh` makes:
 
 The injected JS (`voice-input.js`) runs inside the Control UI and interacts with the chat input. Review the source before deploying.
 
+## CORS Policy
+
+The `/transcribe` proxy endpoint uses a configurable `Access-Control-Allow-Origin` header.
+Set `VOICE_ALLOWED_ORIGIN` env var to restrict. Default: `https://<VOICE_HOST>:<VOICE_HTTPS_PORT>`.
+
 ## Uninstall
 
 To fully revert all changes:
@@ -111,8 +141,8 @@ This will:
 4. Remove the HTTPS origin from gateway config
 5. Restart the gateway
 
-Workspace files (`voice-input/`) and TLS certs are kept by default. To remove them too:
-
+Workspace files (`voice-input/`) and TLS certs are kept by default.
+To remove them too:
 ```bash
 rm -rf ~/.openclaw/workspace/voice-input
 ```

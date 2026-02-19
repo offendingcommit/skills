@@ -8,7 +8,6 @@ const handler = async (event: any) => {
   if (event.type !== "gateway" || event.action !== "startup") return;
 
   const script = join(__dirname, "inject.sh");
-
   try {
     execSync(`bash "${script}"`, {
       timeout: 10_000,
