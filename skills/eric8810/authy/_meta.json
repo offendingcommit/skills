@@ -3,9 +3,15 @@
   "slug": "authy",
   "displayName": "Authy",
   "latest": {
-    "version": "0.2.2",
-    "publishedAt": 1771377793192,
-    "commit": "https://github.com/openclaw/skills/commit/64c80107a3d63230cf857b184548e105d0a2f54d"
+    "version": "0.3.0",
+    "publishedAt": 1771463246071,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.2.2",
+      "publishedAt": 1771377793192,
+      "commit": "https://github.com/openclaw/skills/commit/64c80107a3d63230cf857b184548e105d0a2f54d"
+    }
+  ]
 }
