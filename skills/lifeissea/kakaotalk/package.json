@@ -1,0 +1,39 @@
+{
+  "name": "@yeomyeonggeori/kakaotalk",
+  "version": "1.0.1",
+  "description": "카카오톡 채널 웹훅 브릿지 AI 비서. 카카오 i 오픈빌더와 연동해 라온(Raon) AI 비서와 대화. Ollama(qwen3:8b) → Gemini 2.5 Flash Lite fallback.",
+  "keywords": [
+    "openclaw",
+    "openclaw-skill",
+    "kakaotalk",
+    "kakao",
+    "kakao-channel",
+    "카카오톡",
+    "ai-assistant",
+    "raon",
+    "라온",
+    "chatbot",
+    "webhook",
+    "ollama"
+  ],
+  "homepage": "https://github.com/yeomyeonggeori/kakaotalk-skill",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeomyeonggeori/kakaotalk-skill.git"
+  },
+  "author": "Yeomyeonggeori Inc. <iam@dawn.kim>",
+  "license": "MIT",
+  "main": "scripts/server.py",
+  "files": [
+    "SKILL.md",
+    "scripts/",
+    "references/"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
