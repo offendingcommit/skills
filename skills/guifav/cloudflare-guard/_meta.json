@@ -1,0 +1,11 @@
+{
+  "owner": "guifav",
+  "slug": "cloudflare-guard",
+  "displayName": "Cloudflare Guard",
+  "latest": {
+    "version": "0.1.1",
+    "publishedAt": 1771446353616,
+    "commit": null
+  },
+  "history": []
+}
