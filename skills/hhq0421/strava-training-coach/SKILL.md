@@ -1,17 +1,26 @@
 ---
 name: strava-training-coach
 description: |
-  AI training coach that prevents running injuries before they happen. Monitors Strava data for dangerous
-  mileage spikes, intensity imbalances, and recovery gaps — then sends smart alerts to Discord or Slack.
+  Security-hardened AI training coach that prevents running injuries before they happen. 
+  Monitors Strava data for dangerous mileage spikes, intensity imbalances, and recovery gaps — 
+  then sends smart alerts to Discord or Slack.
 
   Use when:
   - Monitoring training load to prevent overtraining and injury
-  - Setting up automated weekly training reports with trend analysis
+  - Setting up automated weekly training reports with trend analysis  
   - Receiving alerts when weekly mileage or intensity spikes dangerously
   - Tracking long-term fitness trends and recovery patterns
   - Getting notified of meaningful achievements (PRs, consistency milestones)
+
+  Security features:
+  - No hardcoded secrets - all credentials via environment variables
+  - Input validation on all external data
+  - Sensitive data redaction in logs
+  - Rate limiting on notifications
+  - Secure file permissions on token storage
+  - Webhook URL validation
 homepage: https://developers.strava.com/docs/reference/
-metadata: {"clawdbot":{"emoji":"🏃","tags":["fitness","strava","running","injury-prevention","training","alerts","discord","slack"],"requires":{"env":["STRAVA_CLIENT_ID","STRAVA_CLIENT_SECRET"]}}}
+metadata: {"clawdbot":{"emoji":"🏃","tags":["fitness","strava","running","injury-prevention","training","alerts","discord","slack","security"],"requires":{"env":["STRAVA_CLIENT_ID","STRAVA_CLIENT_SECRET","DISCORD_WEBHOOK_URL or SLACK_WEBHOOK_URL"]}}}
 ---
 
 # Strava Training Coach
@@ -37,33 +46,47 @@ Built on the 80/20 principle: 80% easy, 20% hard. The same approach used by elit
 ### 1. Connect Strava
 
 ```bash
-# Set your Strava API credentials
-STRAVA_CLIENT_ID=your_id
-STRAVA_CLIENT_SECRET=your_secret
+# Set your Strava API credentials (required)
+export STRAVA_CLIENT_ID=your_id
+export STRAVA_CLIENT_SECRET=your_secret
 
 # Authenticate (opens browser for OAuth)
 python3 scripts/auth.py
 ```
 
-### 2. Set Up Notifications
+Tokens are stored securely in `~/.config/strava-training-coach/` with 0600 permissions.
 
+### 2. Set Up Notifications (Required)
+
+**Discord:**
 ```bash
-# Discord
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-NOTIFICATION_CHANNEL=discord
-
-# Or Slack
-SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-NOTIFICATION_CHANNEL=slack
+export DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+export NOTIFICATION_CHANNEL=discord
 ```
 
-### 3. Run
+**Slack:**
+```bash
+export SLACK_WEBHOOK_URL=https://hooks.slack.com/...
+export NOTIFICATION_CHANNEL=slack
+```
+
+⚠️ **Security:** Webhook URLs must be set via environment variables. No hardcoded URLs allowed.
+
+### 3. Optional: Enable Oura Integration
+
+```bash
+export OURA_ENABLED=true
+```
+
+Requires Oura CLI authentication.
+
+### 4. Run
 
 ```bash
 # Daily training check + alerts
 python3 scripts/coach_check.py
 
-# Weekly summary report
+# Weekly summary report  
 python3 scripts/weekly_report.py
 ```
 
@@ -77,14 +100,47 @@ Optional: schedule with cron for hands-off monitoring:
 }
 ```
 
+## Security Features
+
+This skill is designed with security in mind for ClawHub publication:
+
+### Credential Handling
+- **No hardcoded secrets** — All credentials via environment variables
+- **Secure token storage** — Tokens saved with 0600 permissions
+- **XDG compliance** — Config stored in `~/.config/strava-training-coach/`
+- **Token validation** — Structure validation before use
+
+### Input Validation
+- **Date format validation** — ISO8601 format checking
+- **Numeric range validation** — All thresholds bounded
+- **Type checking** — Safe type conversion with defaults
+- **Webhook URL validation** — Pattern matching for Discord/Slack
+
+### Data Protection
+- **Log redaction** — Sensitive data masked in logs
+- **Secure temp files** — Proper permissions on state files
+- **No data leakage** — Safe error messages
+- **Rate limiting** — Max 1 alert per hour per type
+
+### Network Security
+- **HTTPS only** — All API calls use TLS
+- **Timeout handling** — 30-second timeouts on all requests
+- **Retry logic** — 3 attempts with exponential backoff
+- **Certificate validation** — Standard SSL verification
+
 ## Configuration
 
-All thresholds are optional — sensible defaults are built in.
+All thresholds are optional — sensible defaults with validation.
 
 ```bash
-MAX_WEEKLY_MILEAGE_JUMP=30     # Alert if >30% weekly increase
-MAX_HARD_DAY_PERCENTAGE=25     # Alert if >25% of runs are hard
-MIN_EASY_RUN_HEART_RATE=145    # Your easy run ceiling
+# Training thresholds (validated ranges)
+MAX_WEEKLY_MILEAGE_JUMP=30     # 5-100%, default: 30
+MAX_HARD_DAY_PERCENTAGE=25     # 5-100%, default: 25
+MIN_EASY_RUN_HEART_RATE=145    # 100-200 bpm, default: 145
+
+# Feature flags
+OURA_ENABLED=false             # Enable Oura integration
+distVERBOse=false              # Enable debug logging
 ```
 
 ## Example Alerts
