@@ -1,14 +1,20 @@
 ---
-name: Self-Improving
+name: Self-Improving Agent
 slug: self-improving
-version: 1.0.0
-description: Build compound knowledge over time with structured memory, correction learning, and graceful scaling across projects and years.
+version: 1.1.0
+homepage: https://clawic.com/skills/self-improving
+description: Corrections become improvements. Memory that self-improves.
+changelog: Added detection triggers, quick queries, memory stats, and example templates for easier setup.
 metadata: {"clawdbot":{"emoji":"🧠","requires":{"bins":[]},"os":["linux","darwin","win32"]}}
 ---
 
+## When to Use
+
+User corrects you or points out mistakes. You need to remember preferences, patterns, and lessons across sessions. Knowledge should compound over time without manual maintenance.
+
 ## Architecture
 
-Memory lives in ~/self-improving/ with tiered structure. See `memory-template.md` for setup.
+Memory lives in `~/self-improving/` with tiered structure. See `memory-template.md` for setup.
 
 ```
 ~/self-improving/
@@ -36,23 +42,72 @@ All data stored in `~/self-improving/`. Create on first use:
 mkdir -p ~/self-improving/{projects,domains,archive}
 ```
 
-## Scope
+## Detection Triggers
 
-This skill ONLY:
-- Learns from explicit user corrections
-- Stores preferences in local files (`~/self-improving/`)
-- Reads its own memory files on activation
+Log automatically when you notice these patterns:
 
-This skill NEVER:
-- Accesses calendar, email, or contacts
-- Makes network requests
-- Reads files outside `~/self-improving/`
-- Infers preferences from silence or observation
+**Corrections** → add to `corrections.md`, evaluate for `memory.md`:
+- "No, that's not right..."
+- "Actually, it should be..."
+- "You're wrong about..."
+- "I prefer X, not Y"
+- "Remember that I always..."
+- "I told you before..."
+- "Stop doing X"
+- "Why do you keep..."
 
-## Self-Modification
+**Preference signals** → add to `memory.md` if explicit:
+- "I like when you..."
+- "Always do X for me"
+- "Never do Y"
+- "My style is..."
+- "For [project], use..."
 
-This skill NEVER modifies its own SKILL.md.
-All learned data stored in `~/self-improving/memory.md` and subdirectories.
+**Pattern candidates** → track, promote after 3x:
+- Same instruction repeated 3+ times
+- Workflow that works well repeatedly
+- User praises specific approach
+
+**Ignore** (don't log):
+- One-time instructions ("do X now")
+- Context-specific ("in this file...")
+- Hypotheticals ("what if...")
+
+## Quick Queries
+
+| User says | Action |
+|-----------|--------|
+| "What do you know about X?" | Search all tiers for X |
+| "What have you learned?" | Show last 10 from `corrections.md` |
+| "Show my patterns" | List `memory.md` (HOT) |
+| "Show [project] patterns" | Load `projects/{name}.md` |
+| "What's in warm storage?" | List files in `projects/` + `domains/` |
+| "Memory stats" | Show counts per tier |
+| "Forget X" | Remove from all tiers (confirm first) |
+| "Export memory" | ZIP all files |
+
+## Memory Stats
+
+On "memory stats" request, report:
+
+```
+📊 Self-Improving Memory
+
+HOT (always loaded):
+  memory.md: X entries
+
+WARM (load on demand):
+  projects/: X files
+  domains/: X files
+
+COLD (archived):
+  archive/: X files
+
+Recent activity (7 days):
+  Corrections logged: X
+  Promotions to HOT: X
+  Demotions to WARM: X
+```
 
 ## Core Rules
 
@@ -93,23 +148,43 @@ When file exceeds limit:
 3. Summarize verbose entries
 4. Never lose confirmed preferences
 
-### 7. Query Support
-User can ask:
-- "What do you know about X?" → search all tiers
-- "Show my [project] patterns" → load specific namespace
-- "Forget X" → remove from all tiers
-- "What changed this month?" → show corrections.md
-
-### 8. Transparency
+### 7. Transparency
 - Every action from memory → cite source: "Using X (from projects/foo.md:12)"
 - Weekly digest available: patterns learned, demoted, archived
 - Full export on demand: all files as ZIP
 
-### 9. Security Boundaries
+### 8. Security Boundaries
 See `boundaries.md` — never store credentials, health data, third-party info.
 
-### 10. Graceful Degradation
+### 9. Graceful Degradation
 If context limit hit:
 1. Load only memory.md (HOT)
 2. Load relevant namespace on demand
 3. Never fail silently — tell user what's not loaded
+
+## Scope
+
+This skill ONLY:
+- Learns from explicit user corrections
+- Stores preferences in local files (`~/self-improving/`)
+- Reads its own memory files on activation
+
+This skill NEVER:
+- Accesses calendar, email, or contacts
+- Makes network requests
+- Reads files outside `~/self-improving/`
+- Infers preferences from silence or observation
+- Modifies its own SKILL.md
+
+## Related Skills
+Install with `clawhub install <slug>` if user confirms:
+
+- `memory` — Long-term memory patterns for agents
+- `learning` — Adaptive teaching and explanation
+- `decide` — Auto-learn decision patterns
+- `escalate` — Know when to ask vs act autonomously
+
+## Feedback
+
+- If useful: `clawhub star self-improving`
+- Stay updated: `clawhub sync`
