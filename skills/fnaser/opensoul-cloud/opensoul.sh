@@ -15,6 +15,8 @@ Commands:
   share             Share your workspace (extract → anonymize → summarize → upload)
   share --preview   Preview what will be shared (no upload)
   share --note "…"  Attach a personal note when sharing
+  list              List your shared souls
+  delete <id>       Delete a soul you shared
   browse [query]    Browse community souls
   suggest           Get suggestions based on your setup
   import <id>       Import a soul for inspiration
@@ -25,6 +27,8 @@ Examples:
   opensoul share
   opensoul share --preview
   opensoul share --note "My first share!"
+  opensoul list
+  opensoul delete abc123
   opensoul browse "automation"
   opensoul import abc123
 
@@ -98,6 +102,29 @@ Find soul IDs by browsing: opensoul browse
 EOF
 }
 
+usage_list() {
+  cat << EOF
+opensoul list - List your shared souls
+
+Usage: opensoul list [--json]
+
+Shows all souls you've shared, with IDs for deletion.
+EOF
+}
+
+usage_delete() {
+  cat << EOF
+opensoul delete - Delete a soul you shared
+
+Usage: opensoul delete <soul-id> [--force]
+
+Options:
+  --force    Skip confirmation prompt
+
+Find your soul IDs with: opensoul list
+EOF
+}
+
 # Check for subcommand-level --help
 has_help_flag() {
   for arg in "$@"; do
@@ -112,7 +139,7 @@ case "$1" in
   register)
     shift
     if has_help_flag "$@"; then usage_register; exit 0; fi
-    npx ts-node "$SCRIPTS/register.ts" "$@"
+    tsx "$SCRIPTS/register.ts" "$@"
     ;;
   share)
     shift
@@ -128,27 +155,37 @@ case "$1" in
       esac
     done
     if [[ "$PREVIEW" == "true" ]]; then
-      npx ts-node "$SCRIPTS/extract.ts" | npx ts-node "$SCRIPTS/anonymize.ts" | npx ts-node "$SCRIPTS/summarize.ts"
+      tsx "$SCRIPTS/extract.ts" | tsx "$SCRIPTS/anonymize.ts" | tsx "$SCRIPTS/summarize.ts"
     elif [[ -n "$NOTE" ]]; then
-      OPENSOUL_NOTE="$NOTE" npx ts-node "$SCRIPTS/extract.ts" | npx ts-node "$SCRIPTS/anonymize.ts" | npx ts-node "$SCRIPTS/summarize.ts" | OPENSOUL_NOTE="$NOTE" npx ts-node "$SCRIPTS/upload.ts"
+      OPENSOUL_NOTE="$NOTE" tsx "$SCRIPTS/extract.ts" | tsx "$SCRIPTS/anonymize.ts" | tsx "$SCRIPTS/summarize.ts" | OPENSOUL_NOTE="$NOTE" tsx "$SCRIPTS/upload.ts"
     else
-      npx ts-node "$SCRIPTS/extract.ts" | npx ts-node "$SCRIPTS/anonymize.ts" | npx ts-node "$SCRIPTS/summarize.ts" | npx ts-node "$SCRIPTS/upload.ts"
+      tsx "$SCRIPTS/extract.ts" | tsx "$SCRIPTS/anonymize.ts" | tsx "$SCRIPTS/summarize.ts" | tsx "$SCRIPTS/upload.ts"
     fi
     ;;
   browse)
     shift
     if has_help_flag "$@"; then usage_browse; exit 0; fi
-    npx ts-node "$SCRIPTS/browse.ts" "$@"
+    tsx "$SCRIPTS/browse.ts" "$@"
     ;;
   suggest)
     shift
     if has_help_flag "$@"; then usage_suggest; exit 0; fi
-    npx ts-node "$SCRIPTS/extract.ts" | npx ts-node "$SCRIPTS/suggest.ts"
+    tsx "$SCRIPTS/extract.ts" | tsx "$SCRIPTS/suggest.ts"
     ;;
   import)
     shift
     if has_help_flag "$@"; then usage_import; exit 0; fi
-    npx ts-node "$SCRIPTS/import.ts" "$@"
+    tsx "$SCRIPTS/import.ts" "$@"
+    ;;
+  list)
+    shift
+    if has_help_flag "$@"; then usage_list; exit 0; fi
+    tsx "$SCRIPTS/list.ts" "$@"
+    ;;
+  delete)
+    shift
+    if has_help_flag "$@"; then usage_delete; exit 0; fi
+    tsx "$SCRIPTS/delete.ts" "$@"
     ;;
   -h|--help|help|"")
     usage

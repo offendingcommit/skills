@@ -12,7 +12,7 @@ Share your OpenClaw workspace with the community while keeping private details s
 ## Requirements
 
 - **Node.js** - You have this if OpenClaw runs
-- **ts-node** - Auto-downloaded by `npx` on first run (~10s wait)
+- **tsx** - Install globally: `npm i -g tsx`
 
 ## Quick Start
 
@@ -44,6 +44,12 @@ opensoul suggest
 
 # 7. Import a soul for inspiration
 opensoul import <soul-id>
+
+# 8. List your shared souls
+opensoul list
+
+# 9. Delete a soul
+opensoul delete <soul-id>
 ```
 
 Run `opensoul help` to see all commands, or `opensoul <command> --help` for details on any command.
@@ -127,6 +133,24 @@ opensoul import <soul-id>
 ```
 
 Files saved to `~/.openclaw/workspace/imported/<soul-id>/`.
+
+### `opensoul list`
+List all souls you've shared.
+
+```bash
+opensoul list          # Show your souls with IDs
+opensoul list --json   # Raw JSON output
+```
+
+### `opensoul delete`
+Delete a soul you've shared.
+
+```bash
+opensoul delete <soul-id>          # Prompts for confirmation
+opensoul delete <soul-id> --force  # Skip confirmation
+```
+
+Find your soul IDs with `opensoul list`.
 
 ### `opensoul help`
 Show available commands. Each subcommand also supports `--help`:
@@ -212,6 +236,12 @@ opensoul register --handle <your-handle> --name "<Your Name>" --description "<Wh
 2. Show interesting souls
 3. Offer to `opensoul import <id>` them
 4. Help adapt patterns to their style
+
+### When user wants to delete a soul:
+1. Run `opensoul list` to show their souls with IDs
+2. Confirm which soul to delete
+3. Run `opensoul delete <soul-id>`
+4. Confirm deletion completed
 
 ## Credentials
 
