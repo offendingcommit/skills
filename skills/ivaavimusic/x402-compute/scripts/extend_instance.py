@@ -12,30 +12,29 @@ Usage:
 
 Example:
   python extend_instance.py abc-123 --hours 720  # extend by 1 month
-
-AWAL mode:
-  export X402_USE_AWAL=1
-  export COMPUTE_API_KEY="x402c_..."  # required for compute management auth
 """
 
 import argparse
 import json
 import sys
+from typing import Dict
 
 import requests
 
-from awal_bridge import awal_pay_url
-from wallet_signing import is_awal_mode, load_payment_signer, load_wallet_address, create_compute_auth_headers
+from solana_signing import create_solana_xpayment_from_accept, ensure_solana_destination_ready
+from wallet_signing import create_compute_auth_headers, load_compute_chain, load_payment_signer
 
 BASE_URL = "https://compute.x402layer.cc"
 
 
-def _find_base_accept_option(challenge: dict) -> dict:
+def _find_accept_option(challenge: dict, requested_network: str) -> dict:
     for option in challenge.get("accepts", []):
         network = str(option.get("network", "")).lower()
-        if network == "base" or "8453" in network:
+        if requested_network == "base" and (network == "base" or "8453" in network):
             return option
-    raise ValueError("No Base payment option found in 402 challenge")
+        if requested_network == "solana" and (network == "solana" or network.startswith("solana:")):
+            return option
+    raise ValueError(f"No {requested_network} payment option found in 402 challenge")
 
 
 def extend_instance(instance_id: str, hours: int = 720, network: str = "base") -> dict:
@@ -45,22 +44,16 @@ def extend_instance(instance_id: str, hours: int = 720, network: str = "base") -
         "network": network,
     }
     body_json = json.dumps(body, separators=(",", ":"))
+    auth_chain = load_compute_chain()
 
     print(f"Extending instance {instance_id} by {hours} hours...")
 
     # Step 1: Get 402 challenge
     path = f"/compute/instances/{instance_id}/extend"
+    auth_headers: Dict[str, str] = {}
     try:
-        auth_headers = create_compute_auth_headers("POST", path, body_json)
+        auth_headers = create_compute_auth_headers("POST", path, body_json, chain=auth_chain)
     except Exception as exc:
-        if is_awal_mode():
-            return {
-                "error": (
-                    "AWAL mode for compute extension requires COMPUTE_API_KEY. "
-                    "Create it once using private-key mode via create_api_key.py."
-                ),
-                "details": str(exc),
-            }
         return {"error": f"Failed to build auth headers: {exc}"}
     response = requests.post(
         f"{BASE_URL}/compute/instances/{instance_id}/extend",
@@ -81,55 +74,36 @@ def extend_instance(instance_id: str, hours: int = 720, network: str = "base") -
 
     challenge = response.json()
 
-    if is_awal_mode():
-        # Compute management auth requires signature headers or X-API-Key.
-        # In AWAL mode, use a pre-created COMPUTE_API_KEY for auth headers.
-        wallet = load_wallet_address(required=False)
-        print("Payment mode: AWAL (Base)")
-        result = awal_pay_url(
-            f"{BASE_URL}/compute/instances/{instance_id}/extend",
-            method="POST",
-            data=body,
-            headers={
-                "Content-Type": "application/json",
-                **auth_headers,
-                **({"x-wallet-address": wallet} if wallet else {}),
-            },
-        )
-        if "error" in result:
-            return result
+    option = _find_accept_option(challenge, network)
 
-        order = result.get("order", {}) if isinstance(result, dict) else {}
-        if order:
-            print("✅ Instance extended!")
-            print(f"   New Expiry: {order.get('expires_at', 'N/A')}")
-        return result
-
-    signer = load_payment_signer()
-    base_option = _find_base_accept_option(challenge)
-
-    pay_to = base_option["payTo"]
-    amount = int(base_option["maxAmountRequired"])
+    pay_to = option["payTo"]
+    amount = int(option["maxAmountRequired"])
     print(f"Payment required: {amount} atomic USDC units (${amount / 1_000_000:.2f})")
 
-    x_payment = signer.create_x402_payment_header(pay_to=pay_to, amount=amount)
+    if network == "base":
+        signer = load_payment_signer()
+        x_payment = signer.create_x402_payment_header(pay_to=pay_to, amount=amount)
+    else:
+        ensure_solana_destination_ready(option)
+        x_payment = create_solana_xpayment_from_accept(option)
 
     # Step 2: Pay and extend
-    auth_headers = create_compute_auth_headers("POST", path, body_json)
+    # NOTE: Do NOT send compute auth headers here.
+    # The x402 X-Payment header authenticates the payer via on-chain payment.
+    # Sending auth headers causes 401 (nonce already consumed from step 1).
     response = requests.post(
         f"{BASE_URL}/compute/instances/{instance_id}/extend",
         data=body_json,
         headers={
             "Content-Type": "application/json",
             "X-Payment": x_payment,
-            **auth_headers,
         },
         timeout=60,
     )
 
     print(f"Response: {response.status_code}")
 
-    if response.status_code == 200:
+    if response.status_code in (200, 201):
         data = response.json()
         order = data.get("order", {})
         print(f"✅ Instance extended!")
