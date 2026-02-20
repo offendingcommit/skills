@@ -18,6 +18,9 @@ metadata:
           secret: true
           optional: true
           description: "Bearer auth token for Pinchtab API"
+        - name: BRIDGE_BIND
+          optional: true
+          description: "Bind address (default: 127.0.0.1, set 0.0.0.0 for network access)"
         - name: BRIDGE_PORT
           optional: true
           description: "HTTP port (default: 9867)"
@@ -36,6 +39,9 @@ metadata:
         - name: BRIDGE_STEALTH
           optional: true
           description: "Stealth level: light (default, basic) or full (canvas/WebGL/font spoofing)"
+        - name: BRIDGE_MAX_TABS
+          optional: true
+          description: "Maximum number of open tabs (default: 20, 0 = unlimited)"
         - name: BRIDGE_BLOCK_IMAGES
           optional: true
           description: "Block image loading for faster, lower-bandwidth browsing (true/false)"
@@ -45,6 +51,12 @@ metadata:
         - name: BRIDGE_NO_ANIMATIONS
           optional: true
           description: "Disable CSS animations/transitions globally (true/false)"
+        - name: BRIDGE_TIMEZONE
+          optional: true
+          description: "Force browser timezone (IANA tz, e.g. Europe/Rome)"
+        - name: BRIDGE_CHROME_VERSION
+          optional: true
+          description: "Chrome version string used by fingerprint rotation profiles"
         - name: CHROME_BINARY
           optional: true
           description: "Path to Chrome/Chromium binary (auto-detected if not set)"
@@ -63,6 +75,24 @@ metadata:
         - name: CDP_URL
           optional: true
           description: "Connect to existing Chrome DevTools instead of launching"
+        - name: BRIDGE_NO_DASHBOARD
+          optional: true
+          description: "Disable dashboard/orchestrator endpoints on instance processes"
+        - name: PINCHTAB_AUTO_LAUNCH
+          optional: true
+          description: "Dashboard mode: auto-launch default profile instance on startup"
+        - name: PINCHTAB_DEFAULT_PROFILE
+          optional: true
+          description: "Dashboard mode: default profile name for auto-launch"
+        - name: PINCHTAB_DEFAULT_PORT
+          optional: true
+          description: "Dashboard mode: default port for auto-launched profile"
+        - name: PINCHTAB_HEADED
+          optional: true
+          description: "Dashboard mode: when set, auto-launched profile runs headed"
+        - name: PINCHTAB_DASHBOARD_URL
+          optional: true
+          description: "Base dashboard URL used by `pinchtab connect` helper"
 ---
 
 # Pinchtab
@@ -71,20 +101,115 @@ Fast, lightweight browser control for AI agents via HTTP + accessibility tree.
 
 ## Setup
 
-Ensure Pinchtab is running:
+Start Pinchtab in one of these modes:
 
 ```bash
-# Headless (default for automation)
-BRIDGE_HEADLESS=true pinchtab &
-
-# With UI (debugging)
+# Headless (default) — no UI, pure automation (lowest token cost when using /text and filtered snapshots)
 pinchtab &
+
+# Headed — visible Chrome for human + agent workflows
+BRIDGE_HEADLESS=false pinchtab &
+
+# Dashboard/orchestrator — profile manager + launcher, no browser in dashboard process
+pinchtab dashboard &
 ```
 
 Default port: `9867`. Override with `BRIDGE_PORT=9868`.
 Auth: set `BRIDGE_TOKEN=<secret>` and pass `Authorization: Bearer <secret>`.
 
 Base URL for all examples: `http://localhost:9867`
+
+Token savings come from the API shape (`/text`, `/snapshot?filter=interactive&format=compact`), not from headless vs headed alone.
+
+### Headed mode definition
+
+Headed mode means a real visible Chrome window managed by Pinchtab.
+
+- Human can open profile(s), log in, pass 2FA/captcha, and validate page state
+- Agent then calls Pinchtab HTTP APIs against that same running profile instance
+- Session state persists in the profile directory, so follow-up runs reuse cookies/storage
+
+In dashboard workflows, the dashboard process itself does not launch Chrome; it launches profile instances that run Chrome (headed or headless).
+
+To resolve a running profile endpoint from dashboard state:
+
+```bash
+pinchtab connect <profile-name>
+```
+
+Recommended human + agent flow:
+
+```bash
+# human
+pinchtab dashboard
+# setup profile + launch profile instance
+
+# agent
+PINCHTAB_BASE_URL="$(pinchtab connect <profile-name>)"
+curl "$PINCHTAB_BASE_URL/health"
+```
+
+## Profile Management (Dashboard Mode)
+
+When running `pinchtab dashboard`, profiles are managed via the dashboard API on port 9867.
+
+### List profiles
+
+```bash
+curl http://localhost:9867/profiles
+```
+
+Returns array of profiles with `id`, `name`, `accountEmail`, `useWhen`, etc.
+
+### Start a profile by ID
+
+```bash
+# Auto-allocate port (recommended)
+curl -X POST http://localhost:9867/start/278be873adeb
+
+# With specific port and headless mode
+curl -X POST http://localhost:9867/start/278be873adeb \
+  -H 'Content-Type: application/json' \
+  -d '{"port": "9868", "headless": true}'
+```
+
+Returns the instance info including the allocated `port`. Use that port for all subsequent API calls (navigate, snapshot, action, etc.).
+
+### Stop a profile by ID
+
+```bash
+curl -X POST http://localhost:9867/stop/278be873adeb
+```
+
+### Check profile instance status
+
+```bash
+curl http://localhost:9867/profiles/Pinchtab%20org/instance
+```
+
+### Typical agent flow with profiles
+
+```bash
+# 1. List profiles to find the right one
+PROFILES=$(curl -s http://localhost:9867/profiles)
+# Pick the profile ID you need
+
+# 2. Start the profile
+INSTANCE=$(curl -s -X POST http://localhost:9867/start/$PROFILE_ID)
+PORT=$(echo $INSTANCE | jq -r .port)
+
+# 3. Use the instance (all API calls go to the instance port)
+curl -X POST http://localhost:$PORT/navigate -H 'Content-Type: application/json' \
+  -d '{"url": "https://mail.google.com"}'
+curl http://localhost:$PORT/snapshot?maxTokens=4000
+
+# 4. Stop when done
+curl -s -X POST http://localhost:9867/stop/$PROFILE_ID
+```
+
+### Profile IDs
+
+Each profile gets a stable 12-char hex ID (SHA-256 of name, truncated) stored in `profile.json`. The ID is generated at creation time and never changes. Use IDs instead of names in automation — they're URL-safe and stable.
 
 ## Core Workflow
 
@@ -334,24 +459,41 @@ curl http://localhost:9867/health
 
 ## Environment Variables
 
+### Core runtime
+
 | Var | Default | Description |
 |---|---|---|
+| `BRIDGE_BIND` | `127.0.0.1` | Bind address — localhost only by default. Set `0.0.0.0` for network access |
 | `BRIDGE_PORT` | `9867` | HTTP port |
-| `BRIDGE_HEADLESS` | `false` | Run Chrome headless |
-| `BRIDGE_TOKEN` | (none) | Bearer auth token |
+| `BRIDGE_HEADLESS` | `true` | Run Chrome headless |
+| `BRIDGE_TOKEN` | (none) | Bearer auth token (recommended when using `BRIDGE_BIND=0.0.0.0`) |
 | `BRIDGE_PROFILE` | `~/.pinchtab/chrome-profile` | Chrome profile dir |
 | `BRIDGE_STATE_DIR` | `~/.pinchtab` | State/session storage |
 | `BRIDGE_NO_RESTORE` | `false` | Skip tab restore on startup |
 | `BRIDGE_STEALTH` | `light` | Stealth level: `light` or `full` |
+| `BRIDGE_MAX_TABS` | `20` | Max open tabs (0 = unlimited) |
 | `BRIDGE_BLOCK_IMAGES` | `false` | Block image loading |
 | `BRIDGE_BLOCK_MEDIA` | `false` | Block all media (images + fonts + CSS + video) |
 | `BRIDGE_NO_ANIMATIONS` | `false` | Disable CSS animations/transitions |
+| `BRIDGE_TIMEZONE` | (none) | Force browser timezone (IANA tz) |
+| `BRIDGE_CHROME_VERSION` | `144.0.7559.133` | Chrome version string used by fingerprint rotation |
 | `CHROME_BINARY` | (auto) | Path to Chrome/Chromium binary |
 | `CHROME_FLAGS` | (none) | Extra Chrome flags (space-separated) |
 | `BRIDGE_CONFIG` | `~/.pinchtab/config.json` | Path to config JSON file |
 | `BRIDGE_TIMEOUT` | `15` | Action timeout (seconds) |
 | `BRIDGE_NAV_TIMEOUT` | `30` | Navigation timeout (seconds) |
 | `CDP_URL` | (none) | Connect to existing Chrome DevTools |
+| `BRIDGE_NO_DASHBOARD` | `false` | Disable dashboard/orchestrator endpoints on instance processes |
+
+### Dashboard mode (`pinchtab dashboard`)
+
+| Var | Default | Description |
+|---|---|---|
+| `PINCHTAB_AUTO_LAUNCH` | `false` | Auto-launch a default profile at dashboard startup |
+| `PINCHTAB_DEFAULT_PROFILE` | `default` | Profile name for auto-launch |
+| `PINCHTAB_DEFAULT_PORT` | `9867` | Port for auto-launched profile |
+| `PINCHTAB_HEADED` | (unset) | If set, auto-launched profile is headed; unset means headless |
+| `PINCHTAB_DASHBOARD_URL` | `http://localhost:$BRIDGE_PORT` | CLI helper base URL for `pinchtab connect` |
 
 ## Tips
 
