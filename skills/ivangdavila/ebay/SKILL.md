@@ -1,7 +1,8 @@
 ---
 name: eBay
 slug: ebay
-version: 1.0.0
+version: 1.0.1
+changelog: Minor refinements for consistency
 description: Buy, sell, and flip on eBay with listing optimization, pricing research, shipping calculations, and scam detection.
 metadata: {"clawdbot":{"emoji":"🛒","requires":{"bins":[]},"os":["linux","darwin","win32"]}}
 ---
