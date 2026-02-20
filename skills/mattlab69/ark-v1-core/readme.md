@@ -1,6 +1,6 @@
 # ARK — Adaptive Regulative Kriptos
 
-**Version:** 1.0
+**Version:** 1.0.1
 **Edition:** ClawHub Declarative Core
 **Status:** Public Release
 
@@ -105,7 +105,7 @@ ARK is declarative in V1. Enforcement depends on integration.
 
 # 6. How to Use ARK (ClawHub)
 
-1. Install `ARK_CORE_SKILL.md` as a constitutional skill.
+1. Install the ark-v1-core skill (contains SKILL.md) via ClawHub..
 2. Declare ARK compliance in your agent configuration.
 3. Ensure the agent respects confidence requirements for important answers.
 4. Ensure scope governance (no unsolicited suggestions).

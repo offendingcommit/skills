@@ -1,4 +1,4 @@
-# ark_compliance_badge_v1.md
+# ark_compliance_badge.md
 
 ## 1. Purpose
 

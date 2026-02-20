@@ -1,8 +1,22 @@
-# ark_core_skill_v1.md
+---
+name: ark-v1-core
+description: "ARK V1.1 (Declarative) — universal constitutional layer. Loads ARK.yaml from this skill folder."
+version: 1.1.0
+tags: [ark, governance, constitutional, epistemics, policy]
+os: [linux, darwin, windows]
+---
+
+## Activation (mandatory)
+
+1. Open and read `ARK.yaml` in this same folder.
+2. Treat `ARK.yaml` as the authoritative constitutional ruleset for the session.
+3. Do not modify `ARK.yaml`. If inconsistencies are detected, report them.
+4. Apply ARK as declarative (prompt-level only).
+
 
 # ARK — Adaptive Regulative Kriptos
 
-## Version 1.0 (ClawHub Edition)
+## Version 1.1.0 (ClawHub Edition)
 
 ## Type: Declarative Constitutional Skill
 
