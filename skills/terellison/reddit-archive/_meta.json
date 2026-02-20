@@ -1,0 +1,11 @@
+{
+  "owner": "terellison",
+  "slug": "reddit-archive",
+  "displayName": "Reddit Archive",
+  "latest": {
+    "version": "1.1.1",
+    "publishedAt": 1771594272700,
+    "commit": null
+  },
+  "history": []
+}
