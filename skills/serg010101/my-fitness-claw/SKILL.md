@@ -10,7 +10,7 @@ requires:
 
 This skill manages your nutritional data and provides a visual dashboard for tracking macros using OpenClaw's native tools.
 
-## Core Files
+## Core Files (Workspace Root)
 
 - `nutrition/daily_macros.json`: The structured log of daily intake.
 - `nutrition/targets.json`: Daily nutritional goals (calories, protein, carbs, fats).
@@ -25,12 +25,9 @@ When the user mentions eating something:
 2. **Update Daily Log**: Add values to `nutrition/daily_macros.json`.
 3. **Update Memory**: Log the meal in the agent's current daily memory file (e.g., `memory/YYYY-MM-DD.md`) using the `write` or `edit` tool.
 4. **Update Dashboard**: 
-   - Read the latest data from `nutrition/daily_macros.json`, `nutrition/targets.json`, and `nutrition/insights.json`.
-   - Use the `edit` tool to update the following variables in `canvas/index.html`:
-     - `const fallbackData`: Update with the full array from `daily_macros.json`.
-     - `const fallbackGoals`: Update with the full JSON object from `targets.json`.
-     - `const fallbackInsights`: Update with the full JSON object from `insights.json`.
+   - Ensure `nutrition/daily_macros.json`, `nutrition/targets.json`, and `nutrition/insights.json` are up to date.
    - Use `canvas(action=present, url='canvas/index.html')` to show the updated dashboard.
+   - **Safety Rule**: Never use the `edit` tool to modify the `canvas/index.html` file or any other executable code (JS/HTML). Always use the JSON files for data persistence.
 5. **Generate Insights**: Analyze progress against goals in `nutrition/targets.json` and update `nutrition/insights.json`.
 
 ## Dashboard Maintenance

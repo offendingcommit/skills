@@ -26,10 +26,11 @@
         .metric-stats { font-size: 0.8rem; color: #666; }
         .metric-current { color: #fff; font-weight: bold; font-size: 0.9rem; }
         .insight-box { background: #1a1a2e; border: 1px solid #36A2EB; padding: 15px; border-radius: 10px; font-size: 0.85rem; color: #ccc; line-height: 1.4; }
+        .error-state { color: #f44336; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="main-container">
+    <div id="dashboard" class="main-container" style="display:none">
         <div class="history-section">
             <div class="table-container">
                 <h2>Last 7 Days</h2>
@@ -64,21 +65,19 @@
             </div>
         </div>
     </div>
+    <div id="loader" class="error-state">Loading your nutritional data...</div>
 
     <script>
-        const fallbackGoals = { "daily_goals": { "calories": 2000, "protein": 120, "carbs": 250, "fats": 85 } };
-        const fallbackInsights = { "tips": ["Log your first meal to see AI insights!"] };
-        const fallbackData = [
-          { "date": "2026-02-16", "calories": 862, "protein": 42, "carbs": 75, "fats": 38 },
-          { "date": "2026-02-17", "calories": 1480, "protein": 100, "carbs": 90, "fats": 80 },
-          { "date": "2026-02-18", "calories": 1192, "protein": 58.4, "carbs": 93.6, "fats": 45.6 }
-        ];
-
         function renderUI(data, goalsJson, insights) {
+            if (!data || data.length === 0) return;
+            
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+
             const goals = goalsJson.daily_goals;
             const latest = data[data.length - 1];
             document.getElementById('headerDate').innerText = `Macro Distribution - ${latest.date}`;
-            document.getElementById('totalCalories').innerText = `Current: ${latest.calories} / Target: ${goals.calories} kcal`;
+            document.getElementById('totalCalories').innerText = `Current: ${Math.round(latest.calories)} / Target: ${goals.calories} kcal`;
 
             // Table
             const tableBody = document.querySelector('#historyTable tbody');
@@ -94,7 +93,7 @@
 
             // Insights
             const recs = document.getElementById('recommendations');
-            recs.innerText = ''; // Clear calculating text
+            recs.innerText = '';
             if (insights && insights.tips && Array.isArray(insights.tips)) {
                 insights.tips.forEach(t => {
                     const tipDiv = document.createElement('div');
@@ -103,13 +102,12 @@
                     recs.appendChild(tipDiv);
                 });
             } else {
-                recs.innerHTML = '<b>On track:</b> Keep hitting those targets!';
+                recs.innerHTML = 'Log your first meal to see AI insights!';
             }
 
-            // Goal Bars & Insights
+            // Goal Bars
             const goalBars = document.getElementById('goalBars');
             goalBars.innerHTML = '';
-            
             const metrics = [
                 { label: 'Calories', current: latest.calories, target: goals.calories, class: '' },
                 { label: 'Protein', current: latest.protein, target: goals.protein, class: 'protein' },
@@ -120,7 +118,6 @@
             metrics.forEach(m => {
                 const pct = (m.current / m.target) * 100;
                 const isOver = m.current > m.target && m.label !== 'Protein' && m.label !== 'Calories';
-                
                 goalBars.innerHTML += `
                     <div class="metric-header">
                         <span class="metric-label">${m.label}</span>
@@ -159,20 +156,24 @@
         }
 
         async function init() {
-            let data = fallbackData;
-            let goals = fallbackGoals;
-            let insights = fallbackInsights;
             try {
-                const dRes = await fetch('../nutrition/daily_macros.json?v=' + Date.now());
-                if (dRes.ok) data = await dRes.json();
+                const [dRes, gRes, iRes] = await Promise.all([
+                    fetch('../nutrition/daily_macros.json?v=' + Date.now()),
+                    fetch('../nutrition/targets.json?v=' + Date.now()),
+                    fetch('../nutrition/insights.json?v=' + Date.now())
+                ]);
                 
-                const gRes = await fetch('../nutrition/targets.json?v=' + Date.now());
-                if (gRes.ok) goals = await gRes.json();
-
-                const iRes = await fetch('../nutrition/insights.json?v=' + Date.now());
-                if (iRes.ok) insights = await iRes.json();
-            } catch (e) { console.warn('Using fallbacks', e); }
-            renderUI(data, goals, insights);
+                if (!dRes.ok || !gRes.ok) throw new Error('Data files missing');
+                
+                const data = await dRes.json();
+                const goals = await gRes.json();
+                const insights = iRes.ok ? await iRes.json() : null;
+                
+                renderUI(data, goals, insights);
+            } catch (e) { 
+                document.getElementById('loader').innerHTML = '<b>Error:</b> Data not found.<br><small>Make sure nutrition/daily_macros.json exists.</small>';
+                console.error(e); 
+            }
         }
         init();
     </script>
