@@ -3,9 +3,15 @@
   "slug": "time",
   "displayName": "Time",
   "latest": {
-    "version": "0.2.0",
-    "publishedAt": 1771507772996,
-    "commit": "https://github.com/openclaw/skills/commit/eb55ac6f05d747bc8ce554ac3745362f2b046730"
+    "version": "0.3.0",
+    "publishedAt": 1771515605964,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.2.0",
+      "publishedAt": 1771507772996,
+      "commit": "https://github.com/openclaw/skills/commit/eb55ac6f05d747bc8ce554ac3745362f2b046730"
+    }
+  ]
 }

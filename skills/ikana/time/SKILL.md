@@ -22,9 +22,11 @@ Use one frame only: you move forward through time.
 
 - `temporal` must be on your `$PATH`.
 - If `temporal` is not on `$PATH`, run `scripts/install.sh` from the skill directory.
-- `scripts/install.sh` auto-detects OS/arch, verifies SHA-256 checksums, and installs to `/usr/local/bin/temporal` when writable or `~/.local/bin/temporal` otherwise.
-- Installer defaults to `v0.1.0` and can be overridden (for example `TEMPORAL_VERSION=latest ./scripts/install.sh`).
+- `scripts/install.sh` auto-detects OS/arch, verifies SHA-256 checksums from values bundled in the installer (not from the release checksums file), and installs to `/usr/local/bin/temporal` when writable or `~/.local/bin/temporal` otherwise.
+- Installer defaults to `v0.1.0`. You can override version/install dir with `TEMPORAL_VERSION` and `TEMPORAL_INSTALL_DIR`.
+- For versions without a bundled checksum, set `TEMPORAL_SHA256` to an independently obtained digest.
 - Ensure `~/.local/bin` is on your `$PATH` (for example, `export PATH="$HOME/.local/bin:$PATH"` in your shell profile).
+- Note: The OS-specific `curl` examples below install binaries without checksum verification; prefer `scripts/install.sh` when possible.
 - Install (macOS Apple Silicon):
   `mkdir -p ~/.local/bin && curl -L https://github.com/Ikana/temporal/releases/latest/download/temporal-darwin-arm64 -o ~/.local/bin/temporal && chmod +x ~/.local/bin/temporal`
 - Install (macOS Intel):
@@ -33,8 +35,8 @@ Use one frame only: you move forward through time.
   `mkdir -p ~/.local/bin && curl -L https://github.com/Ikana/temporal/releases/latest/download/temporal-linux-x64 -o ~/.local/bin/temporal && chmod +x ~/.local/bin/temporal`
 - Install (Linux ARM64):
   `mkdir -p ~/.local/bin && curl -L https://github.com/Ikana/temporal/releases/latest/download/temporal-linux-arm64 -o ~/.local/bin/temporal && chmod +x ~/.local/bin/temporal`
-- Verify checksums before install (recommended; pin a tag instead of `latest` for reproducible installs):
-  `VERSION=v0.1.0 && FILE=temporal-linux-x64 && curl -L https://github.com/Ikana/temporal/releases/download/$VERSION/$FILE -o /tmp/$FILE && curl -L https://github.com/Ikana/temporal/releases/download/$VERSION/temporal-checksums.txt -o /tmp/temporal-checksums.txt && grep " $FILE$" /tmp/temporal-checksums.txt | sha256sum -c -`
+- Install a custom version with explicit checksum:
+  `TEMPORAL_VERSION=v0.1.1 TEMPORAL_SHA256=<sha256> ./scripts/install.sh`
 - Install/build instructions: [github.com/Ikana/temporal](https://github.com/Ikana/temporal)
 
 ## Quick Start
