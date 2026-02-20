@@ -1,6 +1,6 @@
 ---
 name: command-center
-version: 1.0.4
+version: 1.1.0
 description: Mission control dashboard for OpenClaw - real-time session monitoring, LLM usage tracking, cost intelligence, and system vitals. View all your AI agents in one place.
 metadata:
   openclaw:
@@ -20,11 +20,8 @@ Mission control for your AI workforce.
 ## Quick Start
 
 ```bash
-# Install from ClawHub
-clawhub install command-center
-
-# Start the dashboard
-cd ~/.openclaw/skills/command-center
+npx clawhub@latest install command-center
+cd skills/command-center
 node lib/server.js
 ```
 
