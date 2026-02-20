@@ -1,6 +1,12 @@
 ---
 name: pr-reviewer
+version: 1.0.1
 description: Automated GitHub PR code review with diff analysis, lint integration, and structured reports. Use when reviewing pull requests, checking for security issues, error handling gaps, test coverage, or code style problems. Supports Go, Python, and JavaScript/TypeScript. Requires `gh` CLI authenticated with repo access.
+metadata:
+  openclaw:
+    requires:
+      bins: ["gh", "python3"]
+      anyBins: ["golangci-lint", "ruff"]
 ---
 
 # PR Reviewer
@@ -17,19 +23,19 @@ Automated code review for GitHub pull requests. Analyzes diffs for security issu
 
 ```bash
 # Review all open PRs in current repo
-scripts/pr-review.sh check
+scripts/github/pr-reviewer.sh check
 
 # Review a specific PR
-scripts/pr-review.sh review 42
+scripts/github/pr-reviewer.sh review 42
 
 # Post review as GitHub comment
-scripts/pr-review.sh post 42
+scripts/github/pr-reviewer.sh post 42
 
 # Check status of all open PRs
-scripts/pr-review.sh status
+scripts/github/pr-reviewer.sh status
 
 # List unreviewed PRs (useful for heartbeat/cron integration)
-scripts/pr-review.sh list-unreviewed
+scripts/github/pr-reviewer.sh list-unreviewed
 ```
 
 ## Configuration
@@ -40,6 +46,11 @@ Set these environment variables or the script auto-detects from the current git 
 - `PR_REVIEW_DIR` — Local checkout path for lint (default: git root of cwd)
 - `PR_REVIEW_STATE` — State file path (default: `./data/pr-reviews.json`)
 - `PR_REVIEW_OUTDIR` — Report output directory (default: `./data/pr-reviews/`)
+
+## Directories Written
+
+- **`PR_REVIEW_STATE`** (default: `./data/pr-reviews.json`) — Tracks reviewed PRs and their HEAD SHAs
+- **`PR_REVIEW_OUTDIR`** (default: `./data/pr-reviews/`) — Markdown review reports
 
 ## What It Checks
 
@@ -73,9 +84,9 @@ Reports are saved as markdown files in the output directory. Each report include
 Add to a periodic check (heartbeat, cron job, or CI):
 
 ```bash
-UNREVIEWED=$(scripts/pr-review.sh list-unreviewed)
+UNREVIEWED=$(scripts/github/pr-reviewer.sh list-unreviewed)
 if [ -n "$UNREVIEWED" ]; then
-  scripts/pr-review.sh check
+  scripts/github/pr-reviewer.sh check
 fi
 ```
 

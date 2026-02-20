@@ -1,11 +1,17 @@
 {
   "owner": "briancolinger",
   "slug": "pr-reviewer",
-  "displayName": "PR Reviewer",
+  "displayName": "pr-reviewer",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770065590361,
-    "commit": "https://github.com/clawdbot/skills/commit/75d0ef5bdfd40cd475c2ac26c665fe6ed191a2d1"
+    "version": "1.0.1",
+    "publishedAt": 1771529167274,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770065590361,
+      "commit": "https://github.com/clawdbot/skills/commit/75d0ef5bdfd40cd475c2ac26c665fe6ed191a2d1"
+    }
+  ]
 }
