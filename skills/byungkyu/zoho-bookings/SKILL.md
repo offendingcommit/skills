@@ -1,5 +1,5 @@
 ---
-name: zohobookings
+name: zoho-bookings
 description: |
   Zoho Bookings API integration with managed OAuth. Manage appointments, services, staff, and workspaces.
   Use this skill when users want to book appointments, manage services, view staff availability, or manage workspaces in Zoho Bookings.
