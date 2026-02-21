@@ -3,11 +3,16 @@
   "slug": "agent-factory",
   "displayName": "Agent Factory",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1771359546197,
-    "commit": "https://github.com/openclaw/skills/commit/8332460575d9fba87485f6de7d72b70904b2831e"
+    "version": "1.0.5",
+    "publishedAt": 1771582792614,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771359546197,
+      "commit": "https://github.com/openclaw/skills/commit/8332460575d9fba87485f6de7d72b70904b2831e"
+    },
     {
       "version": "1.0.2",
       "publishedAt": 1771276876187,
