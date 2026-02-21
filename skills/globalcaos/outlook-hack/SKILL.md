@@ -1,372 +1,66 @@
 ---
 name: outlook-hack
-version: 1.0.0
-description: "Access Outlook email via the browser relay — read, search, send, reply to emails and check calendar without separate auth. Piggybacks on the existing Outlook Web session in Chrome. When IMAP is blocked and Microsoft Graph API requires admin consent you can't get, this is the third option: just open Outlook in Chrome, click the relay button, and your agent has full email access. Zero API keys, zero admin approval, zero config."
-homepage: https://github.com/globalcaos/clawdbot-moltbot-openclaw
-repository: https://github.com/globalcaos/clawdbot-moltbot-openclaw
+version: 2.6.0
+description: "Your agent reads Outlook email all day. Drafts replies for you. Won't send a single one. Not even if you ask nicely."
 metadata:
-  openclaw:
-    emoji: "📧"
-    requires:
-      tools: ["browser"]
+  {
+    "openclaw":
+      {
+        "emoji": "📧",
+        "os": ["linux", "darwin"],
+        "requires":
+          {
+            "capabilities": ["browser"],
+          },
+        "notes":
+          {
+            "security": "This skill captures Outlook Web session tokens via browser tab sharing to make direct REST calls to Microsoft's internal APIs. No API keys or admin approval needed. SENDING IS CODE-DISABLED: the skill physically cannot send, reply, or forward emails. It reads, searches, and creates drafts only. Drafts land in the user's Drafts folder for manual review and sending. No credentials are stored beyond the session token lifetime (8-24 hours).",
+          },
+      },
+  }
 ---
 
-# Outlook Hack — When IMAP is Blocked and APIs Need Admin Consent
+# Outlook Hack
 
-*The skill born from corporate IT frustration. If you can open Outlook in Chrome, your agent can read your email.*
+**Your AI agent won't email the CEO at 3am.**
 
-## The Problem
+Not because there's a setting. Not because there's a policy. Because the code physically cannot send emails. We removed that capability the way you'd remove a chainsaw from a toddler — completely and without negotiation.
 
-Corporate Outlook access is locked down three ways:
+**What it does:** reads, searches, and drafts replies. The drafts land in your Drafts folder. You review. You hit send. The AI never does.
 
-1. **IMAP/SMTP** — disabled by IT policy (most Microsoft 365 tenants)
-2. **Microsoft Graph API** — requires Azure AD app registration + admin consent (good luck getting that approved)
-3. **EWS (Exchange Web Services)** — deprecated and increasingly blocked
+**What it won't do:**
 
-If you're an OpenClaw user with a corporate Microsoft 365 account, you're stuck — until now.
+- Won't beg IT for API access
+- Won't need admin to enable IMAP
+- Won't die after 20 minutes like a browser extension with commitment issues
+- Won't send, forward, or reply on your behalf — ever
+- Won't make you explain to compliance why an AI is loose in your inbox
 
-## The Third Option
+**How it works:** Open Outlook Web once. OpenClaw grabs the auth tokens from your existing browser session. Done. One handshake in the morning, reads all day. No IT ticket. No extensions to babysit. No OAuth dance with Azure AD.
 
-This skill piggybacks on your existing Outlook Web session in Chrome via the OpenClaw browser relay. No API keys, no admin consent, no IMAP. If you can read email in your browser, your agent can too.
+Every token refresh, every session recovery, every edge case where Microsoft decides to rotate cookies at 2pm on a Tuesday — handled. Because we're that kind of obsessive.
 
-**How it works:**
-
-1. Open Outlook Web (`https://outlook.office.com`) in Chrome
-2. Click the OpenClaw Browser Relay toolbar button (badge ON)
-3. Your agent executes `fetch()` calls inside the tab using the MSAL access token that's already there
-
-The Outlook Web app stores OAuth tokens in `localStorage`. This skill extracts them and calls the Outlook REST API v2.0 directly from the browser context. No tokens leave the browser — all API calls happen within Chrome's security sandbox.
-
-## Prerequisites
-
-- OpenClaw Browser Relay extension installed in Chrome ([docs](https://docs.openclaw.ai/tools/chrome-extension))
-- Outlook Web tab open and logged in
-- Relay attached to the Outlook tab (toolbar button → badge ON)
+**The punchline:** Your security team's biggest fear is "what if it sends something?" This skill can't. The send function doesn't exist. It writes drafts — you pull the trigger. Sleep well.
 
 ## Capabilities
 
-| Feature | Supported |
-|---------|-----------|
-| Read inbox (with preview) | ✅ |
-| Read full message body (HTML) | ✅ |
-| Search messages | ✅ |
-| Send email | ✅ |
-| Reply / Reply All / Forward | ✅ |
-| List folders + unread counts | ✅ |
-| Calendar events | ✅ |
-| Download attachments | ✅ |
-| Mark read/unread | ✅ |
-| Move to folder | ✅ |
-| Flag messages | ✅ |
+- 📧 Read and search emails across all folders
+- 📅 Access calendar events
+- 👥 Browse contacts
+- ✏️ Create email drafts (lands in Drafts folder — never sends)
 
-## Usage
+## How It Works (Technical)
 
-### Finding the Outlook Tab
+1. Share your Outlook Web tab with OpenClaw via the Browser Relay
+2. The skill captures your authenticated session tokens
+3. From that point, it makes direct REST calls to Microsoft's internal Outlook APIs
+4. Works autonomously until the session naturally expires (typically 8-24 hours)
+5. Next day: share the tab again. One handshake. That's it.
 
-First, find the attached Outlook tab:
+The skill is NOT scraping the page. It speaks Outlook's own internal API language, authenticated through your existing browser session.
 
-```
-browser action=tabs profile=chrome
-```
+## The Full Stack
 
-Look for a tab with URL containing `outlook.office.com`. Note the `targetId`.
+Pair with [**whatsapp-ultimate**](https://clawhub.com/globalcaos/whatsapp-ultimate) for messaging and [**jarvis-voice**](https://clawhub.com/globalcaos/jarvis-voice) for voice. Part of a 13-skill cognitive architecture.
 
-### Token Extraction
-
-All API calls start by extracting the MSAL access token from localStorage:
-
-```javascript
-const tokenKey = Object.keys(localStorage).find(k =>
-  k.includes('accesstoken') &&
-  k.includes('outlook.office.com') &&
-  k.includes('mail.readwrite')
-);
-const token = JSON.parse(localStorage.getItem(tokenKey)).secret;
-```
-
-Use this token as `Authorization: Bearer <token>` for all Outlook REST API calls.
-
-### API Base URL
-
-```
-https://outlook.office.com/api/v2.0/me/
-```
-
-### List Inbox Messages
-
-```javascript
-async () => {
-  // Extract token
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-
-  const resp = await fetch(
-    'https://outlook.office.com/api/v2.0/me/messages?' +
-    '$top=20&$select=Subject,From,ReceivedDateTime,IsRead,BodyPreview,Id' +
-    '&$orderby=ReceivedDateTime desc',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const data = await resp.json();
-  return data.value?.map(m => ({
-    id: m.Id,
-    subject: m.Subject,
-    from: m.From?.EmailAddress?.Name,
-    email: m.From?.EmailAddress?.Address,
-    date: m.ReceivedDateTime,
-    read: m.IsRead,
-    preview: m.BodyPreview?.substring(0, 150)
-  }));
-}
-```
-
-Add `&$filter=IsRead eq false` to list only unread messages.
-
-### Read Full Message
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const messageId = '<MESSAGE_ID>';
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/messages/${messageId}?` +
-    '$select=Subject,From,ToRecipients,CcRecipients,Body,ReceivedDateTime,HasAttachments',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  return await resp.json();
-}
-```
-
-The `Body.Content` field contains full HTML.
-
-### Search Messages
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const query = 'invoice January';
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/messages?` +
-    `$search="${encodeURIComponent(query)}"&$top=10` +
-    '&$select=Subject,From,ReceivedDateTime,BodyPreview',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const data = await resp.json();
-  return data.value;
-}
-```
-
-### Send Email
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-
-  const resp = await fetch('https://outlook.office.com/api/v2.0/me/sendmail', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      Message: {
-        Subject: 'Subject here',
-        Body: { ContentType: 'HTML', Content: '<p>Email body here</p>' },
-        ToRecipients: [{ EmailAddress: { Address: 'recipient@example.com' } }],
-        CcRecipients: []  // optional
-      }
-    })
-  });
-  return { status: resp.status, ok: resp.ok };
-}
-```
-
-### Reply to Message
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const messageId = '<MESSAGE_ID>';
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/messages/${messageId}/reply`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ Comment: '<p>Reply text here</p>' })
-    }
-  );
-  return { status: resp.status, ok: resp.ok };
-}
-```
-
-Use `/replyall` instead of `/reply` for Reply All. Use `/forward` with a `ToRecipients` array for forwarding.
-
-### Calendar Events
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const now = new Date().toISOString();
-  const end = new Date(Date.now() + 7 * 86400000).toISOString();
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/calendarview?` +
-    `startdatetime=${now}&enddatetime=${end}` +
-    '&$select=Subject,Start,End,Location,Organizer,IsAllDay' +
-    '&$orderby=Start/DateTime',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const data = await resp.json();
-  return data.value;
-}
-```
-
-### List Folders
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-
-  const resp = await fetch(
-    'https://outlook.office.com/api/v2.0/me/mailfolders?' +
-    '$select=DisplayName,UnreadItemCount,TotalItemCount',
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const data = await resp.json();
-  return data.value;
-}
-```
-
-### Download Attachment
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const messageId = '<MESSAGE_ID>';
-  const attachmentId = '<ATTACHMENT_ID>';
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/messages/${messageId}/attachments/${attachmentId}`,
-    { headers: { 'Authorization': 'Bearer ' + token } }
-  );
-  const data = await resp.json();
-  // data.ContentBytes = base64-encoded file content
-  // data.Name = filename
-  // data.ContentType = MIME type
-  return { name: data.Name, type: data.ContentType, size: data.ContentBytes?.length };
-}
-```
-
-### Mark as Read/Unread
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const messageId = '<MESSAGE_ID>';
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/messages/${messageId}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ IsRead: true })  // false for unread
-    }
-  );
-  return { status: resp.status, ok: resp.ok };
-}
-```
-
-### Move to Folder
-
-```javascript
-async () => {
-  const tk = Object.keys(localStorage).find(k => k.includes('accesstoken') && k.includes('outlook.office.com') && k.includes('mail.readwrite'));
-  const token = JSON.parse(localStorage.getItem(tk)).secret;
-  const messageId = '<MESSAGE_ID>';
-
-  const resp = await fetch(
-    `https://outlook.office.com/api/v2.0/me/messages/${messageId}/move`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ DestinationId: 'Archive' })  // or folder ID
-    }
-  );
-  return { status: resp.status, ok: resp.ok };
-}
-```
-
-## Implementation Pattern
-
-Always use the browser tool with `profile="chrome"`:
-
-```
-browser action=act profile=chrome targetId=<outlook-tab-id>
-  request.kind=evaluate
-  request.fn=<async function>
-```
-
-## Token Refresh
-
-MSAL auto-refreshes tokens in the background while the Outlook tab is open. If a call returns 401:
-
-1. Wait 2 seconds (MSAL may be refreshing)
-2. Re-extract the token from localStorage (it will have been updated)
-3. Retry the call
-
-Tokens expire after ~1 hour but are refreshed automatically.
-
-## Comparison with Other Approaches
-
-| Feature | IMAP | Graph API | EWS | **Outlook Hack** |
-|---------|------|-----------|-----|------------------|
-| Admin consent needed | Often blocked | ✅ Required | Often blocked | ❌ None |
-| API keys needed | ✅ Credentials | ✅ App registration | ✅ Credentials | ❌ None |
-| Works with MFA | ❌ Breaks IMAP | ✅ | ❌ Often breaks | ✅ Via browser session |
-| Calendar access | ❌ | ✅ | ✅ | ✅ |
-| Send email | ✅ | ✅ | ✅ | ✅ |
-| Search | ❌ Limited | ✅ | ✅ | ✅ |
-| Setup time | Medium | Hours/days | Medium | **2 minutes** |
-| Requires browser open | ❌ | ❌ | ❌ | ✅ |
-
-## Limitations
-
-- Requires Chrome with the Outlook tab open (tab can be background)
-- Token expires if Outlook tab is closed for extended periods
-- Large attachments (>25MB) may be slow via base64 encoding
-- Microsoft rate limits apply (~10K requests per 10 minutes)
-- Cannot access other users' mailboxes (only your own)
-
-## Security Notes
-
-- No tokens are stored outside the browser
-- All API calls happen within Chrome's security context
-- The relay bridges CDP commands only — auth stays in Chrome's cookie jar
-- No credentials are written to disk by this skill
-
----
-
-## Credits
-
-Created by **Oscar Serra** with the help of **Claude** (Anthropic).
-
-*Born at 2 AM on a Sunday, because corporate IT said "no" to IMAP, "no" to Graph API, and "submit a ticket" for everything else.*
+👉 **[Clone it. Fork it. Break it. Make it yours.](https://github.com/globalcaos/clawdbot-moltbot-openclaw)**
