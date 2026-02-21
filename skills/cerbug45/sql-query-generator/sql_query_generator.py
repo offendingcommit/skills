@@ -297,6 +297,8 @@ class SQLInputValidator:
         value = re.sub(r'\b\d{3}-\d{2}-\d{4}\b', '[REDACTED-SSN]', value)
         value = re.sub(r'password\s*=\s*[^\s]+', 'password=[REDACTED]',
                       value, flags=re.IGNORECASE)
+        value = re.sub(r'(api[_-]?key|token|secret)\s*=\s*[^\s]+', r'\1=[REDACTED]',
+                      value, flags=re.IGNORECASE)
         
         return value
 
@@ -429,6 +431,13 @@ class SQLQueryGenerator:
                         severity='WARNING'
                     )
                 raise SecurityException(f"Rate limit exceeded: {reason}")
+
+    def _enforce_table_allowlist(self, table_name: str) -> None:
+        """Enforce allowlist policy for every referenced table."""
+        if self.allowed_tables is None:
+            return
+        if table_name.lower() not in self.allowed_tables:
+            raise SecurityException(f"Table not allowed by policy: {table_name}")
     
     def generate_select_query(
         self,
@@ -453,10 +462,8 @@ class SQLQueryGenerator:
             for table in tables
         ]
 
-        if self.allowed_tables is not None:
-            for table in validated_tables:
-                if table.lower() not in self.allowed_tables:
-                    raise SecurityException(f"Table not allowed by policy: {table}")
+        for table in validated_tables:
+            self._enforce_table_allowlist(table)
         
         validated_columns = []
         for col in columns:
@@ -487,6 +494,7 @@ class SQLQueryGenerator:
                     join['table'],
                     security_level=self.security_level
                 )
+                self._enforce_table_allowlist(join_table)
                 query += f"{join_type} JOIN\n    {join_table} ON {join['on']}\n"
         
         if where_conditions:
@@ -546,6 +554,40 @@ class SQLQueryGenerator:
         self.last_query_time = time.time()
         
         return query
+
+    def generate_paginated_select_query(
+        self,
+        table: str,
+        columns: List[str],
+        sort_by: str,
+        sort_direction: str = "DESC",
+        page: int = 1,
+        page_size: int = 50,
+        where_conditions: Optional[List[str]] = None,
+        user_id: Optional[str] = None,
+    ) -> str:
+        """Generate safe paginated SELECT query with strict validation."""
+        validated_page = self.validator.validate_integer(page, min_val=1, max_val=1_000_000)
+        validated_page_size = self.validator.validate_integer(page_size, min_val=1, max_val=1000)
+        validated_sort = self.validator.validate_identifier(sort_by, security_level=self.security_level)
+        validated_dir = self.validator.validate_enum(sort_direction.upper(), ["ASC", "DESC"])
+
+        offset = (validated_page - 1) * validated_page_size
+
+        return self.generate_select_query(
+            tables=[table],
+            columns=columns,
+            where_conditions=where_conditions,
+            order_by=[f"{validated_sort} {validated_dir}"],
+            limit=validated_page_size,
+            offset=offset,
+            user_id=user_id,
+        )
+
+    def query_fingerprint(self, query: str) -> str:
+        """Deterministic hash fingerprint for cache/audit correlation."""
+        normalized = re.sub(r"\s+", " ", query.strip()).lower()
+        return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
     
     def validate_query_security(self, query: str, user_id: Optional[str] = None) -> List[str]:
         """Comprehensive security validation of a query"""

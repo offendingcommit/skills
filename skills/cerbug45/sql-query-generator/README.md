@@ -6,14 +6,15 @@ AI-powered SQL query generator with **100x enhanced security** features, designe
 
 ## 🛡️ Security Features
 
-### New in latest update (10x workflow boost)
-- Table allowlist policy (`allowed_tables`) to hard-block unauthorized table access.
-- Offset pagination support (`offset`) with validation.
-- Structured query analysis (`analyze_query`) with:
-  - complexity score (0-100)
-  - risk score (0-100)
-  - actionable recommendations
-  - machine-friendly tags (for CI/automation)
+### New in latest update (v0.3.0)
+- Table allowlist now enforced on **JOIN tables** too (not just primary table).
+- New `generate_paginated_select_query(...)` helper:
+  - strict page/page_size validation
+  - safe sort column + sort direction validation
+  - automatic LIMIT/OFFSET generation
+- New `query_fingerprint(query)` helper for deterministic cache/audit correlation.
+- Stronger log sanitization: redacts `api_key`, `token`, and `secret` patterns.
+- Structured query analysis (`analyze_query`) retained for CI/automation scoring.
 
 ### Core Security Mechanisms
 
@@ -134,6 +135,23 @@ if warnings:
         print(f"⚠ {warning}")
 else:
     print("✓ Query is secure")
+```
+
+### Safe Pagination Helper (new)
+
+```python
+q = generator.generate_paginated_select_query(
+    table='orders',
+    columns=['order_id', 'customer_id', 'created_at'],
+    sort_by='created_at',
+    sort_direction='DESC',
+    page=2,
+    page_size=25,
+    where_conditions=['status = $1'],
+    user_id='john_doe'
+)
+
+print(generator.query_fingerprint(q))  # e.g. '9f1a2b3c4d5e6f70'
 ```
 
 ### Performance Optimization
