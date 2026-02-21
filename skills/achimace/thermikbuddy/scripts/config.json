@@ -1,0 +1,241 @@
+{
+  "regions": {
+    "werdenfels": {
+      "name": "Werdenfels / Bayerischer Alpenordrand",
+      "emoji": "🏔️",
+      "latitude": 47.48,
+      "longitude": 11.10,
+      "elevation_m": 700,
+      "type": "alpine",
+      "dhv_region": "Nordalpen",
+      "description": "Garmisch-Partenkirchen, Sportfliegergruppe Werdenfels"
+    },
+    "inntal": {
+      "name": "Inntal / Nordtiroler Alpen",
+      "emoji": "🏔️",
+      "latitude": 47.26,
+      "longitude": 11.39,
+      "elevation_m": 580,
+      "type": "alpine",
+      "dhv_region": "Nordalpen",
+      "description": "Innsbruck, Inntal, Nordkette"
+    },
+    "koenigsdorf": {
+      "name": "Königsdorf / Bayerisches Alpenvorland",
+      "emoji": "🏔️",
+      "latitude": 47.81,
+      "longitude": 11.48,
+      "elevation_m": 620,
+      "type": "alpine",
+      "dhv_region": "Nordalpen",
+      "description": "Flugplatz Königsdorf, Tölzer Land"
+    },
+    "unterwössen": {
+      "name": "Unterwössen / Chiemgau",
+      "emoji": "🏔️",
+      "latitude": 47.73,
+      "longitude": 12.47,
+      "elevation_m": 555,
+      "type": "alpine",
+      "dhv_region": "Nordalpen",
+      "description": "Flugplatz Unterwössen, Chiemgauer Alpen"
+    },
+    "schwaebische_alb": {
+      "name": "Schwäbische Alb",
+      "emoji": "⛰️",
+      "latitude": 48.40,
+      "longitude": 9.45,
+      "elevation_m": 750,
+      "type": "mittelgebirge",
+      "dhv_region": "Deutschland",
+      "description": "Schwäbische Alb, Raum Münsingen/Blaubeuren"
+    },
+    "wasserkuppe": {
+      "name": "Wasserkuppe / Rhön",
+      "emoji": "⛰️",
+      "latitude": 50.50,
+      "longitude": 9.94,
+      "elevation_m": 950,
+      "type": "mittelgebirge",
+      "dhv_region": "Deutschland",
+      "description": "Wasserkuppe, Wiege des Segelflugs"
+    },
+    "schwarzwald": {
+      "name": "Schwarzwald",
+      "emoji": "🌄",
+      "latitude": 48.05,
+      "longitude": 8.20,
+      "elevation_m": 700,
+      "type": "mittelgebirge",
+      "dhv_region": "Deutschland",
+      "description": "Schwarzwald, Raum Freiburg/Feldberg"
+    },
+    "luesse": {
+      "name": "Lüsse / Brandenburg",
+      "emoji": "🌾",
+      "latitude": 52.14,
+      "longitude": 12.67,
+      "elevation_m": 70,
+      "type": "flachland",
+      "dhv_region": "Deutschland",
+      "description": "Flugplatz Lüsse, Brandenburger Flachland"
+    },
+    "oerlinghausen": {
+      "name": "Oerlinghausen / Teutoburger Wald",
+      "emoji": "⛰️",
+      "latitude": 51.94,
+      "longitude": 8.67,
+      "elevation_m": 300,
+      "type": "mittelgebirge",
+      "dhv_region": "Deutschland",
+      "description": "Flugplatz Oerlinghausen, NRW"
+    },
+    "suedtirol": {
+      "name": "Südtirol / Südalpen",
+      "emoji": "🏔️",
+      "latitude": 46.50,
+      "longitude": 11.35,
+      "elevation_m": 250,
+      "type": "alpine",
+      "dhv_region": "Südalpen",
+      "description": "Bozen/Südtirol, Südalpen"
+    },
+    "bassano": {
+      "name": "Bassano del Grappa",
+      "emoji": "🏔️",
+      "latitude": 45.77,
+      "longitude": 11.73,
+      "elevation_m": 130,
+      "type": "alpine",
+      "dhv_region": "Südalpen",
+      "description": "Bassano del Grappa, Monte Grappa"
+    }
+  },
+  "api": {
+    "base_url": "https://api.open-meteo.com/v1/forecast",
+    "model_preference": {
+      "alpine": "icon_d2",
+      "mittelgebirge": "icon_d2",
+      "flachland": "icon_d2"
+    },
+    "fallback_model": "icon_eu",
+    "forecast_days": 3
+  },
+  "timezone": "Europe/Berlin",
+  "scoring": {
+    "weights": {
+      "cape": 0.15,
+      "boundary_layer_height": 0.20,
+      "lifted_index": 0.10,
+      "cloud_cover": 0.15,
+      "wind": 0.10,
+      "temp_spread": 0.05,
+      "radiation": 0.10,
+      "soil_moisture": 0.10,
+      "previous_rain": 0.05
+    },
+    "thresholds": {
+      "cape": {
+        "poor": [0, 50],
+        "ok": [50, 150],
+        "good": [150, 400],
+        "very_good": [400, 900],
+        "excellent": [900, 1500],
+        "thunderstorm_warning": 2000
+      },
+      "boundary_layer_height_agl": {
+        "poor": [0, 500],
+        "ok": [500, 1000],
+        "good": [1000, 1800],
+        "very_good": [1800, 2500],
+        "excellent": [2500, 4000]
+      },
+      "lifted_index": {
+        "poor": [2, 999],
+        "ok": [0, 2],
+        "good": [-2, 0],
+        "very_good": [-4, -2],
+        "excellent": [-8, -4],
+        "severe_warning": -6
+      },
+      "cloud_cover_low_mid": {
+        "poor": [80, 100],
+        "ok": [50, 80],
+        "good": [30, 50],
+        "very_good": [10, 30],
+        "excellent": [0, 10]
+      },
+      "wind_speed_10m": {
+        "poor": [35, 999],
+        "ok": [25, 35],
+        "good": [15, 25],
+        "very_good": [5, 15],
+        "excellent": [0, 10]
+      },
+      "temp_spread": {
+        "poor": [0, 3],
+        "ok": [3, 5],
+        "good": [5, 8],
+        "very_good": [8, 12],
+        "excellent": [12, 30]
+      },
+      "direct_radiation": {
+        "poor": [0, 200],
+        "ok": [200, 400],
+        "good": [400, 600],
+        "very_good": [600, 800],
+        "excellent": [800, 1200]
+      },
+      "soil_moisture": {
+        "poor": [0.40, 1.0],
+        "ok": [0.30, 0.40],
+        "good": [0.20, 0.30],
+        "very_good": [0.10, 0.20],
+        "excellent": [0.0, 0.10]
+      }
+    },
+    "phases": {
+      "morning": {"start": 9, "end": 12, "label": "Vormittag"},
+      "early_afternoon": {"start": 12, "end": 15, "label": "Früher Nachmittag"},
+      "late_afternoon": {"start": 15, "end": 18, "label": "Später Nachmittag"},
+      "evening": {"start": 18, "end": 20, "label": "Abend"}
+    },
+    "alpine_specifics": {
+      "foehn_detection": {
+        "wind_direction_700hpa_range": [135, 225],
+        "wind_speed_700hpa_min_kmh": 25
+      },
+      "thunderstorm_warning": {
+        "cape_threshold": 2000,
+        "lifted_index_threshold": -6
+      },
+      "cu_thermal_ideal": {
+        "cloud_cover_range": [15, 50],
+        "cape_min": 300
+      }
+    }
+  },
+  "output": {
+    "score_labels": {
+      "0": "Kein Segelflugwetter ❌",
+      "1": "Kein Segelflugwetter ❌",
+      "2": "Kein Segelflugwetter ❌",
+      "3": "Eingeschränkt 🌥️",
+      "4": "Eingeschränkt 🌥️",
+      "5": "Ordentlicher Tag ⛅",
+      "6": "Ordentlicher Tag ⛅",
+      "7": "Guter Tag ☀️",
+      "8": "Guter Tag ☀️",
+      "9": "Hammertag! 🔥",
+      "10": "Hammertag! 🔥"
+    },
+    "detail_links": {
+      "DHV Wetter": "https://www.dhv.de/wetter/dhv-wetter/",
+      "SkySight": "https://skysight.io",
+      "TopMeteo": "https://europe.topmeteo.eu/de/",
+      "DWD Segelflug": "https://www.dwd.de/DE/fachnutzer/luftfahrt/kg_segel/segel_node.html",
+      "aufwin.de": "https://aufwin.de",
+      "Soaringmeteo (WRF 2km)": "https://soaringmeteo.org/v2"
+    }
+  }
+}
