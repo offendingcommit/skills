@@ -1,0 +1,11 @@
+{
+  "owner": "gblockchainnetwork",
+  "slug": "ollama-seo-auditor",
+  "displayName": "Ollama SEO Auditor",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771598311767,
+    "commit": null
+  },
+  "history": []
+}
