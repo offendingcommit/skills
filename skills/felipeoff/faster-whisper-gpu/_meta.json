@@ -1,0 +1,11 @@
+{
+  "owner": "felipeoff",
+  "slug": "faster-whisper-gpu",
+  "displayName": "Faster Whisper Gpu",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1771666692156,
+    "commit": null
+  },
+  "history": []
+}
