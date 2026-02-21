@@ -1,6 +1,6 @@
 ---
 name: paygents
-description: AI agent payment skill — generate wallet deeplinks (MetaMask, Trust Wallet), verify transactions on-chain, generate receipts, check balances. No custody, no backend, no API keys. Human approves in their own wallet.
+description: Accept crypto payments in AI agent conversations. Generate MetaMask/Trust Wallet deeplinks, verify transactions on-chain, check balances, issue receipts. No custody, no backend, no API keys.
 metadata:
   openclaw:
     requires:
@@ -9,9 +9,28 @@ metadata:
         - bash
 ---
 
-# EVM Payment Deeplink Skill
+# PayGents
 
-Generate wallet deeplinks for EVM payments. The user taps the link, approves in MetaMask, and the agent verifies the transaction on-chain.
+Accept crypto payments through your AI agent. Generate wallet deeplinks, verify on-chain, issue receipts — no backend, no API keys.
+
+## Quick Start
+
+Send 10 USDC on Base:
+```bash
+scripts/evm-payment-link.sh --to 0xRECIPIENT --amount 10 --chain-id 8453
+```
+
+Verify the payment:
+```bash
+scripts/evm-verify-tx.sh --chain-id 8453 --from 0xSENDER --to 0xRECIPIENT --asset ERC20 --amount 10 --blocks 50
+```
+
+Check a wallet balance:
+```bash
+scripts/evm-balance.sh --address 0xADDRESS
+```
+
+That's it. No API keys, no backend, no custody.
 
 ## Flow
 
@@ -60,7 +79,7 @@ Store the user's wallet preference so you don't ask again. The agent should note
 
 **ERC20 (USDC) — MetaMask:**
 ```bash
-skills/evm-usdc-wallet-poc/scripts/evm-payment-link.sh \
+scripts/evm-payment-link.sh \
   --to 0x1234...5678 \
   --amount 10 \
   --chain-id 8453
@@ -68,7 +87,7 @@ skills/evm-usdc-wallet-poc/scripts/evm-payment-link.sh \
 
 **Native ETH — Trust Wallet:**
 ```bash
-skills/evm-usdc-wallet-poc/scripts/evm-payment-link.sh \
+scripts/evm-payment-link.sh \
   --to 0x1234...5678 \
   --amount 0.01 \
   --asset ETH \
@@ -85,7 +104,7 @@ Output is JSON with:
 
 After the user says "sent", verify on-chain:
 ```bash
-skills/evm-usdc-wallet-poc/scripts/evm-verify-tx.sh \
+scripts/evm-verify-tx.sh \
   --chain-id 11155111 \
   --from 0xSENDER \
   --to 0xRECIPIENT \
@@ -113,7 +132,7 @@ When sending the link, always include:
 3. "Tap to open MetaMask and approve"
 4. "Reject if recipient or amount doesn't match"
 
-### Check Wallet Balance
+## Check Wallet Balance
 
 Query native + major ERC20 balances across all supported chains:
 
@@ -131,12 +150,12 @@ Supported chains: Ethereum, Base, Polygon, Arbitrum, Optimism, BNB Chain, Sepoli
 
 No API key needed — uses public RPCs directly.
 
-### Generate Receipt
+## Generate Receipt
 
 After a transaction is verified, generate a structured receipt:
 
 ```bash
-skills/evm-usdc-wallet-poc/scripts/evm-receipt.sh \
+scripts/evm-receipt.sh \
   --tx-hash 0xabc123... \
   --chain-id 8453 \
   --memo "order-42" \
@@ -182,7 +201,6 @@ Resolution order: env var `RPC_<chainId>` → `config.json` → public fallback.
 
 - The wallet is the trust boundary — agent cannot force-execute.
 - Verification checks the actual on-chain receipt, not user claims.
-- No backend, no policy enforcement. This is a POC skill.
 - Never store or handle private keys.
 - **RPC privacy:** If using public fallback RPCs, third-party providers will see wallet addresses and tx hashes you query. Set your own RPCs via env vars or config.json for privacy.
 - **Wallet preference:** The agent may store the user's preferred wallet (metamask/trust) in its memory. This is only the wallet app name, no keys or sensitive data. The user can ask the agent to clear it at any time.
