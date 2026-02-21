@@ -1,12 +1,11 @@
 ---
 name: lead-research-assistant-cn
-description: "销售线索研究助手。分析你的产品/服务，搜索目标公司，提供可执行的联系策略。适合销售、商务拓展、营销人员。触发词：找客户、销售线索、潜在客户、商务拓展。翻译自 ComposioHQ/awesome-claude-skills。"
+description: "销售线索研究助手 | Sales Lead Research Assistant. 识别高质量销售线索 | Identify high-quality sales leads. 分析目标公司、提供联系策略 | Analyze target companies, provide contact strategies. 触发词：销售线索、lead research、客户开发."
 metadata:
   openclaw:
     emoji: 🎯
-    fork-of: ComposioHQ/awesome-claude-skills/lead-research-assistant
+    fork-of: "https://github.com/anthropics/skills"
 ---
-
 # Lead Research Assistant
 
 This skill helps you identify and qualify potential leads for your business by analyzing your product/service, understanding your ideal customer profile, and providing actionable outreach strategies.
