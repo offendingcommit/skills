@@ -1,0 +1,11 @@
+{
+  "owner": "0xrapi",
+  "slug": "isnad-scan",
+  "displayName": "isnad-scan",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1771606685484,
+    "commit": null
+  },
+  "history": []
+}
